@@ -2296,20 +2296,28 @@ function toHex(buf) {
   return [...buf].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function signB2Request(env, method, objectKey, payloadHash) {
+async function signB2Request(env, method, objectKey, payloadHash, queryString = '') {
   const keyId = env.B2_KEY_ID;
   const appKey = env.B2_APP_KEY;
   const bucket = env.B2_BUCKET;
   const endpoint = env.B2_ENDPOINT;
   const region = env.B2_REGION;
 
+  if (!keyId || !appKey || !bucket || !endpoint || !region) {
+    throw new Error('B2 环境变量未配置完整');
+  }
+
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
   const dateStamp = amzDate.substring(0, 8);
 
   const host = endpoint;
-  const canonicalUri = `/${bucket}/${objectKey}`;
+  // objectKey 为空时签名到桶根（ListObjects）
+  const canonicalUri = objectKey
+    ? `/${bucket}/${String(objectKey).split('/').map(encodeURIComponent).join('/')}`
+    : `/${bucket}`;
   const service = 's3';
+  const canonicalQuery = queryString || '';
 
   const canonicalHeaders =
     `host:${host}\n` +
@@ -2318,7 +2326,7 @@ async function signB2Request(env, method, objectKey, payloadHash) {
   const signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
 
   const canonicalRequest =
-    `${method}\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+    `${method}\n${canonicalUri}\n${canonicalQuery}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
   const stringToSign =
@@ -2334,8 +2342,9 @@ async function signB2Request(env, method, objectKey, payloadHash) {
     `AWS4-HMAC-SHA256 Credential=${keyId}/${credentialScope}, ` +
     `SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
+  const url = `https://${host}${canonicalUri}${canonicalQuery ? '?' + canonicalQuery : ''}`;
   return {
-    url: `https://${host}${canonicalUri}`,
+    url,
     headers: {
       'Host': host,
       'Authorization': authorization,
@@ -2343,6 +2352,171 @@ async function signB2Request(env, method, objectKey, payloadHash) {
       'x-amz-date': amzDate
     }
   };
+}
+
+async function requireAdmin(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return { error: errorResponse('请先登录', 401) };
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return { error: errorResponse('权限不足', 403) };
+  return { userId, user };
+}
+
+/** 列出 B2 桶内对象 */
+async function handleAdminListB2(env, authHeader, url) {
+  const auth = await requireAdmin(env, authHeader);
+  if (auth.error) return auth.error;
+  try {
+    const prefix = url.searchParams.get('prefix') || '';
+    const token = url.searchParams.get('token') || '';
+    const maxKeys = Math.min(parseInt(url.searchParams.get('limit') || '200', 10) || 200, 1000);
+    const parts = ['list-type=2', 'max-keys=' + maxKeys];
+    if (prefix) parts.push('prefix=' + encodeURIComponent(prefix));
+    if (token) parts.push('continuation-token=' + encodeURIComponent(token));
+    parts.sort();
+    const qs = parts.join('&');
+    const emptyHash = await sha256Hex('');
+    const signed = await signB2Request(env, 'GET', '', emptyHash, qs);
+    const res = await fetch(signed.url, { method: 'GET', headers: signed.headers });
+    const xml = await res.text();
+    if (!res.ok) return errorResponse('B2 列表失败: ' + xml.slice(0, 200), 500);
+    const files = [];
+    const re = /<Contents>[\s\S]*?<Key>([^<]*)<\/Key>[\s\S]*?(?:<LastModified>([^<]*)<\/LastModified>)?[\s\S]*?(?:<Size>([^<]*)<\/Size>)?[\s\S]*?<\/Contents>/g;
+    let m;
+    while ((m = re.exec(xml)) !== null) {
+      const key = m[1].replace(/&amp;/g, '&');
+      files.push({
+        key,
+        last_modified: m[2] || '',
+        size: parseInt(m[3] || '0', 10) || 0,
+        url: '/api/file/' + key,
+        is_image: /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(key)
+      });
+    }
+    const truncated = /<IsTruncated>\s*true\s*<\/IsTruncated>/i.test(xml);
+    const nextMatch = xml.match(/<NextContinuationToken>([^<]*)<\/NextContinuationToken>/);
+    return jsonResponse({
+      files,
+      truncated,
+      next_token: nextMatch ? nextMatch[1] : null,
+      count: files.length
+    });
+  } catch (e) {
+    return errorResponse('B2 列表异常: ' + e.message, 500);
+  }
+}
+
+/** 删除 B2 对象 */
+async function handleAdminDeleteB2(env, authHeader, body) {
+  const auth = await requireAdmin(env, authHeader);
+  if (auth.error) return auth.error;
+  const key = body && body.key;
+  if (!key) return errorResponse('请提供 key');
+  try {
+    const emptyHash = await sha256Hex('');
+    const signed = await signB2Request(env, 'DELETE', key, emptyHash, '');
+    const res = await fetch(signed.url, { method: 'DELETE', headers: signed.headers });
+    if (!res.ok && res.status !== 204) {
+      const t = await res.text();
+      return errorResponse('删除失败: ' + (t || res.status), 500);
+    }
+    return jsonResponse({ success: true, message: '已删除', key });
+  } catch (e) {
+    return errorResponse('删除异常: ' + e.message, 500);
+  }
+}
+
+/** D1：列出所有表 */
+async function handleAdminDbTables(env, authHeader) {
+  const auth = await requireAdmin(env, authHeader);
+  if (auth.error) return auth.error;
+  try {
+    const r = await queryDB(env, `SELECT name, type FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name`);
+    const tables = [];
+    for (const row of (r.results || [])) {
+      let count = 0;
+      try {
+        const c = await queryDB(env, `SELECT COUNT(*) as c FROM "${row.name}"`);
+        count = c.results?.[0]?.c || 0;
+      } catch (e) {}
+      tables.push({ name: row.name, type: row.type, count });
+    }
+    return jsonResponse(tables);
+  } catch (e) {
+    return errorResponse('读取表失败: ' + e.message, 500);
+  }
+}
+
+/** D1：查看某表数据 */
+async function handleAdminDbTable(env, authHeader, tableName, url) {
+  const auth = await requireAdmin(env, authHeader);
+  if (auth.error) return auth.error;
+  if (!tableName || !/^[a-zA-Z0-9_]+$/.test(tableName)) return errorResponse('非法表名');
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10) || 100, 500);
+  const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+  try {
+    const cols = await queryDB(env, `PRAGMA table_info("${tableName}")`);
+    const columns = (cols.results || []).map(c => c.name);
+    const data = await queryDB(env, `SELECT * FROM "${tableName}" LIMIT ? OFFSET ?`, [limit, offset]);
+    let total = 0;
+    try {
+      const t = await queryDB(env, `SELECT COUNT(*) as c FROM "${tableName}"`);
+      total = t.results?.[0]?.c || 0;
+    } catch (e) {}
+    return jsonResponse({
+      table: tableName,
+      columns,
+      rows: data.results || [],
+      total,
+      limit,
+      offset
+    });
+  } catch (e) {
+    return errorResponse('查询失败: ' + e.message, 500);
+  }
+}
+
+/** D1：执行 SQL（管理员，默认仅允许 SELECT；写操作需 confirm） */
+async function handleAdminDbQuery(env, authHeader, body) {
+  const auth = await requireAdmin(env, authHeader);
+  if (auth.error) return auth.error;
+  const sql = (body && body.sql || '').trim();
+  if (!sql) return errorResponse('请提供 SQL');
+  const upper = sql.replace(/^\s+/, '').toUpperCase();
+  const isSelect = upper.startsWith('SELECT') || upper.startsWith('PRAGMA') || upper.startsWith('EXPLAIN');
+  const isWrite = /^(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE)/i.test(upper);
+  if (isWrite && body.confirm !== 'YES') {
+    return errorResponse('写操作需在 body 中设置 confirm:"YES"', 400);
+  }
+  if (!isSelect && !isWrite) return errorResponse('不支持的 SQL 类型');
+  try {
+    if (isSelect) {
+      const r = await queryDB(env, sql);
+      return jsonResponse({ results: r.results || [], meta: r.meta || {} });
+    }
+    const r = await runDB(env, sql);
+    return jsonResponse({ success: true, meta: r.meta || {}, message: '执行成功' });
+  } catch (e) {
+    return errorResponse('SQL 执行失败: ' + e.message, 500);
+  }
+}
+
+/** D1：按主键删除一行 */
+async function handleAdminDbDeleteRow(env, authHeader, body) {
+  const auth = await requireAdmin(env, authHeader);
+  if (auth.error) return auth.error;
+  const table = body && body.table;
+  const id = body && body.id;
+  const idCol = (body && body.id_column) || 'id';
+  if (!table || !/^[a-zA-Z0-9_]+$/.test(table)) return errorResponse('非法表名');
+  if (!idCol || !/^[a-zA-Z0-9_]+$/.test(idCol)) return errorResponse('非法主键列');
+  if (id === undefined || id === null || id === '') return errorResponse('请提供 id');
+  try {
+    await runDB(env, `DELETE FROM "${table}" WHERE "${idCol}" = ?`, [id]);
+    return jsonResponse({ success: true, message: '已删除' });
+  } catch (e) {
+    return errorResponse('删除失败: ' + e.message, 500);
+  }
 }
 
 async function handleUploadFile(env, authHeader, request) {
@@ -2673,6 +2847,17 @@ export async function onRequest(context) {
           const gId = path.replace('/api/admin/gifts/', '');
           return await handleAdminDeleteGift(env, authHeader, gId);
         }
+        // —— 控制终端：D1 数据库 ——
+        if (path === '/api/admin/db/tables' && method === 'GET') return await handleAdminDbTables(env, authHeader);
+        if (path === '/api/admin/db/query' && method === 'POST') return await handleAdminDbQuery(env, authHeader, body);
+        if (path === '/api/admin/db/row' && method === 'DELETE') return await handleAdminDbDeleteRow(env, authHeader, body);
+        if (path.startsWith('/api/admin/db/table/') && method === 'GET') {
+          const tName = path.replace('/api/admin/db/table/', '');
+          return await handleAdminDbTable(env, authHeader, decodeURIComponent(tName), url);
+        }
+        // —— 控制终端：B2 文件 ——
+        if (path === '/api/admin/b2/list' && method === 'GET') return await handleAdminListB2(env, authHeader, url);
+        if (path === '/api/admin/b2/delete' && method === 'POST') return await handleAdminDeleteB2(env, authHeader, body);
       }
     }
 
