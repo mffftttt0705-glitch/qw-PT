@@ -1522,7 +1522,8 @@ async function handleGetPendingOrders(env, authHeader) {
   const userId = verifyAndGetUserId(authHeader);
   if (!userId) return errorResponse('请先登录', 401);
   const user = await getUserById(env, userId);
-  if (!user || user.role !== 'handler') return errorResponse('只有打手可查看', 403);
+  if (!user) return errorResponse('用户不存在', 404);
+  // 接单大厅对所有身份可见，仅打手可接单（接单接口仍校验角色）
   const result = await queryDB(env,
     `SELECT o.*, b.username as boss_name
      FROM orders o
