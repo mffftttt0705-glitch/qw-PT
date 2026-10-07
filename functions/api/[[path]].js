@@ -1359,6 +1359,10 @@ async function handleTakeOrder(env, authHeader, orderId) {
   const order = (result.results && result.results[0]) || null;
   if (!order) return errorResponse('订单不存在', 404);
   if (order.status !== 'pending') return errorResponse('订单不可接');
+  // 老板发布的需求单不可直接接单，需申请并由老板同意
+  if (order.order_type === 'demand') {
+    return errorResponse('该订单为老板需求单，请使用「申请接单」，等待老板同意', 403);
+  }
   await runDB(env, 'UPDATE orders SET handler_id = ?, status = "ongoing", start_time = ? WHERE id = ?', [userId, new Date().toISOString(), orderId]);
   return jsonResponse({ message: '接单成功' });
 }
@@ -1440,8 +1444,10 @@ async function handleDispatcherPublish(env, authHeader, body) {
   const user = await getUserById(env, userId);
   if (!user) return errorResponse('用户不存在', 404);
   if (user.role !== 'dispatcher' && user.role !== 'admin') return errorResponse('只有派单员或管理员可发布订单', 403);
-  const { game, title, desc, price, assignedHandlerId } = body;
-  if (!title || !price) return errorResponse('请填写完整信息');
+  await ensureExtraTables(env);
+  const { game, title, desc, description, price, assignedHandlerId, category_id, remark, contact_info, urgency, quantity } = body || {};
+  const finalDesc = description || desc || '';
+  if (!title || !price) return errorResponse('请填写完整信息（标题和价格必填）');
   if (price < 1) return errorResponse('价格至少为1红钻');
   // 已清除派单发布时的扣红钻逻辑
   const orderId = generateId();
@@ -1455,10 +1461,19 @@ async function handleDispatcherPublish(env, authHeader, body) {
       messages = JSON.stringify([{ sender: 'system', content: `派单员发布订单：${title}，已指派打手`, time: new Date().toISOString() }]);
     } else handlerId = null;
   }
-  await runDB(env,
-    `INSERT INTO orders (id, boss_id, handler_id, status, price, game, title, description, messages, start_time)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [orderId, userId, handlerId, status, parseFloat(price), game || '暗区突围', title, desc || '', messages, handlerId ? new Date().toISOString() : null]);
+  const now = handlerId ? new Date().toISOString() : null;
+  try {
+    await runDB(env,
+      `INSERT INTO orders (id, boss_id, handler_id, status, price, game, title, description, messages, start_time, category_id, remark, order_type, contact_info, urgency, quantity, paid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'normal', ?, ?, ?, 0)`,
+      [orderId, userId, handlerId, status, parseFloat(price), game || '暗区突围', title, finalDesc, messages, now,
+       category_id || null, remark || '', contact_info || '', urgency || '普通', parseInt(quantity) || 1]);
+  } catch (e) {
+    await runDB(env,
+      `INSERT INTO orders (id, boss_id, handler_id, status, price, game, title, description, messages, start_time)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [orderId, userId, handlerId, status, parseFloat(price), game || '暗区突围', title, finalDesc, messages, now]);
+  }
   return jsonResponse({ success: true, orderId, message: `订单发布成功` });
 }
 async function handleDispatcherStats(env, authHeader) {
@@ -1516,21 +1531,212 @@ async function handleSendChat(env, authHeader, orderId, body) {
 }
 
 // ============================================================
-//  打手接单大厅
+//  接单大厅分类
+// ============================================================
+async function handleGetHallCategories(env) {
+  await ensureExtraTables(env);
+  const result = await queryDB(env, 'SELECT * FROM hall_categories ORDER BY sort_order ASC, created_at DESC');
+  return jsonResponse(result.results || []);
+}
+async function handleCreateHallCategory(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const { name, icon, sort_order } = body || {};
+  if (!name) return errorResponse('请输入分类名称');
+  const id = generateId();
+  await runDB(env, 'INSERT INTO hall_categories (id, name, icon, sort_order, created_at) VALUES (?, ?, ?, ?, ?)',
+    [id, name, icon || '', parseInt(sort_order) || 0, new Date().toISOString()]);
+  return jsonResponse({ success: true, id, message: '接单分类已创建' });
+}
+async function handleUpdateHallCategory(env, authHeader, catId, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  const { name, icon, sort_order } = body || {};
+  if (!name) return errorResponse('请输入分类名称');
+  await runDB(env, 'UPDATE hall_categories SET name = ?, icon = ?, sort_order = ? WHERE id = ?',
+    [name, icon || '', parseInt(sort_order) || 0, catId]);
+  return jsonResponse({ success: true, message: '分类已更新' });
+}
+async function handleDeleteHallCategory(env, authHeader, catId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await runDB(env, 'DELETE FROM hall_categories WHERE id = ?', [catId]);
+  return jsonResponse({ success: true, message: '分类已删除' });
+}
+
+// ============================================================
+//  打手接单大厅 / 老板发布需求 / 申请接单
 // ============================================================
 async function handleGetPendingOrders(env, authHeader) {
   const userId = verifyAndGetUserId(authHeader);
   if (!userId) return errorResponse('请先登录', 401);
   const user = await getUserById(env, userId);
   if (!user) return errorResponse('用户不存在', 404);
-  // 接单大厅对所有身份可见，仅打手可接单（接单接口仍校验角色）
+  await ensureExtraTables(env);
+  // 接单大厅对所有身份可见
   const result = await queryDB(env,
-    `SELECT o.*, b.username as boss_name
+    `SELECT o.*, b.username as boss_name, hc.name as category_name
      FROM orders o
      LEFT JOIN users b ON o.boss_id = b.id
+     LEFT JOIN hall_categories hc ON o.category_id = hc.id
      WHERE o.status = 'pending'
      ORDER BY o.created_at DESC`);
   return jsonResponse(result.results || []);
+}
+
+/** 老板在接单大厅发布需求（自定义单价），红钻不足无法创建 */
+async function handlePublishDemand(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  if (user.role !== 'boss' && user.role !== 'admin' && user.role !== 'service') {
+    return errorResponse('只有老板可发布需求', 403);
+  }
+  await ensureExtraTables(env);
+  const { title, game, price, description, remark, category_id, contact_info, urgency, quantity } = body || {};
+  if (!title || title.trim() === '') return errorResponse('请填写需求标题');
+  const priceNum = parseFloat(price);
+  if (!priceNum || priceNum < 1) return errorResponse('请填写有效单价（至少1红钻）');
+  if ((user.diamond || 0) < priceNum) {
+    return errorResponse(`红钻不足，无法创建订单。需要 ${priceNum} 红钻，当前仅有 ${user.diamond || 0} 红钻`);
+  }
+  const orderId = generateId();
+  const now = new Date().toISOString();
+  const messages = JSON.stringify([{
+    sender: 'system',
+    content: `老板发布需求：${title}，单价 ${priceNum} 红钻`,
+    time: now
+  }]);
+  try {
+    await runDB(env,
+      `INSERT INTO orders (id, boss_id, handler_id, status, price, game, title, description, messages, category_id, remark, order_type, contact_info, urgency, quantity, paid, created_at)
+       VALUES (?, ?, NULL, 'pending', ?, ?, ?, ?, ?, ?, ?, 'demand', ?, ?, ?, 0, ?)`,
+      [orderId, userId, priceNum, game || '暗区突围', title.trim(), description || '', messages,
+       category_id || null, remark || '', contact_info || '', urgency || '普通', parseInt(quantity) || 1, now]);
+  } catch (e) {
+    // 兼容缺少部分列的旧表
+    await runDB(env,
+      `INSERT INTO orders (id, boss_id, handler_id, status, price, game, title, description, messages)
+       VALUES (?, ?, NULL, 'pending', ?, ?, ?, ?, ?)`,
+      [orderId, userId, priceNum, game || '暗区突围', title.trim(), description || '', messages]);
+    try {
+      await runDB(env, `UPDATE orders SET category_id=?, remark=?, order_type='demand', contact_info=?, urgency=?, quantity=?, paid=0 WHERE id=?`,
+        [category_id || null, remark || '', contact_info || '', urgency || '普通', parseInt(quantity) || 1, orderId]);
+    } catch (e2) {}
+  }
+  return jsonResponse({ success: true, orderId, message: '需求发布成功，等待打手申请接单' });
+}
+
+/** 打手申请接单（不直接接取，发送通知给老板） */
+async function handleApplyOrder(env, authHeader, orderId, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  if (user.role !== 'handler') return errorResponse('只有打手可申请接单', 403);
+  if (user.status !== 'active') return errorResponse('账号未激活');
+  await ensureExtraTables(env);
+  const result = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [orderId]);
+  const order = (result.results && result.results[0]) || null;
+  if (!order) return errorResponse('订单不存在', 404);
+  if (order.status !== 'pending') return errorResponse('订单不可申请');
+  if (order.boss_id === userId) return errorResponse('不能申请自己的订单');
+  // 已申请过且待处理
+  const exist = await queryDB(env,
+    `SELECT * FROM order_applications WHERE order_id = ? AND handler_id = ? AND status = 'pending'`,
+    [orderId, userId]);
+  if (exist.results && exist.results.length > 0) return errorResponse('您已申请过，请等待老板处理');
+  const appId = generateId();
+  const msgText = (body && body.message) ? String(body.message).trim() : '';
+  await runDB(env,
+    `INSERT INTO order_applications (id, order_id, handler_id, status, message, created_at) VALUES (?, ?, ?, 'pending', ?, ?)`,
+    [appId, orderId, userId, msgText, new Date().toISOString()]);
+  // 发送站内消息给老板
+  const notice = `[order_apply]${appId}|${orderId}|${order.title || '订单'}|${order.price || 0}|${user.username || userId}`;
+  try {
+    await insertMessage(env, userId, order.boss_id, notice);
+    await upsertContact(env, order.boss_id, userId, `打手申请接单：${order.title || ''}`, 1);
+    await upsertContact(env, userId, order.boss_id, `已申请接单：${order.title || ''}`, 0);
+  } catch (e) {}
+  return jsonResponse({ success: true, applicationId: appId, message: '已发送接单申请，请等待老板同意' });
+}
+
+/** 老板同意打手接取 → 支付红钻并指派打手 */
+async function handleApproveApplication(env, authHeader, appId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  await ensureExtraTables(env);
+  const appResult = await queryDB(env, 'SELECT * FROM order_applications WHERE id = ?', [appId]);
+  const app = (appResult.results && appResult.results[0]) || null;
+  if (!app) return errorResponse('申请不存在', 404);
+  if (app.status !== 'pending') return errorResponse('该申请已处理');
+  const orderResult = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [app.order_id]);
+  const order = (orderResult.results && orderResult.results[0]) || null;
+  if (!order) return errorResponse('订单不存在', 404);
+  if (order.boss_id !== userId && user.role !== 'admin') return errorResponse('无权处理此申请', 403);
+  if (order.status !== 'pending') return errorResponse('订单状态已变更，无法同意');
+  const priceNum = Number(order.price) || 0;
+  const boss = await getUserById(env, order.boss_id);
+  if (!boss) return errorResponse('老板账号不存在', 404);
+  if ((boss.diamond || 0) < priceNum) {
+    return errorResponse(`红钻不足，无法同意接单。需要 ${priceNum} 红钻，当前仅有 ${boss.diamond || 0} 红钻`);
+  }
+  // 扣红钻
+  await runDB(env, 'UPDATE users SET diamond = diamond - ? WHERE id = ?', [priceNum, order.boss_id]);
+  await runDB(env, `UPDATE orders SET handler_id = ?, status = 'ongoing', start_time = ?, paid = 1 WHERE id = ?`,
+    [app.handler_id, new Date().toISOString(), order.id]);
+  await runDB(env, `UPDATE order_applications SET status = 'approved', handled_at = ? WHERE id = ?`,
+    [new Date().toISOString(), appId]);
+  // 同订单其他待处理申请自动拒绝
+  try {
+    await runDB(env, `UPDATE order_applications SET status = 'rejected', handled_at = ? WHERE order_id = ? AND status = 'pending' AND id != ?`,
+      [new Date().toISOString(), order.id, appId]);
+  } catch (e) {}
+  // 通知打手
+  try {
+    const handler = await getUserById(env, app.handler_id);
+    const okMsg = `老板已同意您接取订单「${order.title || ''}」，订单已开始`;
+    await insertMessage(env, order.boss_id, app.handler_id, okMsg);
+    await upsertContact(env, app.handler_id, order.boss_id, okMsg, 1);
+    await upsertContact(env, order.boss_id, app.handler_id, okMsg, 0);
+  } catch (e) {}
+  return jsonResponse({ success: true, message: `已同意接单，扣除 ${priceNum} 红钻` });
+}
+
+/** 老板拒绝打手接取申请 */
+async function handleRejectApplication(env, authHeader, appId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  await ensureExtraTables(env);
+  const appResult = await queryDB(env, 'SELECT * FROM order_applications WHERE id = ?', [appId]);
+  const app = (appResult.results && appResult.results[0]) || null;
+  if (!app) return errorResponse('申请不存在', 404);
+  if (app.status !== 'pending') return errorResponse('该申请已处理');
+  const orderResult = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [app.order_id]);
+  const order = (orderResult.results && orderResult.results[0]) || null;
+  if (!order) return errorResponse('订单不存在', 404);
+  if (order.boss_id !== userId && user.role !== 'admin') return errorResponse('无权处理此申请', 403);
+  await runDB(env, `UPDATE order_applications SET status = 'rejected', handled_at = ? WHERE id = ?`,
+    [new Date().toISOString(), appId]);
+  try {
+    const rejectMsg = `老板已拒绝您对订单「${order.title || ''}」的接单申请`;
+    await insertMessage(env, order.boss_id, app.handler_id, rejectMsg);
+    await upsertContact(env, app.handler_id, order.boss_id, rejectMsg, 1);
+    await upsertContact(env, order.boss_id, app.handler_id, rejectMsg, 0);
+  } catch (e) {}
+  return jsonResponse({ success: true, message: '已拒绝该申请' });
 }
 
 // ============================================================
@@ -1677,6 +1883,29 @@ async function ensureExtraTables(env) {
       id TEXT PRIMARY KEY, handler_id TEXT, order_id TEXT, user_id TEXT, rating INTEGER, content TEXT, created_at TEXT
     )`);
   } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS hall_categories (
+      id TEXT PRIMARY KEY, name TEXT, icon TEXT, sort_order INTEGER DEFAULT 0, created_at TEXT
+    )`);
+  } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS order_applications (
+      id TEXT PRIMARY KEY, order_id TEXT, handler_id TEXT, status TEXT, message TEXT, created_at TEXT, handled_at TEXT
+    )`);
+  } catch (e) {}
+  // 订单扩展字段（兼容已有表）
+  const orderCols = [
+    ['category_id', 'TEXT'],
+    ['remark', 'TEXT'],
+    ['order_type', 'TEXT'],
+    ['contact_info', 'TEXT'],
+    ['urgency', 'TEXT'],
+    ['quantity', 'INTEGER'],
+    ['paid', 'INTEGER']
+  ];
+  for (const [col, typ] of orderCols) {
+    try { await runDB(env, `ALTER TABLE orders ADD COLUMN ${col} ${typ}`); } catch (e) {}
+  }
 }
 
 /** 确保客服机器人在 users 表中存在，避免消息外键约束失败 */
@@ -2695,6 +2924,21 @@ export async function onRequest(context) {
     }
 
     if (path === '/api/handler/pending-orders' && method === 'GET') return await handleGetPendingOrders(env, authHeader);
+    if (path === '/api/hall/categories' && method === 'GET') return await handleGetHallCategories(env);
+    if (path === '/api/hall/categories' && method === 'POST') return await handleCreateHallCategory(env, authHeader, body);
+    if (path.startsWith('/api/hall/categories/') && method === 'PUT') {
+      return await handleUpdateHallCategory(env, authHeader, path.replace('/api/hall/categories/', ''), body);
+    }
+    if (path.startsWith('/api/hall/categories/') && method === 'DELETE') {
+      return await handleDeleteHallCategory(env, authHeader, path.replace('/api/hall/categories/', ''));
+    }
+    if (path === '/api/hall/publish-demand' && method === 'POST') return await handlePublishDemand(env, authHeader, body);
+    if (path.startsWith('/api/order-applications/') && path.endsWith('/approve') && method === 'POST') {
+      return await handleApproveApplication(env, authHeader, path.replace('/api/order-applications/', '').replace('/approve', ''));
+    }
+    if (path.startsWith('/api/order-applications/') && path.endsWith('/reject') && method === 'POST') {
+      return await handleRejectApplication(env, authHeader, path.replace('/api/order-applications/', '').replace('/reject', ''));
+    }
 
     if (path === '/api/my-shop' && method === 'GET') return await handleMyShop(env, authHeader);
     if (path === '/api/my-shop/apply' && method === 'POST') return await handleApplyShop(env, authHeader, body);
@@ -2743,6 +2987,7 @@ export async function onRequest(context) {
       const orderId = path.replace('/api/orders/', '');
       if (method === 'GET') return await handleGetOrderDetail(env, authHeader, orderId);
       if (orderId.endsWith('/take')) return await handleTakeOrder(env, authHeader, orderId.replace('/take', ''));
+      if (orderId.endsWith('/apply') && method === 'POST') return await handleApplyOrder(env, authHeader, orderId.replace('/apply', ''), body);
       if (orderId.endsWith('/submit-complete')) return await handleSubmitComplete(env, authHeader, orderId.replace('/submit-complete', ''));
       if (orderId.endsWith('/boss-confirm')) return await handleBossConfirm(env, authHeader, orderId.replace('/boss-confirm', ''));
       if (orderId.endsWith('/refund-request')) return await handleRefundRequest(env, authHeader, orderId.replace('/refund-request', ''), body);
