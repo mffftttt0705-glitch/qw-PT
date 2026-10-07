@@ -2637,6 +2637,85 @@ async function handleGetHandlers(env) {
   const result = await queryDB(env, 'SELECT id, username FROM users WHERE role = "handler" AND status = "active"');
   return jsonResponse(result.results || []);
 }
+
+/** 打手排行榜：好评次数 / 完成订单 / 赚取红钻 */
+async function handleGetHandlerRank(env, url) {
+  const by = (url.searchParams.get('by') || 'orders').toLowerCase();
+  try {
+    const result = await queryDB(env, `
+      SELECT u.id, u.username, u.avatar, u.level, u.is_accepting,
+        COALESCE((
+          SELECT COUNT(*) FROM orders o
+          WHERE o.handler_id = u.id AND (o.status = 'completed' OR o.status = 'settled')
+        ), 0) AS completed_orders,
+        COALESCE((
+          SELECT COUNT(*) FROM handler_reviews r
+          WHERE r.handler_id = u.id AND CAST(r.rating AS INTEGER) >= 4
+        ), 0) AS good_reviews,
+        COALESCE((
+          SELECT SUM(CAST(o.price AS REAL)) FROM orders o
+          WHERE o.handler_id = u.id AND (o.status = 'completed' OR o.status = 'settled')
+        ), 0) AS earned_diamonds
+      FROM users u
+      WHERE u.role = 'handler' AND u.status = 'active'
+    `);
+    let list = (result.results || []).map(u => ({
+      id: u.id,
+      username: u.username || '未知',
+      avatar: u.avatar || '',
+      level: Number(u.level) || 1,
+      is_accepting: Number(u.is_accepting) || 0,
+      completed_orders: Number(u.completed_orders) || 0,
+      good_reviews: Number(u.good_reviews) || 0,
+      earned_diamonds: Math.round(Number(u.earned_diamonds) || 0)
+    }));
+    if (by === 'reviews') {
+      list.sort((a, b) => b.good_reviews - a.good_reviews || b.completed_orders - a.completed_orders);
+    } else if (by === 'diamonds') {
+      list.sort((a, b) => b.earned_diamonds - a.earned_diamonds || b.completed_orders - a.completed_orders);
+    } else {
+      list.sort((a, b) => b.completed_orders - a.completed_orders || b.good_reviews - a.good_reviews);
+    }
+    // 只返回有数据的前 100，避免空榜过长；仍保留 0 的也可显示
+    return jsonResponse({ by, list });
+  } catch (err) {
+    // 兼容无 handler_reviews 表等情况
+    try {
+      const result = await queryDB(env, `
+        SELECT u.id, u.username, u.avatar, u.level, u.is_accepting,
+          COALESCE((
+            SELECT COUNT(*) FROM orders o
+            WHERE o.handler_id = u.id AND (o.status = 'completed' OR o.status = 'settled')
+          ), 0) AS completed_orders,
+          COALESCE((
+            SELECT SUM(CAST(o.price AS REAL)) FROM orders o
+            WHERE o.handler_id = u.id AND (o.status = 'completed' OR o.status = 'settled')
+          ), 0) AS earned_diamonds
+        FROM users u
+        WHERE u.role = 'handler' AND u.status = 'active'
+      `);
+      let list = (result.results || []).map(u => ({
+        id: u.id,
+        username: u.username || '未知',
+        avatar: u.avatar || '',
+        level: Number(u.level) || 1,
+        is_accepting: Number(u.is_accepting) || 0,
+        completed_orders: Number(u.completed_orders) || 0,
+        good_reviews: 0,
+        earned_diamonds: Math.round(Number(u.earned_diamonds) || 0)
+      }));
+      if (by === 'diamonds') {
+        list.sort((a, b) => b.earned_diamonds - a.earned_diamonds);
+      } else {
+        list.sort((a, b) => b.completed_orders - a.completed_orders);
+      }
+      return jsonResponse({ by, list });
+    } catch (e2) {
+      return errorResponse('获取排行失败: ' + err.message, 500);
+    }
+  }
+}
+
 async function handleHealthCheck(env) { return jsonResponse({ status: 'ok', time: new Date().toISOString() }); }
 
 // ============================================================
@@ -2993,6 +3072,7 @@ export async function onRequest(context) {
     if (path === '/api/post-categories' && method === 'GET') return await handleGetPostCategories(env);
     if (path === '/api/announce' && method === 'GET') return await handleGetAnnounce(env);
     if (path === '/api/handlers' && method === 'GET') return await handleGetHandlers(env);
+    if (path === '/api/handlers/rank' && method === 'GET') return await handleGetHandlerRank(env, url);
     if (path === '/api/support-contacts' && method === 'GET') return await handleGetSupportContacts(env);
     if (path === '/api/shops' && method === 'GET') return await handleGetShops(env, url);
     if (path === '/api/banners' && method === 'GET') return await handleGetBanners(env);
