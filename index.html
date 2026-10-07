@@ -289,6 +289,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .action-group{display:flex;gap:4px;flex-wrap:wrap;}
 .category-btn{padding:4px 14px;border-radius:20px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
 .category-btn.active{background:#0f1419;color:#fff;border-color:#0f1419;}
+.category-btn img,.hall-cat-icon{width:18px;height:18px;object-fit:cover;border-radius:4px;flex-shrink:0;display:inline-block;vertical-align:middle;}
 .post-actions-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
 .post-actions-bar button{padding:6px 16px;border-radius:20px;border:none;font-weight:500;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;}
 .stat-card{background:var(--bg-card-hover);border-radius:12px;padding:12px;}
@@ -4325,6 +4326,7 @@ async function renderSubDispatcher(){
       let actions='';
       if(o.status==='pending'||o.status==='ongoing')actions+=`<button class="btn btn-danger btn-xs" onclick="dispatcherCancelOrder('${o.id}')">撤销</button>`;
       if(o.status==='ongoing'||o.status==='pending')actions+=`<button class="btn btn-success btn-xs" onclick="dispatcherConfirmOrder('${o.id}')">确认</button>`;
+      actions+=`<button class="btn btn-outline btn-xs" onclick="dispatcherDeleteOrder('${o.id}')" style="color:#f4212e;border-color:#f4212e;"><i class="fas fa-trash"></i> 删除</button>`;
       listHtml+=`<tr><td>${o.id}</td><td>${o.title}</td><td>${o.price} 红钻</td><td><span class="status-badge ${statusClass(o.status)}">${statusText(o.status)}</span></td><td><div class="action-group">${actions}</div></td></tr>`;
     }
     listHtml+='</tbody></table></div>';
@@ -4348,10 +4350,18 @@ async function dispatcherDirectPublishSub(){
     renderSubDispatcher();
   }catch(err){toast(err.message,'error');}
 }
-window.dispatcherCancelOrder=function(orderId){confirmAction('确认撤销','确认撤销？','确认撤销',`doDispatcherCancelOrder('${orderId}')`);};
+window.dispatcherCancelOrder=function(orderId){confirmAction('确认撤销','确认撤销该订单？','确认撤销',`doDispatcherCancelOrder('${orderId}')`);};
 async function doDispatcherCancelOrder(orderId){try{await apiRequest('/orders/'+orderId+'/cancel',{method:'PUT'});toast('已撤销','success');renderSubDispatcher();}catch(err){toast(err.message,'error');}}
 window.dispatcherConfirmOrder=function(orderId){confirmAction('确认完成','确认完成？','确认完成',`doDispatcherConfirmOrder('${orderId}')`);};
 async function doDispatcherConfirmOrder(orderId){try{await apiRequest('/orders/'+orderId+'/dispatcher-confirm',{method:'PUT'});toast('已完成','success');renderSubDispatcher();}catch(err){toast(err.message,'error');}}
+window.dispatcherDeleteOrder=function(orderId){confirmAction('确认删除','删除后不可恢复，确定删除该订单？','确认删除',`doDispatcherDeleteOrder('${orderId}')`);};
+async function doDispatcherDeleteOrder(orderId){
+  try{
+    await apiRequest('/orders/'+orderId,{method:'DELETE'});
+    toast('已删除','success');
+    renderSubDispatcher();
+  }catch(err){toast(err.message,'error');}
+}
 
 /* ============================================================
    子页面-分类
@@ -4434,12 +4444,17 @@ async function loadHallCatList(){
     if(cats.length===0){container.innerHTML='<p style="font-size:12px;color:var(--text-muted);">暂无接单分类</p>';return;}
     let html='<div class="table-wrap"><table><thead><tr><th>排序</th><th>名称</th><th>图标</th><th>操作</th></tr></thead><tbody>';
     cats.forEach(c=>{
+      const iconCell = c.icon
+        ? (isImageUrl(c.icon)
+          ? `<img src="${String(c.icon).replace(/"/g,'&quot;')}" style="max-width:40px;max-height:40px;border-radius:4px;object-fit:cover;" onerror="this.outerHTML='-'" />`
+          : hallCatIconHtml(c.icon) || c.icon)
+        : '-';
       html+=`<tr>
         <td>${c.sort_order||0}</td>
         <td>${c.name}</td>
-        <td>${c.icon?(c.icon.startsWith('http')?`<img src="${c.icon}" style="max-width:40px;max-height:40px;border-radius:4px;" />`:c.icon):'-'}</td>
+        <td>${iconCell}</td>
         <td>
-          <button class="btn btn-primary btn-xs" onclick="editHallCategory('${c.id}','${(c.name||'').replace(/'/g,"\\'")}','${(c.icon||'').replace(/'/g,"\\'")}','${c.sort_order||0}')">编辑</button>
+          <button class="btn btn-primary btn-xs" onclick="editHallCategory('${c.id}')">编辑</button>
           <button class="btn btn-danger btn-xs" onclick="confirmDeleteHallCategory('${c.id}')">删除</button>
         </td>
       </tr>`;
@@ -4461,11 +4476,20 @@ async function createHallCategory(){
     loadHallCatList();
   }catch(err){toast(err.message,'error');}
 }
-function editHallCategory(id,name,icon,sort){
+async function editHallCategory(id){
+  let name='',icon='',sort=0;
+  try{
+    const cats=await apiRequest('/hall/categories')||[];
+    const c=cats.find(x=>x.id===id);
+    if(c){name=c.name||'';icon=c.icon||'';sort=c.sort_order||0;}
+  }catch(e){}
+  const safeName=String(name).replace(/"/g,'&quot;');
+  const safeIcon=String(icon).replace(/"/g,'&quot;');
   showCustomModal(`
     <h3><i class="fas fa-edit"></i> 编辑接单分类</h3>
-    <div class="form-group"><label>分类名称</label><input class="admin-form-control" id="editHallCatName" value="${name||''}" /></div>
-    <div class="form-group"><label>图标图片URL</label><input class="admin-form-control" id="editHallCatIcon" value="${icon||''}" /></div>
+    <div class="form-group"><label>分类名称</label><input class="admin-form-control" id="editHallCatName" value="${safeName}" /></div>
+    <div class="form-group"><label>图标图片URL</label><input class="admin-form-control" id="editHallCatIcon" value="${safeIcon}" /></div>
+    ${icon&&isImageUrl(icon)?`<div style="margin-bottom:8px;"><img src="${safeIcon}" style="max-width:80px;max-height:80px;border-radius:8px;object-fit:cover;" /></div>`:''}
     <div class="form-group"><label>排序</label><input class="admin-form-control" id="editHallCatSort" type="number" value="${sort||0}" /></div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
@@ -4958,12 +4982,37 @@ async function doInviteHandler() {
 let currentHallCategory = 'all';
 let hallOrdersCache = [];
 
+function isImageUrl(s) {
+  if (!s) return false;
+  const t = String(s).trim();
+  if (!t) return false;
+  if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('//')) return true;
+  if (t.startsWith('/') || t.startsWith('data:image')) return true;
+  if (/\.(png|jpe?g|gif|webp|svg|bmp)(\?|#|$)/i.test(t)) return true;
+  // 常见对象存储 / CDN 路径
+  if (/^(r2|cdn|img|upload|uploads|images|static)\//i.test(t)) return true;
+  return false;
+}
+function hallCatIconHtml(icon) {
+  if (!icon) return '';
+  const t = String(icon).trim();
+  if (isImageUrl(t)) {
+    return `<img class="hall-cat-icon" src="${t.replace(/"/g, '&quot;')}" alt="" onerror="this.style.display='none'" />`;
+  }
+  if (t.startsWith('fa ') || t.startsWith('fas ') || t.startsWith('far ') || t.startsWith('fab ') || t.includes('fa-')) {
+    return `<i class="${t}"></i>`;
+  }
+  return '';
+}
+
 function buildHallOrdersHtml(orders) {
   const role = currentUserRole || currentUser?.role;
   const isHandler = role === 'handler';
+  const myId = currentUser && currentUser.id;
   let html = '';
   for (const o of orders) {
     const isDemand = o.order_type === 'demand';
+    const isMyOrder = myId && o.boss_id === myId;
     let actionBtn = '';
     if (isHandler) {
       if (isDemand) {
@@ -4971,6 +5020,11 @@ function buildHallOrdersHtml(orders) {
       } else {
         actionBtn = `<button class="btn btn-success btn-sm" onclick="confirmHallTake('${o.id}')" style="white-space:nowrap;"><i class="fas fa-hand-paper"></i> 接单</button>`;
       }
+    } else if (isMyOrder && isDemand && o.status === 'pending') {
+      // 老板自己的需求单：可撤销
+      actionBtn = `<button class="btn btn-danger btn-sm" onclick="confirmCancelDemand('${o.id}')" style="white-space:nowrap;"><i class="fas fa-times"></i> 撤销</button>`;
+    } else if (isMyOrder && (role === 'boss' || role === 'admin' || role === 'service') && o.status === 'pending') {
+      actionBtn = `<button class="btn btn-danger btn-sm" onclick="confirmCancelDemand('${o.id}')" style="white-space:nowrap;"><i class="fas fa-times"></i> 撤销</button>`;
     }
     const typeTag = isDemand
       ? '<span style="font-size:10px;background:#1d9bf0;color:#fff;padding:1px 6px;border-radius:8px;margin-left:4px;">需求单</span>'
@@ -5043,8 +5097,8 @@ async function renderHallPage() {
       if (tabs) {
         let th = `<button class="category-btn ${!currentHallCategory || currentHallCategory === 'all' ? 'active' : ''}" data-cat="all" onclick="filterHallByCategory('all')">全部</button>`;
         cats.forEach(c => {
-          const icon = c.icon ? (c.icon.startsWith('http') ? `<img src="${c.icon}" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:2px;" />` : `<i class="${c.icon}"></i> `) : '';
-          th += `<button class="category-btn ${currentHallCategory === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="filterHallByCategory('${c.id}')">${icon}${c.name}</button>`;
+          const icon = hallCatIconHtml(c.icon);
+          th += `<button class="category-btn ${currentHallCategory === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="filterHallByCategory('${c.id}')">${icon}<span>${c.name}</span></button>`;
         });
         tabs.innerHTML = th;
       }
@@ -5098,6 +5152,20 @@ async function doHallApply(orderId) {
     const r = await apiRequest('/orders/' + orderId + '/apply', { method: 'POST', body: JSON.stringify({}) });
     toast(r.message || '申请已发送', 'success');
     renderHallPage();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function confirmCancelDemand(orderId) {
+  confirmAction('撤销需求', '确认撤销该需求订单？撤销后将不再显示在接单大厅。', '确认撤销', `doCancelDemand('${orderId}')`);
+}
+async function doCancelDemand(orderId) {
+  try {
+    const r = await apiRequest('/orders/' + orderId + '/cancel', { method: 'PUT' });
+    toast(r.message || '已撤销', 'success');
+    renderHallPage();
+    renderSubHall();
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -5748,6 +5816,11 @@ window.showPublishDemand=showPublishDemand;
 window.submitPublishDemand=submitPublishDemand;
 window.confirmHallApply=confirmHallApply;
 window.doHallApply=doHallApply;
+window.confirmCancelDemand=confirmCancelDemand;
+window.doCancelDemand=doCancelDemand;
+window.isImageUrl=isImageUrl;
+window.hallCatIconHtml=hallCatIconHtml;
+window.doDispatcherDeleteOrder=doDispatcherDeleteOrder;
 window.approveOrderApplication=approveOrderApplication;
 window.rejectOrderApplication=rejectOrderApplication;
 window.createHallCategory=createHallCategory;
