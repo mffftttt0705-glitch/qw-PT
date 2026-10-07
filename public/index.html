@@ -427,6 +427,19 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 </div>
 
 <div class="view" id="view-category">
+<!-- 最上方：分类 / 排名 切换 -->
+<div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid #eff3f4;">
+<button type="button" id="catMainTabCategory" onclick="switchCatMainTab('category')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:700;color:#0f1419;cursor:pointer;position:relative;">
+分类
+<span style="display:block;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:#0f1419;border-radius:2px;" id="catMainUnderlineCategory"></span>
+</button>
+<button type="button" id="catMainTabRank" onclick="switchCatMainTab('rank')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:500;color:#536471;cursor:pointer;position:relative;">
+排名
+<span style="display:none;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:#0f1419;border-radius:2px;" id="catMainUnderlineRank"></span>
+</button>
+</div>
+
+<div id="catMainPanelCategory">
 <div style="margin-bottom:10px;">
 <input class="admin-form-control" id="catSearchInput" placeholder="搜索商品名称/店铺名称..." oninput="handleCatSearch(this.value)" />
 </div>
@@ -455,6 +468,17 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div id="catTabShop" style="display:none;">
 <div id="categoryShopList"></div>
 </div>
+</div>
+</div>
+
+<!-- 排名面板 -->
+<div id="catMainPanelRank" style="display:none;">
+<div style="display:flex;gap:8px;margin-bottom:12px;">
+<button type="button" class="rank-sub-btn active" data-rank="reviews" onclick="switchRankTab('reviews')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #0f1419;background:#0f1419;color:#fff;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-thumbs-up"></i> 好评榜</button>
+<button type="button" class="rank-sub-btn" data-rank="orders" onclick="switchRankTab('orders')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-clipboard-check"></i> 完成订单</button>
+<button type="button" class="rank-sub-btn" data-rank="diamonds" onclick="switchRankTab('diamonds')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-gem"></i> 赚取红钻</button>
+</div>
+<div id="handlerRankList"><div class="empty-state"><p>加载中...</p></div></div>
 </div>
 </div>
 
@@ -1557,6 +1581,94 @@ function switchCatTab(tab){
   });
   document.getElementById('catTabProduct').style.display=tab==='product'?'block':'none';
   document.getElementById('catTabShop').style.display=tab==='shop'?'block':'none';
+}
+
+let currentRankBy='reviews';
+function switchCatMainTab(tab){
+  const isCat=tab==='category';
+  const catBtn=document.getElementById('catMainTabCategory');
+  const rankBtn=document.getElementById('catMainTabRank');
+  const catUnderline=document.getElementById('catMainUnderlineCategory');
+  const rankUnderline=document.getElementById('catMainUnderlineRank');
+  const catPanel=document.getElementById('catMainPanelCategory');
+  const rankPanel=document.getElementById('catMainPanelRank');
+  if(catBtn){
+    catBtn.style.fontWeight=isCat?'700':'500';
+    catBtn.style.color=isCat?'#0f1419':'#536471';
+  }
+  if(rankBtn){
+    rankBtn.style.fontWeight=!isCat?'700':'500';
+    rankBtn.style.color=!isCat?'#0f1419':'#536471';
+  }
+  if(catUnderline)catUnderline.style.display=isCat?'block':'none';
+  if(rankUnderline)rankUnderline.style.display=!isCat?'block':'none';
+  if(catPanel)catPanel.style.display=isCat?'block':'none';
+  if(rankPanel)rankPanel.style.display=!isCat?'block':'none';
+  if(!isCat) renderHandlerRank(currentRankBy||'reviews');
+}
+
+function switchRankTab(by){
+  currentRankBy=by;
+  document.querySelectorAll('.rank-sub-btn').forEach(btn=>{
+    const on=btn.dataset.rank===by;
+    btn.classList.toggle('active',on);
+    btn.style.background=on?'#0f1419':'transparent';
+    btn.style.color=on?'#fff':'#536471';
+    btn.style.borderColor=on?'#0f1419':'#eff3f4';
+  });
+  renderHandlerRank(by);
+}
+
+async function renderHandlerRank(by){
+  const container=document.getElementById('handlerRankList');
+  if(!container)return;
+  container.innerHTML='<div class="empty-state"><p>加载中...</p></div>';
+  try{
+    const data=await apiRequest('/handlers/rank?by='+encodeURIComponent(by||'orders'));
+    const list=(data&&data.list)||(Array.isArray(data)?data:[]);
+    if(!list.length){
+      container.innerHTML='<div class="empty-state"><i class="fas fa-trophy"></i><p>暂无排行数据</p></div>';
+      return;
+    }
+    const metricLabel=by==='reviews'?'好评':(by==='diamonds'?'红钻':'完成单');
+    let html='';
+    list.forEach((h,idx)=>{
+      const rank=idx+1;
+      let rankStyle='background:#eff3f4;color:#536471;';
+      if(rank===1)rankStyle='background:linear-gradient(135deg,#ffd700,#f0c14b);color:#0f1419;';
+      else if(rank===2)rankStyle='background:linear-gradient(135deg,#c0c0c0,#a8a8a8);color:#0f1419;';
+      else if(rank===3)rankStyle='background:linear-gradient(135deg,#cd7f32,#b87333);color:#fff;';
+      let valueText='';
+      if(by==='reviews')valueText=`${h.good_reviews||0} 次好评`;
+      else if(by==='diamonds')valueText=`${h.earned_diamonds||0} 红钻`;
+      else valueText=`${h.completed_orders||0} 单`;
+      const av=h.avatar
+        ?`<img src="${h.avatar}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${(h.username||'?').charAt(0)}'" />`
+        :(h.username||'?').charAt(0).toUpperCase();
+      html+=`
+        <div onclick="viewUserProfile('${h.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 8px;border-bottom:1px solid #eff3f4;cursor:pointer;">
+          <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;${rankStyle}">${rank}</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:#0f1419;color:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${av}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:15px;font-weight:600;color:#0f1419;display:flex;align-items:center;gap:6px;">
+              ${h.username||'未知'}
+              <span style="font-size:11px;color:#536471;font-weight:500;">LV${h.level||1}</span>
+              ${Number(h.is_accepting)===1?'<span style="font-size:10px;color:#00ba7c;">● 接单中</span>':''}
+            </div>
+            <div style="font-size:12px;color:#536471;margin-top:2px;">
+              完成 ${h.completed_orders||0} 单 · 好评 ${h.good_reviews||0} · 累计 ${h.earned_diamonds||0} 红钻
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:15px;font-weight:700;color:#f4212e;">${valueText}</div>
+            <div style="font-size:10px;color:#536471;">${metricLabel}</div>
+          </div>
+        </div>`;
+    });
+    container.innerHTML=html;
+  }catch(err){
+    container.innerHTML=`<div class="empty-state"><p>加载失败：${err.message||'请稍后重试'}</p></div>`;
+  }
 }
 
 function filterProductsByCategory(categoryId){
@@ -6157,6 +6269,9 @@ window.createGift=createGift;
 window.deleteGift=deleteGift;
 window.doDeleteGift=doDeleteGift;
 window.renderShopCard=renderShopCard;
+window.switchCatMainTab=switchCatMainTab;
+window.switchRankTab=switchRankTab;
+window.renderHandlerRank=renderHandlerRank;
 
 console.log('QW电竞护航平台 v7.9 已加载');
 </script>
