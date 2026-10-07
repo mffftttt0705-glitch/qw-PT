@@ -2438,6 +2438,70 @@ async function handleAdminCancelOrder(env, orderId) {
   return jsonResponse({ message: '已取消' });
 }
 
+/** 老板/派单撤销自己的订单（待接单可撤；需求单同意前可撤） */
+async function handleCancelMyOrder(env, authHeader, orderId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  const result = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [orderId]);
+  const order = (result.results && result.results[0]) || null;
+  if (!order) return errorResponse('订单不存在', 404);
+  const isOwner = order.boss_id === userId;
+  const isAdmin = user.role === 'admin';
+  if (!isOwner && !isAdmin) return errorResponse('只能撤销自己发布的订单', 403);
+  if (order.status !== 'pending' && order.status !== 'ongoing') {
+    return errorResponse('当前状态不可撤销', 400);
+  }
+  // 需求单已支付（老板同意后）撤销时退还红钻
+  if (order.order_type === 'demand' && Number(order.paid) === 1 && order.boss_id) {
+    await runDB(env, 'UPDATE users SET diamond = diamond + ? WHERE id = ?', [order.price, order.boss_id]);
+  }
+  // 商品订单退钻
+  if (order.product_id && order.boss_id) {
+    await runDB(env, 'UPDATE users SET diamond = diamond + ? WHERE id = ?', [order.price, order.boss_id]);
+  }
+  await runDB(env, 'UPDATE orders SET status = "canceled" WHERE id = ?', [orderId]);
+  // 拒绝该订单下未处理的接单申请
+  try {
+    await ensureExtraTables(env);
+    await runDB(env, `UPDATE order_applications SET status = 'rejected', handled_at = ? WHERE order_id = ? AND status = 'pending'`,
+      [new Date().toISOString(), orderId]);
+  } catch (e) {}
+  return jsonResponse({ success: true, message: '订单已撤销' });
+}
+
+/** 派单/管理员删除订单（从列表移除） */
+async function handleDeleteMyOrder(env, authHeader, orderId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  const result = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [orderId]);
+  const order = (result.results && result.results[0]) || null;
+  if (!order) return errorResponse('订单不存在', 404);
+  const isOwner = order.boss_id === userId;
+  const canDelete = isOwner || user.role === 'admin' || user.role === 'dispatcher';
+  if (!canDelete) return errorResponse('无权删除此订单', 403);
+  // 若为已支付需求单且仍进行中，先退钻再删
+  if (order.order_type === 'demand' && Number(order.paid) === 1 && (order.status === 'pending' || order.status === 'ongoing') && order.boss_id) {
+    try {
+      await runDB(env, 'UPDATE users SET diamond = diamond + ? WHERE id = ?', [order.price, order.boss_id]);
+    } catch (e) {}
+  }
+  if (order.product_id && order.boss_id && order.status !== 'completed' && order.status !== 'canceled' && order.status !== 'refunded') {
+    try {
+      await runDB(env, 'UPDATE users SET diamond = diamond + ? WHERE id = ?', [order.price, order.boss_id]);
+    } catch (e) {}
+  }
+  try {
+    await ensureExtraTables(env);
+    await runDB(env, 'DELETE FROM order_applications WHERE order_id = ?', [orderId]);
+  } catch (e) {}
+  await runDB(env, 'DELETE FROM orders WHERE id = ?', [orderId]);
+  return jsonResponse({ success: true, message: '订单已删除' });
+}
+
 // ============================================================
 //  管理员充值
 // ============================================================
@@ -2993,7 +3057,8 @@ export async function onRequest(context) {
       if (orderId.endsWith('/refund-request')) return await handleRefundRequest(env, authHeader, orderId.replace('/refund-request', ''), body);
       if (orderId.endsWith('/chat') && method === 'POST') return await handleSendChat(env, authHeader, orderId.replace('/chat', ''), body);
       if (orderId.endsWith('/dispatcher-confirm') && method === 'PUT') return await handleDispatcherConfirmComplete(env, authHeader, orderId.replace('/dispatcher-confirm', ''));
-      if (orderId.endsWith('/cancel') && method === 'PUT') return await handleAdminCancelOrder(env, orderId.replace('/cancel', ''));
+      if (orderId.endsWith('/cancel') && method === 'PUT') return await handleCancelMyOrder(env, authHeader, orderId.replace('/cancel', ''));
+      if (method === 'DELETE') return await handleDeleteMyOrder(env, authHeader, orderId);
     }
 
     if (path.startsWith('/api/posts/')) {
