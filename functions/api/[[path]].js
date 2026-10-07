@@ -102,9 +102,15 @@ async function handleRegister(env, body) {
 
 async function handleLogin(env, body) {
   const { username, password } = body;
-  if (!username || !password) return errorResponse('请填写用户名和密码');
-  const result = await queryDB(env, 'SELECT * FROM users WHERE username = ?', [username]);
-  const user = (result.results && result.results[0]) || null;
+  // username 字段同时支持「用户名」或「用户ID」登录
+  const account = (username || '').trim();
+  if (!account || !password) return errorResponse('请填写用户名/ID和密码');
+  let result = await queryDB(env, 'SELECT * FROM users WHERE username = ?', [account]);
+  let user = (result.results && result.results[0]) || null;
+  if (!user) {
+    result = await queryDB(env, 'SELECT * FROM users WHERE id = ?', [account]);
+    user = (result.results && result.results[0]) || null;
+  }
   if (!user) return errorResponse('用户不存在');
   if (user.password !== password) return errorResponse('密码错误');
   if (user.status === 'banned') return errorResponse('账号已被封禁');
@@ -112,7 +118,21 @@ async function handleLogin(env, body) {
   const token = generateId() + '.' + user.id;
   return jsonResponse({
     token,
-    user: { id: user.id, username: user.username, role: user.role || 'boss', diamond: user.diamond || 0, balance: user.balance || 0, status: user.status || 'active', banner: user.banner || '', avatar: user.avatar || '', club_prefix: user.club_prefix || '', level: user.level || 1, is_accepting: user.is_accepting || 0, bio: user.bio || '' }
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role || 'boss',
+      diamond: user.diamond || 0,
+      balance: user.balance || 0,
+      status: user.status || 'active',
+      banner: user.banner || '',
+      avatar: user.avatar || '',
+      club_prefix: user.club_prefix || '',
+      level: user.level || 1,
+      is_accepting: user.is_accepting || 0,
+      bio: user.bio || '',
+      gender: user.gender || ''
+    }
   });
 }
 
@@ -131,19 +151,28 @@ async function handleGetMe(env, authHeader) {
 async function handleGetUserPublic(env, userId) {
   let user = null;
   try {
+    await ensureExtraTables(env);
     const result = await queryDB(env,
-      'SELECT id, username, role, diamond, level, status, avatar, banner, is_accepting, bio, last_active FROM users WHERE id = ?',
+      'SELECT id, username, role, diamond, level, status, avatar, banner, is_accepting, bio, gender, last_active FROM users WHERE id = ?',
       [userId]);
     user = result.results && result.results[0];
   } catch (e) {
-    const result = await queryDB(env,
-      'SELECT id, username, role, diamond, level, status, avatar, banner, is_accepting, bio FROM users WHERE id = ?',
-      [userId]);
-    user = result.results && result.results[0];
+    try {
+      const result = await queryDB(env,
+        'SELECT id, username, role, diamond, level, status, avatar, banner, is_accepting, bio, gender FROM users WHERE id = ?',
+        [userId]);
+      user = result.results && result.results[0];
+    } catch (e2) {
+      const result = await queryDB(env,
+        'SELECT id, username, role, diamond, level, status, avatar, banner, is_accepting, bio FROM users WHERE id = ?',
+        [userId]);
+      user = result.results && result.results[0];
+    }
   }
   if (!user) return errorResponse('用户不存在', 404);
   user.online = isUserOnline(user);
   user.is_accepting = Number(user.is_accepting) || 0;
+  user.gender = user.gender || '';
   return jsonResponse(user);
 }
 
@@ -152,9 +181,17 @@ async function handleGetUserPublic(env, userId) {
 // ============================================================
 async function handleAdminGetUsers(env) {
   try {
-    const result = await queryDB(env,
-      'SELECT id, username, role, diamond, balance, status, created_at, banner, avatar, club_prefix, level, is_accepting, bio FROM users ORDER BY created_at DESC'
-    );
+    await ensureExtraTables(env);
+    let result;
+    try {
+      result = await queryDB(env,
+        'SELECT id, username, role, diamond, balance, status, created_at, banner, avatar, club_prefix, level, is_accepting, bio, gender FROM users ORDER BY created_at DESC'
+      );
+    } catch (e) {
+      result = await queryDB(env,
+        'SELECT id, username, role, diamond, balance, status, created_at, banner, avatar, club_prefix, level, is_accepting, bio FROM users ORDER BY created_at DESC'
+      );
+    }
     const users = (result.results || []).map(u => ({
       ...u,
       username: u.username || '未知',
@@ -163,6 +200,7 @@ async function handleAdminGetUsers(env) {
       balance: Number(u.balance) || 0,
       status: u.status || 'active',
       level: Number(u.level) || 1,
+      gender: u.gender || ''
     }));
     return jsonResponse(users);
   } catch (err) {
@@ -1906,6 +1944,41 @@ async function ensureExtraTables(env) {
   for (const [col, typ] of orderCols) {
     try { await runDB(env, `ALTER TABLE orders ADD COLUMN ${col} ${typ}`); } catch (e) {}
   }
+  // 用户性别字段
+  try { await runDB(env, `ALTER TABLE users ADD COLUMN gender TEXT`); } catch (e) {}
+}
+
+/** 用户自己设置性别：仅允许设置一次（已设置则不可改） */
+async function handleSetGender(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  await ensureExtraTables(env);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  if (user.gender && String(user.gender).trim() !== '') {
+    return errorResponse('性别只能设置一次，如需修改请联系管理员', 403);
+  }
+  const gender = (body && body.gender) ? String(body.gender).trim() : '';
+  if (!['男', '女', '保密'].includes(gender)) return errorResponse('请选择有效性别：男/女/保密');
+  await runDB(env, 'UPDATE users SET gender = ? WHERE id = ?', [gender, userId]);
+  return jsonResponse({ success: true, gender, message: '性别已设置' });
+}
+
+/** 管理员修改任意用户性别 */
+async function handleAdminSetGender(env, authHeader, targetUserId, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const admin = await getUserById(env, userId);
+  if (!admin || admin.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const target = await getUserById(env, targetUserId);
+  if (!target) return errorResponse('用户不存在', 404);
+  const gender = (body && body.gender) ? String(body.gender).trim() : '';
+  if (gender !== '' && !['男', '女', '保密'].includes(gender)) {
+    return errorResponse('请选择有效性别：男/女/保密，或清空');
+  }
+  await runDB(env, 'UPDATE users SET gender = ? WHERE id = ?', [gender || '', targetUserId]);
+  return jsonResponse({ success: true, gender: gender || '', message: gender ? '性别已修改' : '性别已清空' });
 }
 
 /** 确保客服机器人在 users 表中存在，避免消息外键约束失败 */
@@ -2960,6 +3033,7 @@ export async function onRequest(context) {
     if (path === '/api/user/banner' && method === 'PUT') return await handleSetBanner(env, authHeader, body);
     if (path === '/api/user/toggle-accepting' && method === 'POST') return await handleToggleAccepting(env, authHeader);
     if (path === '/api/user/bio' && method === 'PUT') return await handleUpdateBio(env, authHeader, body);
+    if (path === '/api/user/gender' && method === 'PUT') return await handleSetGender(env, authHeader, body);
     if (path === '/api/orders/my' && method === 'GET') return await handleGetMyOrders(env, authHeader);
     if (path === '/api/orders/buy' && method === 'POST') return await handleBuyProduct(env, authHeader, body);
     if (path === '/api/mails' && method === 'GET') return await handleGetMails(env, authHeader);
@@ -3102,6 +3176,7 @@ export async function onRequest(context) {
           if (tId.endsWith('/reset-password') && method === 'PUT') return await handleAdminResetPassword(env, tId.replace('/reset-password', ''));
           if (tId.endsWith('/approve') && method === 'PUT') return await handleApproveHandler(env, tId.replace('/approve', ''));
           if (tId.endsWith('/username') && method === 'PUT') return await handleChangeUsername(env, tId.replace('/username', ''), body);
+          if (tId.endsWith('/gender') && method === 'PUT') return await handleAdminSetGender(env, authHeader, tId.replace('/gender', ''), body);
           if (method === 'DELETE') return await handleAdminDeleteUser(env, tId, body);
         }
         if (path === '/api/admin/products' && method === 'GET') return await handleAdminGetProducts(env);
