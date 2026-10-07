@@ -458,10 +458,14 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 </div>
 
 <div class="view" id="view-hall">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
 <span style="font-size:18px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-bullseye"></i> 接单大厅</span>
+<div style="display:flex;gap:6px;align-items:center;">
+<button class="btn btn-primary btn-sm" id="hallPublishBtn" style="display:none;" onclick="showPublishDemand()"><i class="fas fa-plus"></i> 发布需求</button>
 <button class="btn btn-outline btn-sm" onclick="renderHallPage()"><i class="fas fa-sync"></i> 刷新</button>
 </div>
+</div>
+<div id="hallCatTabs" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch;"></div>
 <div id="hallList"></div>
 </div>
 
@@ -4277,6 +4281,11 @@ async function renderSubDispatcher(){
   try{
     const stats=await apiRequest('/dispatcher/stats');
     const orders=await apiRequest('/dispatcher/orders');
+    let hallCatOpts='<option value="">-- 请选择分类 --</option>';
+    try{
+      const hcats=await apiRequest('/hall/categories')||[];
+      hcats.forEach(c=>{hallCatOpts+=`<option value="${c.id}">${c.name}</option>`;});
+    }catch(e){}
     container.innerHTML=`
       <div class="admin-card">
         <div class="admin-card-title"><i class="fas fa-chart-bar"></i> 派单仪表盘</div>
@@ -4289,13 +4298,26 @@ async function renderSubDispatcher(){
       </div>
       <div class="admin-card">
         <div class="admin-card-title"><i class="fas fa-clipboard-list"></i> 直接发布订单</div>
+        <div class="admin-form-group"><label>订单标题 *</label><input class="admin-form-control" id="dispatcherDirectTitleSub" placeholder="例如：暗区上分护航" /></div>
         <div class="admin-form-group"><label>游戏</label><input class="admin-form-control" id="dispatcherDirectGameSub" value="暗区突围" /></div>
-        <div class="admin-form-group"><label>标题</label><input class="admin-form-control" id="dispatcherDirectTitleSub" /></div>
-        <div class="admin-form-group"><label>描述</label><textarea class="admin-form-control" id="dispatcherDirectDescSub" rows="2"></textarea></div>
-        <div class="admin-form-group"><label>价格（红钻）</label><input class="admin-form-control" id="dispatcherDirectPriceSub" type="number" /></div>
+        <div class="admin-form-group"><label>接单分类</label><select class="admin-form-control" id="dispatcherDirectCategorySub"><option value="">加载中...</option></select></div>
+        <div class="admin-form-group"><label>价格（红钻）*</label><input class="admin-form-control" id="dispatcherDirectPriceSub" type="number" min="1" placeholder="订单价格" /></div>
+        <div class="admin-form-group"><label>数量</label><input class="admin-form-control" id="dispatcherDirectQuantitySub" type="number" min="1" value="1" /></div>
+        <div class="admin-form-group"><label>紧急程度</label>
+          <select class="admin-form-control" id="dispatcherDirectUrgencySub">
+            <option value="普通">普通</option>
+            <option value="较急">较急</option>
+            <option value="加急">加急</option>
+          </select>
+        </div>
+        <div class="admin-form-group"><label>详细描述</label><textarea class="admin-form-control" id="dispatcherDirectDescSub" rows="3" placeholder="段位要求、服务内容、预计时长等"></textarea></div>
+        <div class="admin-form-group"><label>备注</label><textarea class="admin-form-control" id="dispatcherDirectRemarkSub" rows="2" placeholder="特殊要求、注意事项等"></textarea></div>
+        <div class="admin-form-group"><label>联系方式</label><input class="admin-form-control" id="dispatcherDirectContactSub" placeholder="微信/QQ/游戏ID（选填）" /></div>
         <button class="btn btn-warning btn-block" onclick="dispatcherDirectPublishSub()">发布订单</button>
       </div>
       <div class="admin-card"><div class="admin-card-title"><i class="fas fa-clipboard-list"></i> 我发布的订单</div><div id="dispatcherOrdersListSub"></div></div>`;
+    const catSel=document.getElementById('dispatcherDirectCategorySub');
+    if(catSel)catSel.innerHTML=hallCatOpts;
     const listContainer=document.getElementById('dispatcherOrdersListSub');
     if(orders.length===0){listContainer.innerHTML='<div class="empty-state"><p>暂无订单</p></div>';return;}
     let listHtml='<div class="table-wrap"><table><thead><tr><th>订单号</th><th>标题</th><th>金额</th><th>状态</th><th>操作</th></tr></thead><tbody>';
@@ -4314,9 +4336,14 @@ async function dispatcherDirectPublishSub(){
   const title=document.getElementById('dispatcherDirectTitleSub').value.trim();
   const desc=document.getElementById('dispatcherDirectDescSub').value.trim();
   const price=parseFloat(document.getElementById('dispatcherDirectPriceSub').value);
-  if(!title||!price)return toast('请填写完整信息','error');
+  const category_id=document.getElementById('dispatcherDirectCategorySub')?.value||null;
+  const remark=document.getElementById('dispatcherDirectRemarkSub')?.value.trim()||'';
+  const contact_info=document.getElementById('dispatcherDirectContactSub')?.value.trim()||'';
+  const urgency=document.getElementById('dispatcherDirectUrgencySub')?.value||'普通';
+  const quantity=parseInt(document.getElementById('dispatcherDirectQuantitySub')?.value)||1;
+  if(!title||!price)return toast('请填写标题和价格','error');
   try{
-    const result=await apiRequest('/dispatcher/publish',{method:'POST',body:JSON.stringify({game,title,desc,price})});
+    const result=await apiRequest('/dispatcher/publish',{method:'POST',body:JSON.stringify({game,title,desc,price,category_id,remark,contact_info,urgency,quantity})});
     toast(result.message||'已发布','success');
     renderSubDispatcher();
   }catch(err){toast(err.message,'error');}
@@ -4380,12 +4407,94 @@ async function renderSubCategories(){
       <button class="btn btn-success" onclick="createPostCategory()">创建帖子分类</button>
       <div id="postCatList" style="margin-top:12px;"></div>`;
     container.appendChild(postCatSection);
+    const hallCatSection=document.createElement('div');
+    hallCatSection.className='admin-card';
+    hallCatSection.innerHTML=`
+      <div class="admin-card-title"><i class="fas fa-bullseye"></i> 接单大厅分类管理</div>
+      <div class="admin-form-group"><label>分类名称</label><input class="admin-form-control" id="hallCatName" placeholder="例如：上分护航" /></div>
+      <div class="admin-form-group"><label>图标图片URL</label><input class="admin-form-control" id="hallCatIcon" /></div>
+      <div class="admin-form-group"><label>排序</label><input class="admin-form-control" id="hallCatSort" type="number" value="0" /></div>
+      <button class="btn btn-success" onclick="createHallCategory()">创建接单分类</button>
+      <div id="hallCatList" style="margin-top:12px;"></div>`;
+    container.appendChild(hallCatSection);
     setTimeout(() => {
       bindUploadBtn('categoryImage', 'image/*');
       bindUploadBtn('postCatIcon', 'image/*');
+      bindUploadBtn('hallCatIcon', 'image/*');
       loadPostCatList();
+      loadHallCatList();
     }, 100);
   }catch(err){}
+}
+async function loadHallCatList(){
+  const container=document.getElementById('hallCatList');
+  if(!container)return;
+  try{
+    const cats=await apiRequest('/hall/categories')||[];
+    if(cats.length===0){container.innerHTML='<p style="font-size:12px;color:var(--text-muted);">暂无接单分类</p>';return;}
+    let html='<div class="table-wrap"><table><thead><tr><th>排序</th><th>名称</th><th>图标</th><th>操作</th></tr></thead><tbody>';
+    cats.forEach(c=>{
+      html+=`<tr>
+        <td>${c.sort_order||0}</td>
+        <td>${c.name}</td>
+        <td>${c.icon?(c.icon.startsWith('http')?`<img src="${c.icon}" style="max-width:40px;max-height:40px;border-radius:4px;" />`:c.icon):'-'}</td>
+        <td>
+          <button class="btn btn-primary btn-xs" onclick="editHallCategory('${c.id}','${(c.name||'').replace(/'/g,"\\'")}','${(c.icon||'').replace(/'/g,"\\'")}','${c.sort_order||0}')">编辑</button>
+          <button class="btn btn-danger btn-xs" onclick="confirmDeleteHallCategory('${c.id}')">删除</button>
+        </td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+    container.innerHTML=html;
+  }catch(err){container.innerHTML='<p style="color:red;font-size:12px;">加载失败</p>';}
+}
+async function createHallCategory(){
+  const name=document.getElementById('hallCatName')?.value.trim();
+  const icon=document.getElementById('hallCatIcon')?.value.trim()||'';
+  const sort_order=parseInt(document.getElementById('hallCatSort')?.value)||0;
+  if(!name)return toast('请输入分类名称','warning');
+  try{
+    await apiRequest('/hall/categories',{method:'POST',body:JSON.stringify({name,icon,sort_order})});
+    toast('接单分类创建成功','success');
+    document.getElementById('hallCatName').value='';
+    document.getElementById('hallCatIcon').value='';
+    loadHallCatList();
+  }catch(err){toast(err.message,'error');}
+}
+function editHallCategory(id,name,icon,sort){
+  showCustomModal(`
+    <h3><i class="fas fa-edit"></i> 编辑接单分类</h3>
+    <div class="form-group"><label>分类名称</label><input class="admin-form-control" id="editHallCatName" value="${name||''}" /></div>
+    <div class="form-group"><label>图标图片URL</label><input class="admin-form-control" id="editHallCatIcon" value="${icon||''}" /></div>
+    <div class="form-group"><label>排序</label><input class="admin-form-control" id="editHallCatSort" type="number" value="${sort||0}" /></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
+      <button class="btn btn-success" onclick="doEditHallCategory('${id}')">保存</button>
+    </div>
+  `);
+  setTimeout(()=>bindUploadBtn('editHallCatIcon','image/*'),50);
+}
+async function doEditHallCategory(id){
+  const name=document.getElementById('editHallCatName')?.value.trim();
+  const icon=document.getElementById('editHallCatIcon')?.value.trim()||'';
+  const sort_order=parseInt(document.getElementById('editHallCatSort')?.value)||0;
+  if(!name)return toast('请输入分类名称','warning');
+  try{
+    await apiRequest('/hall/categories/'+id,{method:'PUT',body:JSON.stringify({name,icon,sort_order})});
+    closeCustomModal();
+    toast('已更新','success');
+    loadHallCatList();
+  }catch(err){toast(err.message,'error');}
+}
+function confirmDeleteHallCategory(id){
+  confirmAction('确认删除','确定删除该接单分类？','删除',`doDeleteHallCategory('${id}')`);
+}
+async function doDeleteHallCategory(id){
+  try{
+    await apiRequest('/hall/categories/'+id,{method:'DELETE'});
+    toast('已删除','success');
+    loadHallCatList();
+  }catch(err){toast(err.message,'error');}
 }
 async function createCategory(){
   const name=document.getElementById('categoryName').value.trim();
@@ -4846,43 +4955,107 @@ async function doInviteHandler() {
 /* ============================================================
    接单大厅
 ============================================================ */
+let currentHallCategory = 'all';
+let hallOrdersCache = [];
+
 function buildHallOrdersHtml(orders) {
   const role = currentUserRole || currentUser?.role;
-  const canTake = role === 'handler';
+  const isHandler = role === 'handler';
   let html = '';
   for (const o of orders) {
+    const isDemand = o.order_type === 'demand';
+    let actionBtn = '';
+    if (isHandler) {
+      if (isDemand) {
+        actionBtn = `<button class="btn btn-warning btn-sm" onclick="confirmHallApply('${o.id}')" style="white-space:nowrap;"><i class="fas fa-paper-plane"></i> 申请接单</button>`;
+      } else {
+        actionBtn = `<button class="btn btn-success btn-sm" onclick="confirmHallTake('${o.id}')" style="white-space:nowrap;"><i class="fas fa-hand-paper"></i> 接单</button>`;
+      }
+    }
+    const typeTag = isDemand
+      ? '<span style="font-size:10px;background:#1d9bf0;color:#fff;padding:1px 6px;border-radius:8px;margin-left:4px;">需求单</span>'
+      : '<span style="font-size:10px;background:#00ba7c;color:#fff;padding:1px 6px;border-radius:8px;margin-left:4px;">派单</span>';
+    const catTag = o.category_name ? `<span style="font-size:11px;color:var(--text-muted);"> · ${o.category_name}</span>` : '';
     html += `
       <div class="admin-card" style="padding:12px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="flex:1;">
-            <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${o.title}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">${o.game || '暗区突围'} · 老板：${o.boss_name || '未知'}</div>
-            ${o.description ? `<div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">${o.description}</div>` : ''}
-            <div style="font-size:16px;font-weight:700;color:#f4212e;">${o.price} <i class="fas fa-gem" style="font-size:0.9em;"></i></div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${o.title || '未命名'}${typeTag}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">${o.game || '暗区突围'} · 老板：${o.boss_name || '未知'}${catTag}</div>
+            ${o.description ? `<div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">${o.description}</div>` : ''}
+            ${o.remark ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-sticky-note"></i> 备注：${o.remark}</div>` : ''}
+            ${o.contact_info ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-phone"></i> 联系：${o.contact_info}</div>` : ''}
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
+              <div style="font-size:16px;font-weight:700;color:#f4212e;">${o.price} <i class="fas fa-gem" style="font-size:0.9em;"></i></div>
+              ${o.urgency ? `<span style="font-size:11px;background:#fff3cd;color:#856404;padding:1px 6px;border-radius:6px;">${o.urgency}</span>` : ''}
+              ${o.quantity && Number(o.quantity) > 1 ? `<span style="font-size:11px;color:var(--text-muted);">数量 x${o.quantity}</span>` : ''}
+            </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${formatTime(o.created_at)}</div>
           </div>
-          ${canTake ? `<button class="btn btn-success btn-sm" onclick="confirmHallTake('${o.id}')" style="white-space:nowrap;"><i class="fas fa-hand-paper"></i> 接单</button>` : ''}
+          ${actionBtn}
         </div>
       </div>
     `;
   }
   return html;
 }
+
+function filterHallByCategory(catId) {
+  currentHallCategory = catId || 'all';
+  const tabs = document.getElementById('hallCatTabs');
+  if (tabs) {
+    tabs.querySelectorAll('.category-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cat === currentHallCategory);
+    });
+  }
+  let list = hallOrdersCache || [];
+  if (currentHallCategory && currentHallCategory !== 'all') {
+    list = list.filter(o => o.category_id === currentHallCategory);
+  }
+  const container = document.getElementById('hallList');
+  if (!container) return;
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>该分类暂无可接订单</p></div>';
+  } else {
+    container.innerHTML = buildHallOrdersHtml(list);
+  }
+}
+
 async function renderHallPage() {
   const container = document.getElementById('hallList');
   if (!container) return;
   if (!currentUser) {
     container.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>请先登录后查看接单大厅</p></div>';
+    const pubBtn = document.getElementById('hallPublishBtn');
+    if (pubBtn) pubBtn.style.display = 'none';
     return;
+  }
+  const role = currentUserRole || currentUser?.role;
+  const pubBtn = document.getElementById('hallPublishBtn');
+  if (pubBtn) {
+    pubBtn.style.display = (role === 'boss' || role === 'admin' || role === 'service') ? 'inline-flex' : 'none';
   }
   container.innerHTML = '<div class="empty-state"><p>加载中...</p></div>';
   try {
+    try {
+      const cats = await apiRequest('/hall/categories') || [];
+      const tabs = document.getElementById('hallCatTabs');
+      if (tabs) {
+        let th = `<button class="category-btn ${!currentHallCategory || currentHallCategory === 'all' ? 'active' : ''}" data-cat="all" onclick="filterHallByCategory('all')">全部</button>`;
+        cats.forEach(c => {
+          const icon = c.icon ? (c.icon.startsWith('http') ? `<img src="${c.icon}" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:2px;" />` : `<i class="${c.icon}"></i> `) : '';
+          th += `<button class="category-btn ${currentHallCategory === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="filterHallByCategory('${c.id}')">${icon}${c.name}</button>`;
+        });
+        tabs.innerHTML = th;
+      }
+    } catch (e) {}
     const orders = await apiRequest('/handler/pending-orders');
+    hallOrdersCache = orders || [];
     if (!orders || orders.length === 0) {
       container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无可接订单</p></div>';
       return;
     }
-    container.innerHTML = buildHallOrdersHtml(orders);
+    filterHallByCategory(currentHallCategory || 'all');
   } catch (err) {
     container.innerHTML = '<div class="empty-state"><p>加载失败: ' + err.message + '</p></div>';
   }
@@ -4912,6 +5085,109 @@ async function doHallTake(orderId) {
     toast('接单成功', 'success');
     renderHallPage();
     renderSubHall();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function confirmHallApply(orderId) {
+  confirmAction('申请接单', '将向老板发送接单申请，需老板同意并支付红钻后才能正式接单。确认申请？', '发送申请', `doHallApply('${orderId}')`);
+}
+async function doHallApply(orderId) {
+  try {
+    const r = await apiRequest('/orders/' + orderId + '/apply', { method: 'POST', body: JSON.stringify({}) });
+    toast(r.message || '申请已发送', 'success');
+    renderHallPage();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function showPublishDemand() {
+  if (!currentUser) { toast('请先登录', 'warning'); return; }
+  const role = currentUserRole || currentUser?.role;
+  if (role !== 'boss' && role !== 'admin' && role !== 'service') {
+    toast('只有老板可以发布需求', 'warning');
+    return;
+  }
+  let catOptions = '<option value="">-- 请选择分类 --</option>';
+  try {
+    const cats = await apiRequest('/hall/categories') || [];
+    cats.forEach(c => { catOptions += `<option value="${c.id}">${c.name}</option>`; });
+  } catch (e) {}
+  const myDiamond = currentUser.diamond || 0;
+  showCustomModal(`
+    <h3><i class="fas fa-bullseye"></i> 发布需求</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">当前红钻：<b style="color:#f4212e;">${myDiamond}</b>。发布时需余额足够，打手申请后您同意才会扣费。</p>
+    <div class="form-group"><label>需求标题 *</label><input class="admin-form-control" id="demandTitle" placeholder="例如：暗区上分护航" /></div>
+    <div class="form-group"><label>游戏</label><input class="admin-form-control" id="demandGame" value="暗区突围" /></div>
+    <div class="form-group"><label>接单分类</label><select class="admin-form-control" id="demandCategory">${catOptions}</select></div>
+    <div class="form-group"><label>单价（红钻）*</label><input class="admin-form-control" id="demandPrice" type="number" min="1" placeholder="自定义单价" /></div>
+    <div class="form-group"><label>数量</label><input class="admin-form-control" id="demandQuantity" type="number" min="1" value="1" /></div>
+    <div class="form-group"><label>紧急程度</label>
+      <select class="admin-form-control" id="demandUrgency">
+        <option value="普通">普通</option>
+        <option value="较急">较急</option>
+        <option value="加急">加急</option>
+      </select>
+    </div>
+    <div class="form-group"><label>需求描述</label><textarea class="admin-form-control" id="demandDesc" rows="3" placeholder="详细说明需求内容、段位、时间等"></textarea></div>
+    <div class="form-group"><label>备注（自填）</label><textarea class="admin-form-control" id="demandRemark" rows="2" placeholder="可填写特殊要求、注意事项等"></textarea></div>
+    <div class="form-group"><label>联系方式</label><input class="admin-form-control" id="demandContact" placeholder="微信/QQ/游戏ID等（选填）" /></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitPublishDemand()">发布需求</button>
+    </div>
+  `);
+}
+async function submitPublishDemand() {
+  const title = document.getElementById('demandTitle')?.value.trim();
+  const game = document.getElementById('demandGame')?.value.trim() || '暗区突围';
+  const category_id = document.getElementById('demandCategory')?.value || null;
+  const price = parseFloat(document.getElementById('demandPrice')?.value);
+  const quantity = parseInt(document.getElementById('demandQuantity')?.value) || 1;
+  const urgency = document.getElementById('demandUrgency')?.value || '普通';
+  const description = document.getElementById('demandDesc')?.value.trim() || '';
+  const remark = document.getElementById('demandRemark')?.value.trim() || '';
+  const contact_info = document.getElementById('demandContact')?.value.trim() || '';
+  if (!title) return toast('请填写需求标题', 'warning');
+  if (!price || price < 1) return toast('请填写有效单价', 'warning');
+  try {
+    const r = await apiRequest('/hall/publish-demand', {
+      method: 'POST',
+      body: JSON.stringify({ title, game, category_id, price, quantity, urgency, description, remark, contact_info })
+    });
+    closeCustomModal();
+    toast(r.message || '发布成功', 'success');
+    try {
+      const me = await apiRequest('/me');
+      if (me && currentUser) { currentUser.diamond = me.diamond; }
+    } catch (e) {}
+    renderHallPage();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function approveOrderApplication(appId) {
+  try {
+    const r = await apiRequest('/order-applications/' + appId + '/approve', { method: 'POST', body: JSON.stringify({}) });
+    toast(r.message || '已同意', 'success');
+    try {
+      const me = await apiRequest('/me');
+      if (me && currentUser) { currentUser.diamond = me.diamond; if (typeof renderMyPage === 'function') renderMyPage(); }
+    } catch (e) {}
+    if (typeof loadFullscreenMessages === 'function') loadFullscreenMessages();
+    renderHallPage();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+async function rejectOrderApplication(appId) {
+  try {
+    const r = await apiRequest('/order-applications/' + appId + '/reject', { method: 'POST', body: JSON.stringify({}) });
+    toast(r.message || '已拒绝', 'success');
+    if (typeof loadFullscreenMessages === 'function') loadFullscreenMessages();
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -4978,6 +5254,28 @@ function formatMsgContent(content){
   if(content.startsWith('[voice]')){
     const url=content.slice(7);
     return `<audio src="${url}" controls style="max-width:200px;"></audio>`;
+  }
+  // 打手接单申请：[order_apply]appId|orderId|title|price|handlerName
+  if(content.startsWith('[order_apply]')){
+    const raw=content.slice(13);
+    const parts=raw.split('|');
+    const appId=parts[0]||'';
+    const orderId=parts[1]||'';
+    const title=parts[2]||'订单';
+    const price=parts[3]||'0';
+    const handlerName=parts[4]||'打手';
+    const role=currentUserRole||currentUser?.role;
+    const canHandle=role==='boss'||role==='admin'||role==='service';
+    return `<div style="min-width:180px;">
+      <div style="font-weight:600;margin-bottom:4px;"><i class="fas fa-hand-paper"></i> 接单申请</div>
+      <div style="font-size:13px;margin-bottom:2px;">打手：${String(handlerName).replace(/</g,'&lt;')}</div>
+      <div style="font-size:13px;margin-bottom:2px;">订单：${String(title).replace(/</g,'&lt;')}</div>
+      <div style="font-size:13px;color:#f4212e;margin-bottom:8px;">单价：${price} 红钻</div>
+      ${canHandle?`<div style="display:flex;gap:6px;">
+        <button class="btn btn-success btn-xs" onclick="event.stopPropagation();approveOrderApplication('${appId}')">同意并支付</button>
+        <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();rejectOrderApplication('${appId}')">拒绝</button>
+      </div>`:`<div style="font-size:12px;color:var(--text-muted);">等待老板处理</div>`}
+    </div>`;
   }
   return String(content).replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -5445,6 +5743,19 @@ document.addEventListener('DOMContentLoaded',function(){
 window.navigateTo=navigateTo;
 window.switchMsgTab=switchMsgTab;
 window.renderHallPage=renderHallPage;
+window.filterHallByCategory=filterHallByCategory;
+window.showPublishDemand=showPublishDemand;
+window.submitPublishDemand=submitPublishDemand;
+window.confirmHallApply=confirmHallApply;
+window.doHallApply=doHallApply;
+window.approveOrderApplication=approveOrderApplication;
+window.rejectOrderApplication=rejectOrderApplication;
+window.createHallCategory=createHallCategory;
+window.editHallCategory=editHallCategory;
+window.doEditHallCategory=doEditHallCategory;
+window.confirmDeleteHallCategory=confirmDeleteHallCategory;
+window.doDeleteHallCategory=doDeleteHallCategory;
+window.loadHallCatList=loadHallCatList;
 window.openSubPage=openSubPage;
 window.closeSubPage=closeSubPage;
 window.openProductDetail=openProductDetail;
