@@ -1,23 +1,7 @@
-# QW电竞护航平台 - Cloudflare Pages 配置
-# 说明：你在控制台「设置 → 绑定」里已经配置了 DB 和 AI，
-# 对 Pages 项目来说，控制台绑定优先生效。
-# 本文件主要用于本地开发 / 与控制台保持一致，database_id 可先不填真实值。
+# Cloudflare Pages 最小配置
+# D1、Workers AI、B2 等请在控制台「设置 → 绑定 / 变量」里配置（你已经配好了）
+# 不要在本文件写 database_id，避免部署失败
 
 name = "qw-PT"
 compatibility_date = "2026-08-19"
 pages_build_output_dir = "public"
-
-# Workers AI（名称必须是 AI，与代码 env.AI、控制台绑定一致）
-[ai]
-binding = "AI"
-
-# D1（名称必须是 DB）
-# 若 Git 部署因 database_id 报错，可删掉下面整段 [[d1_databases]]，
-# 只保留控制台里的 D1 绑定即可。
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "qw-db"
-# database_id = "这里填控制台 D1 的 UUID"
-
-[vars]
-APP_NAME = "QW电竞护航平台"
