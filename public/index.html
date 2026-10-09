@@ -586,8 +586,8 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 
 <div class="admin-card" style="padding:4px 12px;">
 <div class="menu-list">
-<div class="menu-item" onclick="if(!currentUser){toast('请先登录','warning');return;}openChat('cs_bot','在线客服','contact')">
-<div class="left"><i class="fas fa-headset icon" style="color:#0f1419;"></i><span class="text">联系客服</span></div>
+<div class="menu-item" onclick="if(!currentUser){toast('请先登录','warning');return;}openChat('cs_bot','AI智能体小Q','contact')">
+<div class="left"><i class="fas fa-robot icon" style="color:#0f1419;"></i><span class="text">联系小Q客服</span></div>
 <div class="right"><i class="fas fa-chevron-right"></i></div>
 </div>
 <div class="menu-item" onclick="showLoginModal()">
@@ -696,6 +696,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="sub-page" id="subPageWithdrawals"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-credit-card"></i> 提现管理</span></div><div id="subWithdrawalsContent"></div></div>
 <div class="sub-page" id="subPageAccount"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-cog"></i> 账户设置</span></div><div id="subAccountContent"></div></div>
 <div class="sub-page" id="subPageService"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-headset"></i> 客服系统</span></div><div id="subServiceContent"></div></div>
+<div class="sub-page" id="subPageAi"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-robot"></i> AI智能体小Q</span></div><div id="subAiContent"></div></div>
 <div class="sub-page" id="subPageDispatcher"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-paper-plane"></i> 派单系统</span></div><div id="subDispatcherContent"></div></div>
 <div class="sub-page" id="subPageCategories"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-tags"></i> 分类管理</span></div><div id="subCategoriesContent"></div></div>
 <div class="sub-page" id="subPageBanners"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-image"></i> 广告管理</span></div><div id="subBannersContent"></div></div>
@@ -1076,7 +1077,7 @@ function openSubPage(page){
   const pageMap={
     'orders':'subPageOrders','products':'subPageProducts','users':'subPageUsers',
     'recharges':'subPageRecharges','shops':'subPageShops','announce':'subPageAnnounce',
-    'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService',
+    'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService','ai':'subPageAi',
     'dispatcher':'subPageDispatcher','categories':'subPageCategories',
     'banners':'subPageBanners','icons':'subPageIcons','myshop':'subPageMyShop','hall':'subPageHall','gifts':'subPageGifts'
   };
@@ -1094,6 +1095,7 @@ function openSubPage(page){
     case 'withdrawals':renderSubWithdrawals();break;
     case 'account':renderSubAccount();break;
     case 'service':renderSubService();break;
+    case 'ai':renderSubAi();break;
     case 'dispatcher':renderSubDispatcher();break;
     case 'categories':renderSubCategories();break;
     case 'banners':renderSubBanners();break;
@@ -2201,6 +2203,7 @@ function renderMoreFunctions(){
       {icon:'fa-image',label:'广告管理',action:"openSubPage('banners')"},
       {icon:'fa-palette',label:'图标管理',action:"openSubPage('icons')"},
       {icon:'fa-gift',label:'礼物管理',action:"openSubPage('gifts')"},
+      {icon:'fa-robot',label:'AI智能体小Q',action:"openSubPage('ai')"},
       {icon:'fa-paper-plane',label:'发布订单',action:"openSubPage('dispatcher')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
@@ -4384,6 +4387,163 @@ async function doChangeUserId(newId) {
 /* ============================================================
    子页面-客服
 ============================================================ */
+async function renderSubAi(){
+  const container=document.getElementById('subAiContent');
+  if(!container)return;
+  if(!currentUser||(currentUser.role!=='admin'&&currentUserRole!=='admin')){
+    container.innerHTML='<div class="empty-state"><p>仅管理员可管理 AI智能体小Q</p></div>';
+    return;
+  }
+  container.innerHTML=`
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-robot"></i> AI智能体小Q</div>
+      <p style="font-size:12px;color:#536471;margin-bottom:10px;">名称：AI智能体小Q。优先用关键词自动回复；未命中时由 AI 围绕知识库回答；不知道会引导转人工。聊天中检测违禁词仅警告并通知管理员。</p>
+      <div id="aiBindingTip" style="font-size:12px;margin-bottom:10px;color:#536471;"></div>
+      <div class="admin-form-group"><label>启用 AI 回答（关键词未命中时）</label>
+        <select class="admin-form-control" id="aiEnabledSel">
+          <option value="1">开启</option>
+          <option value="0">关闭（仅关键词+转人工）</option>
+        </select>
+      </div>
+      <div class="admin-form-group"><label>模型（Workers AI）</label>
+        <input class="admin-form-control" id="aiModelInput" placeholder="@cf/meta/llama-3.1-8b-instruct" />
+      </div>
+      <div class="admin-form-group"><label>补充知识库（小Q只能基于此+自动回复内容回答）</label>
+        <textarea class="admin-form-control" id="aiKnowledgeInput" rows="5" placeholder="填写平台规则、充值说明、接单流程等，供小Q参考"></textarea>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="saveAiSettings()"><i class="fas fa-save"></i> 保存 AI 设置</button>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-comment-dots"></i> 关键词自动回复</div>
+      <p style="font-size:12px;color:#536471;margin-bottom:8px;">优先匹配；同时会作为小Q的知识来源。</p>
+      <div class="admin-form-group"><label>问题/关键词（逗号分隔）</label><input class="admin-form-control" id="aiArQuestion" placeholder="例如：充值,如何充值" /></div>
+      <div class="admin-form-group"><label>回答内容</label><textarea class="admin-form-control" id="aiArAnswer" rows="2"></textarea></div>
+      <button class="btn btn-primary btn-sm" onclick="saveAiAutoReply()">添加</button>
+      <div id="aiAutoReplyList" style="margin-top:12px;"></div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-ban"></i> 违禁词管理</div>
+      <p style="font-size:12px;color:#536471;margin-bottom:8px;">用户消息命中后<strong>不拦截</strong>，仅警告用户并通知管理员。</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input class="admin-form-control" id="bannedWordInput" placeholder="输入违禁词" style="flex:1;" />
+        <button class="btn btn-danger btn-sm" onclick="addBannedWord()">添加</button>
+      </div>
+      <div id="bannedWordList"></div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-exclamation-triangle"></i> 违禁词警告记录</div>
+      <button class="btn btn-outline btn-sm" onclick="loadBannedWarnings()" style="margin-bottom:8px;"><i class="fas fa-sync"></i> 刷新</button>
+      <div id="bannedWarningList"></div>
+    </div>`;
+  await loadAiSettingsPanel();
+  await loadAiAutoReplyList();
+  await loadBannedWordList();
+  await loadBannedWarnings();
+}
+
+async function loadAiSettingsPanel(){
+  try{
+    const s=await apiRequest('/ai/settings');
+    const en=document.getElementById('aiEnabledSel');
+    const model=document.getElementById('aiModelInput');
+    const know=document.getElementById('aiKnowledgeInput');
+    const tip=document.getElementById('aiBindingTip');
+    if(en)en.value=s.ai_enabled==='0'?'0':'1';
+    if(model)model.value=s.ai_model||'@cf/meta/llama-3.1-8b-instruct';
+    if(know)know.value=s.ai_knowledge||'';
+    if(tip){
+      tip.innerHTML=s.has_ai_binding
+        ?'<span style="color:#00ba7c;">✓ 已检测到 Workers AI 绑定，小Q可调用模型</span>'
+        :'<span style="color:#f4212e;">⚠ 未检测到 AI 绑定。请在 wrangler.toml 增加：<br><code>[[ai]]\nbinding = "AI"</code><br>未绑定时关键词仍可用，AI 会降级为引导转人工。</span>';
+    }
+  }catch(e){}
+}
+async function saveAiSettings(){
+  try{
+    const ai_enabled=document.getElementById('aiEnabledSel')?.value!=='0';
+    const ai_model=document.getElementById('aiModelInput')?.value.trim();
+    const ai_knowledge=document.getElementById('aiKnowledgeInput')?.value||'';
+    await apiRequest('/ai/settings',{method:'PUT',body:JSON.stringify({ai_enabled,ai_model,ai_knowledge})});
+    toast('AI设置已保存','success');
+  }catch(err){toast(err.message,'error');}
+}
+async function loadAiAutoReplyList(){
+  const box=document.getElementById('aiAutoReplyList');
+  if(!box)return;
+  try{
+    const list=await apiRequest('/auto-replies');
+    if(!list||!list.length){box.innerHTML='<div style="font-size:12px;color:#536471;">暂无</div>';return;}
+    box.innerHTML=list.map(a=>`<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #eff3f4;">
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${a.question||a.keywords||''}</div>
+      <div style="font-size:12px;color:#536471;">${a.answer||''}</div></div>
+      <button class="btn btn-danger btn-xs" onclick="deleteAiAutoReply('${a.id}')">删除</button>
+    </div>`).join('');
+  }catch(e){box.innerHTML='<div style="color:#f4212e;font-size:12px;">加载失败</div>';}
+}
+async function saveAiAutoReply(){
+  const question=document.getElementById('aiArQuestion')?.value.trim();
+  const answer=document.getElementById('aiArAnswer')?.value.trim();
+  if(!question||!answer)return toast('请填写关键词和回答','warning');
+  try{
+    await apiRequest('/auto-replies',{method:'POST',body:JSON.stringify({question,answer,keywords:question})});
+    toast('已添加','success');
+    document.getElementById('aiArQuestion').value='';
+    document.getElementById('aiArAnswer').value='';
+    loadAiAutoReplyList();
+    if(typeof loadAutoReplyList==='function')loadAutoReplyList();
+  }catch(err){toast(err.message,'error');}
+}
+async function deleteAiAutoReply(id){
+  if(!confirm('确认删除？'))return;
+  try{
+    await apiRequest('/auto-replies/'+id,{method:'DELETE'});
+    toast('已删除','success');
+    loadAiAutoReplyList();
+    if(typeof loadAutoReplyList==='function')loadAutoReplyList();
+  }catch(err){toast(err.message,'error');}
+}
+async function loadBannedWordList(){
+  const box=document.getElementById('bannedWordList');
+  if(!box)return;
+  try{
+    const list=await apiRequest('/ai/banned-words');
+    if(!list||!list.length){box.innerHTML='<div style="font-size:12px;color:#536471;">暂无违禁词，请添加</div>';return;}
+    box.innerHTML=list.map(w=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#f7f9f9;border:1px solid #eff3f4;border-radius:16px;padding:4px 10px;margin:0 6px 6px 0;font-size:13px;">
+      ${w.word}<button onclick="deleteBannedWord('${w.id}')" style="border:none;background:none;color:#f4212e;cursor:pointer;font-size:14px;">×</button>
+    </span>`).join('');
+  }catch(e){box.innerHTML='<div style="color:#f4212e;font-size:12px;">加载失败</div>';}
+}
+async function addBannedWord(){
+  const word=document.getElementById('bannedWordInput')?.value.trim();
+  if(!word)return toast('请输入违禁词','warning');
+  try{
+    await apiRequest('/ai/banned-words',{method:'POST',body:JSON.stringify({word})});
+    toast('已添加','success');
+    document.getElementById('bannedWordInput').value='';
+    loadBannedWordList();
+  }catch(err){toast(err.message,'error');}
+}
+async function deleteBannedWord(id){
+  try{
+    await apiRequest('/ai/banned-words/'+id,{method:'DELETE'});
+    toast('已删除','success');
+    loadBannedWordList();
+  }catch(err){toast(err.message,'error');}
+}
+async function loadBannedWarnings(){
+  const box=document.getElementById('bannedWarningList');
+  if(!box)return;
+  try{
+    const list=await apiRequest('/ai/banned-warnings');
+    if(!list||!list.length){box.innerHTML='<div style="font-size:12px;color:#536471;">暂无警告记录</div>';return;}
+    box.innerHTML=list.map(w=>`<div style="padding:10px 0;border-bottom:1px solid #eff3f4;font-size:12px;">
+      <div style="font-weight:600;color:#0f1419;">${w.username||w.user_id} <span style="color:#f4212e;">命中：${w.matched_words||''}</span></div>
+      <div style="color:#536471;margin-top:2px;">${(w.content||'').slice(0,120)}</div>
+      <div style="color:#cfd9de;margin-top:2px;">${w.created_at?new Date(w.created_at).toLocaleString():''}</div>
+    </div>`).join('');
+  }catch(e){box.innerHTML='<div style="color:#f4212e;font-size:12px;">加载失败</div>';}
+}
+
 async function renderSubService(){
   const container=document.getElementById('subServiceContent');
   if(!container)return;
@@ -4401,7 +4561,7 @@ async function renderSubService(){
       </div>
       <div class="admin-card">
         <div class="admin-card-title"><i class="fas fa-robot"></i> 自动回复管理</div>
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">用户联系「在线客服」时，按关键词匹配自动回复。用户发送「转人工」可转接在线客服。</p>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">用户联系「AI智能体小Q」时，按关键词匹配自动回复；未命中走小Q AI。发送「转人工」可转接。更完整的 AI/违禁词管理请到「AI智能体小Q」页面。</p>
         <div class="admin-form-group"><label>问题/关键词（逗号分隔）</label><input class="admin-form-control" id="arQuestion" placeholder="例如：充值,如何充值" /></div>
         <div class="admin-form-group"><label>回答内容</label><textarea class="admin-form-control" id="arAnswer" rows="2" placeholder="自动回复内容"></textarea></div>
         <button class="btn btn-success btn-sm" onclick="saveAutoReply()">添加自动回复</button>
@@ -5563,7 +5723,11 @@ async function openChat(id,username,type='contact'){
   document.body.style.overflow='hidden';
   document.getElementById('fullscreenChatName').textContent=username||id;
   const isCs=id==='cs_bot';
-  document.getElementById('fullscreenChatRole').textContent=type==='order'?'订单聊天':(isCs?'智能客服':'在线');
+  document.getElementById('fullscreenChatRole').textContent=type==='order'?'订单聊天':(isCs?'AI智能体小Q':'在线');
+  if(isCs){
+    const nameEl=document.getElementById('fullscreenChatName');
+    if(nameEl)nameEl.textContent='AI智能体小Q';
+  }
   const transferBtn=document.getElementById('csTransferBtn');
   if(transferBtn)transferBtn.style.display=isCs?'inline-block':'none';
   await loadFullscreenMessages();
@@ -6163,6 +6327,13 @@ window.doSetGender=doSetGender;
 window.adminSetGender=adminSetGender;
 window.doAdminSetGender=doAdminSetGender;
 window.renderSubService=renderSubService;
+window.renderSubAi=renderSubAi;
+window.saveAiSettings=saveAiSettings;
+window.saveAiAutoReply=saveAiAutoReply;
+window.deleteAiAutoReply=deleteAiAutoReply;
+window.addBannedWord=addBannedWord;
+window.deleteBannedWord=deleteBannedWord;
+window.loadBannedWarnings=loadBannedWarnings;
 window.renderSubDispatcher=renderSubDispatcher;
 window.renderSubCategories=renderSubCategories;
 window.renderSubBanners=renderSubBanners;
