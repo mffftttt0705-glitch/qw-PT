@@ -1,7 +1,0 @@
-# Cloudflare Pages 最小配置
-# D1、Workers AI、B2 等请在控制台「设置 → 绑定 / 变量」里配置（你已经配好了）
-# 不要在本文件写 database_id，避免部署失败
-
-name = "qw-PT"
-compatibility_date = "2026-08-19"
-pages_build_output_dir = "public"
