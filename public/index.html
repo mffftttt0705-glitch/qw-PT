@@ -59,6 +59,10 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'Segoe UI','PingFang SC',Roboto,sans-serif;}
 html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hidden;background:var(--bg-primary);color:var(--text-primary);display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent;}
+.loading-spinner{display:inline-block;width:22px;height:22px;border:2.5px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad 0.7s linear infinite;vertical-align:middle;}
+@keyframes spinLoad{to{transform:rotate(360deg);}}
+.loading-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 12px;color:#536471;font-size:13px;}
+.chat-send-pending{opacity:0.55;}
 .app-wrapper{max-width:480px;width:100%;height:100vh;height:100dvh;background:var(--bg-secondary);box-shadow:var(--shadow);overflow:hidden;position:relative;display:flex;flex-direction:column;}
 .app-wrapper .bottom-nav{position:sticky;bottom:0;z-index:1000;background:var(--bottom-nav-bg);backdrop-filter:blur(16px);border-top:1px solid var(--border-light);box-shadow:0 -4px 20px rgba(0,0,0,0.08);display:flex;justify-content:space-around;align-items:center;padding:6px 0 max(10px,env(safe-area-inset-bottom));width:100%;flex-shrink:0;min-height:56px;}
 .view-container{padding:12px 16px 8px;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:4px;position:relative;}
@@ -1624,7 +1628,7 @@ function switchRankTab(by){
 async function renderHandlerRank(by){
   const container=document.getElementById('handlerRankList');
   if(!container)return;
-  container.innerHTML='<div class="empty-state"><p>加载中...</p></div>';
+  container.innerHTML='<div class="loading-box"><div class="loading-spinner"></div><div>排行加载中...</div></div>';
   try{
     const data=await apiRequest('/handlers/rank?by='+encodeURIComponent(by||'orders'));
     const list=(data&&data.list)||(Array.isArray(data)?data:[]);
@@ -1644,9 +1648,7 @@ async function renderHandlerRank(by){
       if(by==='reviews')valueText=`${h.good_reviews||0} 次好评`;
       else if(by==='diamonds')valueText=`${h.earned_diamonds||0} 红钻`;
       else valueText=`${h.completed_orders||0} 单`;
-      const av=h.avatar
-        ?`<img src="${h.avatar}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${(h.username||'?').charAt(0)}'" />`
-        :(h.username||'?').charAt(0).toUpperCase();
+      const av=getAvatarHtml(h.avatar||'',h.username);
       html+=`
         <div onclick="viewUserProfile('${h.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 8px;border-bottom:1px solid #eff3f4;cursor:pointer;">
           <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;${rankStyle}">${rank}</div>
@@ -1756,7 +1758,14 @@ async function openProductDetail(productId){
     document.getElementById('pdPrice').innerHTML=(product.price||0)+' <i class="fas fa-gem" style="color:#f4212e;font-size:0.9em;"></i>';
     document.getElementById('pdName').textContent=product.title||'';
     document.getElementById('pdShop').textContent='店铺：'+(product.shop_name||'未知');
-    document.getElementById('pdDesc').textContent=product.detail_desc||product.description||'暂无描述';
+    const shortDesc=product.description||product.desc||'';
+    const longDesc=product.detail_desc||'';
+    document.getElementById('pdDesc').textContent=(longDesc||shortDesc||'暂无描述');
+    if(shortDesc&&longDesc&&shortDesc!==longDesc){
+      document.getElementById('pdDesc').innerHTML=
+        `<div style="margin-bottom:8px;color:#536471;font-size:13px;">${shortDesc.replace(/</g,'&lt;')}</div>`+
+        `<div style="white-space:pre-wrap;">${longDesc.replace(/</g,'&lt;')}</div>`;
+    }
     document.getElementById('pdStock').textContent='库存：'+(product.quantity-(product.sold||0));
     const imgContainer=document.getElementById('pdImage');
     imgContainer.innerHTML=product.image?`<img src="${product.image}" />`:'<i class="fas fa-tags"></i>';
@@ -1774,24 +1783,67 @@ function buyFromDetail(){if(currentProductId)showBuyWithHandler(currentProductId
 /* ============================================================
    购买
 ============================================================ */
+let selectedBuyHandlerId='';
 async function showBuyWithHandler(productId){
   if(!currentUser){toast('请先登录','warning');return;}
+  selectedBuyHandlerId='';
+  showCustomModal(`
+    <h3><i class="fas fa-shopping-cart"></i> 选择打手</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">仅显示「在线」或「接单中」的打手，也可不指定由打手自行接单</p>
+    <div id="buyHandlerList" style="max-height:280px;overflow-y:auto;margin-bottom:12px;">
+      <div class="empty-state" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i><p>加载打手中...</p></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
+      <button class="btn btn-outline" onclick="selectedBuyHandlerId='';doBuyWithHandler('${productId}')">不指定打手</button>
+      <button class="btn btn-success" onclick="doBuyWithHandler('${productId}')">确认购买</button>
+    </div>`);
   try{
-    const handlers=await apiRequest('/handlers');
-    let options='<option value="">不指定打手（打手自行接单）</option>';
-    handlers.forEach(h=>{options+=`<option value="${h.id}">${h.username}</option>`;});
-    showCustomModal(`
-      <h3><i class="fas fa-shopping-cart"></i> 选择打手</h3>
-      <p style="color:var(--text-muted);font-size:14px;">可选择指定打手接单，或留空让打手自行接单</p>
-      <div class="form-group"><label>选择打手</label><select class="admin-form-control" id="buyHandlerSelect">${options}</select></div>
-      <div class="btn-row">
-        <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
-        <button class="btn btn-success" onclick="doBuyWithHandler('${productId}')">确认购买</button>
-      </div>`);
-  }catch(err){toast(err.message,'error');}
+    const handlers=await apiRequest('/handlers')||[];
+    const available=handlers.filter(h=>Number(h.is_accepting)===1||h.online);
+    const box=document.getElementById('buyHandlerList');
+    if(!box)return;
+    if(available.length===0){
+      box.innerHTML='<div class="empty-state" style="padding:12px;"><i class="fas fa-user-slash"></i><p>暂无在线/接单中的打手，可点「不指定打手」</p></div>';
+      return;
+    }
+    box.innerHTML=available.map(h=>{
+      const av=getAvatarHtml(h.avatar||'',h.username);
+      const tags=[];
+      if(h.online)tags.push('<span style="font-size:10px;background:#e8f5fe;color:#0c7abf;padding:1px 6px;border-radius:8px;">在线</span>');
+      if(Number(h.is_accepting)===1)tags.push('<span style="font-size:10px;background:#00ba7c;color:#fff;padding:1px 6px;border-radius:8px;">接单中</span>');
+      return `<div class="buy-handler-item" data-id="${h.id}" onclick="pickBuyHandler('${h.id}',this)"
+        style="display:flex;align-items:center;gap:10px;padding:10px 8px;border:1px solid #eff3f4;border-radius:12px;margin-bottom:8px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#0f1419;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${av}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;">${h.username||'未知'}</div>
+          <div style="margin-top:2px;display:flex;gap:4px;flex-wrap:wrap;">${tags.join('')}</div>
+        </div>
+        <i class="fas fa-check-circle buy-handler-check" style="color:#cfd9de;font-size:18px;"></i>
+      </div>`;
+    }).join('');
+  }catch(err){
+    const box=document.getElementById('buyHandlerList');
+    if(box)box.innerHTML=`<div class="empty-state"><p>加载失败：${err.message}</p></div>`;
+  }
+}
+function pickBuyHandler(id,el){
+  selectedBuyHandlerId=id;
+  document.querySelectorAll('.buy-handler-item').forEach(item=>{
+    item.style.borderColor='#eff3f4';
+    item.style.background='#fff';
+    const c=item.querySelector('.buy-handler-check');
+    if(c)c.style.color='#cfd9de';
+  });
+  if(el){
+    el.style.borderColor='#0f1419';
+    el.style.background='#f7f9f9';
+    const c=el.querySelector('.buy-handler-check');
+    if(c)c.style.color='#00ba7c';
+  }
 }
 async function doBuyWithHandler(productId) {
-  const handlerId = document.getElementById('buyHandlerSelect').value;
+  const handlerId = selectedBuyHandlerId || '';
   closeCustomModal();
   try {
     const data = await apiRequest('/orders/buy', {
@@ -2290,6 +2342,10 @@ async function viewUserProfile(userId){
     document.getElementById('upBadges').innerHTML=badgesHtml;
     if(user.avatar){
       document.getElementById('upAvatarImg').src=user.avatar;
+      document.getElementById('upAvatarImg').style.display='block';
+      document.getElementById('upAvatarText').style.display='none';
+    }else if(appIcons['avatar_default']){
+      document.getElementById('upAvatarImg').src=appIcons['avatar_default'];
       document.getElementById('upAvatarImg').style.display='block';
       document.getElementById('upAvatarText').style.display='none';
     }else{
@@ -3158,7 +3214,8 @@ window.openEditProduct=async function(productId){
       <div class="form-group"><label>价格</label><input class="admin-form-control" id="editProdPrice" type="number" value="${p.price||0}" /></div>
       <div class="form-group"><label>库存</label><input class="admin-form-control" id="editProdQuantity" type="number" value="${p.quantity||1}" /></div>
       <div class="form-group"><label>商品图片URL</label><input class="admin-form-control" id="editProdImage" value="${p.image||''}" /></div>
-      <div class="form-group"><label>详情描述</label><textarea class="admin-form-control" id="editProdDetailDesc" rows="3">${p.detail_desc||''}</textarea></div>
+      <div class="form-group"><label>描述（列表展示）</label><textarea class="admin-form-control" id="editProdDesc" rows="2">${p.description||p.desc||''}</textarea></div>
+      <div class="form-group"><label>详情描述（商品详情页）</label><textarea class="admin-form-control" id="editProdDetailDesc" rows="3">${p.detail_desc||''}</textarea></div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
         <button class="btn btn-success" onclick="doEditProduct('${productId}')">保存</button>
@@ -3207,10 +3264,11 @@ window.doEditProduct=async function(productId){
   const price=parseFloat(document.getElementById('editProdPrice').value);
   const quantity=parseInt(document.getElementById('editProdQuantity').value)||1;
   const image=document.getElementById('editProdImage').value.trim();
+  const desc=document.getElementById('editProdDesc')?.value.trim()||'';
   const detail_desc=document.getElementById('editProdDetailDesc').value.trim();
   if(!title||!price)return toast('请填写完整信息','error');
   try{
-    await apiRequest('/admin/products/'+productId+'/edit',{method:'PUT',body:JSON.stringify({title,price,quantity,image,category_id,shop_id,shop_category_id,detail_desc})});
+    await apiRequest('/admin/products/'+productId+'/edit',{method:'PUT',body:JSON.stringify({title,price,quantity,image,category_id,shop_id,shop_category_id,desc,detail_desc})});
     closeCustomModal();
     toast('商品已更新','success');
     renderProductsList();
@@ -5742,7 +5800,11 @@ async function openChat(id,username,type='contact'){
 }
 async function loadFullscreenMessages() {
   const body = document.getElementById('fullscreenChatBody');
-  body.innerHTML = '<div class="empty-state"><p>加载中...</p></div>';
+  if(!body)return;
+  // 仅在空内容时显示加载，避免刷新时整页闪烁
+  if(!body.dataset.hasMsg){
+    body.innerHTML = '<div class="loading-box"><div class="loading-spinner"></div><div>消息加载中...</div></div>';
+  }
   try {
     const payload = { contactId: fullscreenContactId };
     if (fullscreenChatType === 'order' && fullscreenOrderId) {
@@ -5753,7 +5815,8 @@ async function loadFullscreenMessages() {
       method: 'POST',
       body: JSON.stringify(payload)
     });
-    if (messages.length === 0) {
+    if (!messages || messages.length === 0) {
+      body.dataset.hasMsg='';
       body.innerHTML = '<div class="empty-state"><i class="fas fa-comment-dots"></i><p>暂无消息，打个招呼吧</p></div>';
       return;
     }
@@ -5762,7 +5825,7 @@ async function loadFullscreenMessages() {
       const isMe = m.sender_id === currentUser.id;
       const isBot = m.sender_id === 'cs_bot';
       const avatarHtml = isBot
-        ? (appIcons['avatar_default']?`<img src="${appIcons['avatar_default']}" style="width:100%;height:100%;object-fit:cover;" />`:'<i class="fas fa-headset" style="font-size:14px;"></i>')
+        ? getAvatarHtml('', '小Q')
         : getAvatarHtml(m.sender_avatar||'', m.sender_name);
       html += `<div style="display:flex;justify-content:${isMe ? 'flex-end' : 'flex-start'};align-items:flex-start;gap:8px;margin-bottom:8px;">
         ${!isMe ? `<div class="chat-avatar">${avatarHtml}</div>` : ''}
@@ -5770,11 +5833,12 @@ async function loadFullscreenMessages() {
         ${isMe ? `<div class="chat-avatar">${avatarHtml}</div>` : ''}
       </div>`;
     });
+    body.dataset.hasMsg='1';
     body.innerHTML = html;
     body.scrollTop = body.scrollHeight;
     updateBadges();
   } catch (err) {
-    body.innerHTML = `<div class="empty-state"><p>加载失败: ${err.message}</p></div>`;
+    body.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>加载失败: ${err.message}</p></div>`;
   }
 }
 async function sendFullscreenMessage(){
@@ -5782,6 +5846,20 @@ async function sendFullscreenMessage(){
   const content=input.value.trim();
   if(!content)return toast('请输入消息','warning');
   if(!fullscreenContactId)return toast('请选择联系人','warning');
+  const body=document.getElementById('fullscreenChatBody');
+  // 乐观更新：先显示自己的消息，减少卡顿感
+  input.value='';
+  if(body){
+    if(body.querySelector('.empty-state,.loading-box')) body.innerHTML='';
+    const av=getAvatarHtml(currentUser.avatar||'',currentUser.username);
+    body.insertAdjacentHTML('beforeend',
+      `<div class="chat-send-pending" style="display:flex;justify-content:flex-end;align-items:flex-start;gap:8px;margin-bottom:8px;">
+        <div class="chat-bubble me">${formatMsgContent(content)}<span class="time">发送中...</span></div>
+        <div class="chat-avatar">${av}</div>
+      </div>`);
+    body.dataset.hasMsg='1';
+    body.scrollTop=body.scrollHeight;
+  }
   try{
     if(fullscreenChatType==='order'&&fullscreenOrderId){
       await apiRequest('/orders/'+fullscreenOrderId+'/chat',{method:'POST',body:JSON.stringify({content})});
@@ -5794,9 +5872,11 @@ async function sendFullscreenMessage(){
       }
       if(r&&r.offline)toast('目前客服不在线，请稍等','warning');
     }
-    input.value='';
     await loadFullscreenMessages();
-  }catch(err){toast(err.message,'error');}
+  }catch(err){
+    toast(err.message,'error');
+    await loadFullscreenMessages();
+  }
 }
 async function requestHumanCS(){
   if(!fullscreenContactId||fullscreenContactId!=='cs_bot')return;
@@ -6451,6 +6531,7 @@ window.renderShopCard=renderShopCard;
 window.switchCatMainTab=switchCatMainTab;
 window.switchRankTab=switchRankTab;
 window.renderHandlerRank=renderHandlerRank;
+window.pickBuyHandler=pickBuyHandler;
 
 console.log('QW电竞护航平台 v7.9 已加载');
 </script>
