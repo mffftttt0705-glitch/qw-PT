@@ -4452,9 +4452,17 @@ async function loadAiSettingsPanel(){
     if(model)model.value=s.ai_model||'@cf/meta/llama-3.1-8b-instruct';
     if(know)know.value=s.ai_knowledge||'';
     if(tip){
-      tip.innerHTML=s.has_ai_binding
-        ?'<span style="color:#00ba7c;">✓ 已检测到 Workers AI 绑定，小Q可调用模型</span>'
-        :'<span style="color:#f4212e;">⚠ 未检测到 AI 绑定。请在 wrangler.toml 增加：<br><code>[[ai]]\nbinding = "AI"</code><br>未绑定时关键词仍可用，AI 会降级为引导转人工。</span>';
+      if(s.has_ai_binding){
+        tip.innerHTML='<span style="color:#00ba7c;">✓ 已检测到 Workers AI 绑定，小Q可调用模型</span>';
+      }else{
+        const keys=(s.env_keys&&s.env_keys.length)?s.env_keys.join(', '):'(无)';
+        tip.innerHTML='<span style="color:#f4212e;">⚠ 未检测到 AI 绑定（env.AI）。</span>'+
+          '<div style="margin-top:6px;color:#536471;font-size:11px;line-height:1.5;">请确认：<br>'+
+          '1. 控制台「设置→绑定」有 Workers AI，名称必须是 <b>AI</b><br>'+
+          '2. 绑定后必须重新部署一次（提交代码或点重试部署）<br>'+
+          '3. 后端文件在 <b>functions/api/[[path]].js</b><br>'+
+          '当前 Worker 可见绑定：'+keys+'</div>';
+      }
     }
   }catch(e){}
 }
