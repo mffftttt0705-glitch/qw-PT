@@ -280,7 +280,9 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .wx-plus-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
 .wx-plus-icon{width:56px;height:56px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,0.04);}
 .wx-plus-label{font-size:12px;color:#666;}
-.wx-emoji-panel{background:#f7f7f7;border-top:1px solid #eee;max-height:240px;display:flex;flex-direction:column;}
+.wx-emoji-panel{background:#f7f7f7;border-top:1px solid #eee;max-height:260px;min-height:180px;flex-direction:column;overflow:hidden;z-index:5;}
+.wx-emoji-panel.open,.wx-emoji-panel[style*="flex"]{display:flex !important;}
+.wx-voice-svg{display:block;color:#1a1a1a;}
 .wx-emoji-tabs{display:flex;gap:0;border-bottom:1px solid #eee;flex-shrink:0;}
 .wx-emoji-tab{flex:1;border:none;background:transparent;padding:8px;font-size:13px;color:#666;cursor:pointer;}
 .wx-emoji-tab.active{color:#0f1419;font-weight:600;border-bottom:2px solid #0f1419;}
@@ -754,7 +756,12 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
   <!-- 文字模式 -->
   <div class="wx-chat-row" id="wxTextMode">
     <button type="button" class="wx-icon-btn" onclick="switchChatInputMode('voice')" title="语音" aria-label="语音">
-      <svg class="wx-voice-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.5 12.5c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/><path d="M7 10.2c1.2 1.8 3 2.8 5 2.8s3.8-1 5-2.8"/><path d="M10.2 15.2c.5.4 1.1.6 1.8.6s1.3-.2 1.8-.6"/></svg>
+      <svg class="wx-voice-svg" viewBox="0 0 48 48" width="28" height="28" aria-hidden="true">
+        <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="2.6"/>
+        <path d="M18 20.5c2.8 2.2 2.8 4.8 0 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M22 16.5c5 3.5 5 11.5 0 15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M26 12.5c7.2 4.8 7.2 18.2 0 23" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
     </button>
     <div class="wx-input-wrap">
       <input type="text" id="fullscreenChatInput" class="wx-text-input" placeholder=""
@@ -6076,10 +6083,8 @@ function switchChatInputMode(mode){
   if(textRow)textRow.style.display=chatInputMode==='text'?'flex':'none';
   if(voiceRow)voiceRow.style.display=chatInputMode==='voice'?'flex':'none';
   closeChatPlusPanel();
-  closeChatEmoji();
-  if(chatInputMode==='text'){
-    setTimeout(()=>{document.getElementById('fullscreenChatInput')?.focus();},50);
-  }
+  // 切到语音时才关表情；切文字不关（避免点表情时被关掉）
+  if(chatInputMode==='voice') closeChatEmoji();
   updateWxSendBtn();
 }
 
@@ -6104,18 +6109,29 @@ function toggleChatEmoji(){
   const panel=document.getElementById('wxEmojiPanel');
   if(!panel)return;
   closeChatPlusPanel();
-  if(panel.style.display==='none'||!panel.style.display){
+  const isOpen=panel.style.display==='flex'||panel.classList.contains('open');
+  if(!isOpen){
+    // 保证在文字模式，但不触发 closeChatEmoji
+    chatInputMode='text';
+    const textRow=document.getElementById('wxTextMode');
+    const voiceRow=document.getElementById('wxVoiceMode');
+    if(textRow)textRow.style.display='flex';
+    if(voiceRow)voiceRow.style.display='none';
     panel.style.display='flex';
-    switchChatInputMode('text');
+    panel.classList.add('open');
     switchEmojiTab(currentEmojiTab||'emoji');
   }else{
     panel.style.display='none';
+    panel.classList.remove('open');
   }
 }
 
 function closeChatEmoji(){
   const panel=document.getElementById('wxEmojiPanel');
-  if(panel)panel.style.display='none';
+  if(panel){
+    panel.style.display='none';
+    panel.classList.remove('open');
+  }
 }
 
 function switchEmojiTab(tab){
