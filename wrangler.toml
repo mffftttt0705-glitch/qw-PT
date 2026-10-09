@@ -1,47 +1,23 @@
-# ============================================================
-#  QW电竞护航平台 - Cloudflare 配置
-#  部署时请把 database_id / 账号相关信息改成你自己的
-# ============================================================
+# QW电竞护航平台 - Cloudflare Pages 配置
+# 说明：你在控制台「设置 → 绑定」里已经配置了 DB 和 AI，
+# 对 Pages 项目来说，控制台绑定优先生效。
+# 本文件主要用于本地开发 / 与控制台保持一致，database_id 可先不填真实值。
 
-name = "qw-esports"
-compatibility_date = "2024-11-01"
-compatibility_flags = ["nodejs_compat"]
-
-# 若使用 Cloudflare Pages：静态资源目录为 public
-# （把 index.html、QW电竞.apk 放在 public/ 下）
+name = "qw-PT"
+compatibility_date = "2026-08-19"
 pages_build_output_dir = "public"
 
-# ------------------------------------------------------------
-#  Workers AI（AI智能体小Q 需要）
-# ------------------------------------------------------------
+# Workers AI（名称必须是 AI，与代码 env.AI、控制台绑定一致）
 [ai]
 binding = "AI"
 
-# ------------------------------------------------------------
-#  D1 数据库（代码中使用 env.DB）
-#  在 Cloudflare 控制台创建 D1 后，把下面 database_id 换成真实 ID
-# ------------------------------------------------------------
-[[d1_databases]]
-binding = "DB"
-database_name = "qw-esports-db"
-database_id = "请替换为你的D1数据库ID"
+# D1（名称必须是 DB）
+# 若 Git 部署因 database_id 报错，可删掉下面整段 [[d1_databases]]，
+# 只保留控制台里的 D1 绑定即可。
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "qw-db"
+# database_id = "这里填控制台 D1 的 UUID"
 
-# ------------------------------------------------------------
-#  环境变量（非密钥可写在这里；密钥建议用 wrangler secret）
-#  B2 图床相关：在控制台 Secrets 或本地执行：
-#    wrangler secret put B2_KEY_ID
-#    wrangler secret put B2_APP_KEY
-#    wrangler secret put B2_BUCKET
-#    wrangler secret put B2_ENDPOINT
-#    wrangler secret put B2_REGION
-# ------------------------------------------------------------
 [vars]
-# 可选：默认说明
 APP_NAME = "QW电竞护航平台"
-
-# ------------------------------------------------------------
-#  本地开发（可选）
-# ------------------------------------------------------------
-# [dev]
-# port = 8787
-# local_protocol = "http"
