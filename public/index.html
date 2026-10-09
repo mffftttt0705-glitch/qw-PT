@@ -280,9 +280,19 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .wx-plus-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
 .wx-plus-icon{width:56px;height:56px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,0.04);}
 .wx-plus-label{font-size:12px;color:#666;}
-.wx-emoji-panel{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:10px 8px;max-height:160px;overflow-y:auto;background:#f7f7f7;border-top:1px solid #eee;font-size:22px;}
-.wx-emoji-panel span{text-align:center;cursor:pointer;padding:4px;border-radius:6px;}
-.wx-emoji-panel span:active{background:#e5e5e5;}
+.wx-emoji-panel{background:#f7f7f7;border-top:1px solid #eee;max-height:240px;display:flex;flex-direction:column;}
+.wx-emoji-tabs{display:flex;gap:0;border-bottom:1px solid #eee;flex-shrink:0;}
+.wx-emoji-tab{flex:1;border:none;background:transparent;padding:8px;font-size:13px;color:#666;cursor:pointer;}
+.wx-emoji-tab.active{color:#0f1419;font-weight:600;border-bottom:2px solid #0f1419;}
+.wx-emoji-body{flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(8,1fr);gap:6px;font-size:22px;min-height:100px;}
+.wx-emoji-body.sticker-grid{grid-template-columns:repeat(5,1fr);}
+.wx-emoji-body span{text-align:center;cursor:pointer;padding:4px;border-radius:6px;}
+.wx-emoji-body span:active{background:#e5e5e5;}
+.wx-sticker-item{width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#fff;cursor:pointer;border:1px solid #eee;display:flex;align-items:center;justify-content:center;}
+.wx-sticker-item img,.wx-sticker-item video{width:100%;height:100%;object-fit:cover;}
+.wx-emoji-actions{display:flex;gap:8px;padding:6px 8px 10px;flex-shrink:0;flex-wrap:wrap;}
+.wx-voice-svg{display:block;}
+.wx-text-input::-webkit-credentials-auto-fill-button{visibility:hidden;pointer-events:none;height:0;width:0;margin:0;}
 .chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--product-img-bg);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted);overflow:hidden;flex-shrink:0;cursor:pointer;}
 .chat-avatar img{width:100%;height:100%;object-fit:cover;}
 .announce-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);justify-content:center;align-items:center;z-index:100000;padding:20px;}
@@ -719,6 +729,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="sub-page" id="subPageAccount"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-cog"></i> 账户设置</span></div><div id="subAccountContent"></div></div>
 <div class="sub-page" id="subPageService"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-headset"></i> 客服系统</span></div><div id="subServiceContent"></div></div>
 <div class="sub-page" id="subPageAi"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-robot"></i> AI智能体小Q</span></div><div id="subAiContent"></div></div>
+<div class="sub-page" id="subPageStickers"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="far fa-smile"></i> 表情包管理</span></div><div id="subStickersContent"></div></div>
 <div class="sub-page" id="subPageDispatcher"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-paper-plane"></i> 派单系统</span></div><div id="subDispatcherContent"></div></div>
 <div class="sub-page" id="subPageCategories"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-tags"></i> 分类管理</span></div><div id="subCategoriesContent"></div></div>
 <div class="sub-page" id="subPageBanners"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-image"></i> 广告管理</span></div><div id="subBannersContent"></div></div>
@@ -742,9 +753,13 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="wx-chat-bar" id="wxChatBar">
   <!-- 文字模式 -->
   <div class="wx-chat-row" id="wxTextMode">
-    <button type="button" class="wx-icon-btn" onclick="switchChatInputMode('voice')" title="语音"><i class="fas fa-wave-square"></i></button>
+    <button type="button" class="wx-icon-btn" onclick="switchChatInputMode('voice')" title="语音" aria-label="语音">
+      <svg class="wx-voice-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.5 12.5c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/><path d="M7 10.2c1.2 1.8 3 2.8 5 2.8s3.8-1 5-2.8"/><path d="M10.2 15.2c.5.4 1.1.6 1.8.6s1.3-.2 1.8-.6"/></svg>
+    </button>
     <div class="wx-input-wrap">
-      <input type="text" id="fullscreenChatInput" class="wx-text-input" placeholder="" autocomplete="off" />
+      <input type="text" id="fullscreenChatInput" class="wx-text-input" placeholder=""
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        inputmode="text" enterkeyhint="send" name="qw_chat_message_field" data-lpignore="true" data-form-type="other" />
       <button type="button" class="wx-mic-in-input" onclick="switchChatInputMode('voice')" title="语音"><i class="fas fa-microphone"></i></button>
     </div>
     <button type="button" class="wx-icon-btn" onclick="toggleChatEmoji()" title="表情"><i class="far fa-smile"></i></button>
@@ -775,8 +790,20 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
       <div class="wx-plus-label">文件</div>
     </div>
   </div>
-  <!-- 简易表情 -->
-  <div class="wx-emoji-panel" id="wxEmojiPanel" style="display:none;"></div>
+  <!-- 表情 / 表情包 -->
+  <div class="wx-emoji-panel" id="wxEmojiPanel" style="display:none;">
+    <div class="wx-emoji-tabs">
+      <button type="button" class="wx-emoji-tab active" data-tab="emoji" onclick="switchEmojiTab('emoji')">Emoji</button>
+      <button type="button" class="wx-emoji-tab" data-tab="mine" onclick="switchEmojiTab('mine')">我的</button>
+      <button type="button" class="wx-emoji-tab" data-tab="public" onclick="switchEmojiTab('public')">公共</button>
+    </div>
+    <div id="wxEmojiBody" class="wx-emoji-body"></div>
+    <div class="wx-emoji-actions">
+      <button type="button" class="btn btn-outline btn-xs" onclick="uploadMySticker('image')"><i class="fas fa-image"></i> 上传图片表情</button>
+      <button type="button" class="btn btn-outline btn-xs" onclick="uploadMySticker('video')"><i class="fas fa-video"></i> 上传视频表情</button>
+    </div>
+  </div>
+  <input type="file" id="stickerUploadInput" accept="image/*,video/*" style="display:none;" onchange="onStickerFileSelected(event)" />
 </div>
 <div id="voiceRecordingTip" style="display:none;position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;padding:20px 28px;border-radius:16px;z-index:9999;text-align:center;font-size:14px;">
   <div style="font-size:36px;margin-bottom:8px;"><i class="fas fa-microphone"></i></div>
@@ -1128,7 +1155,7 @@ function openSubPage(page){
   const pageMap={
     'orders':'subPageOrders','products':'subPageProducts','users':'subPageUsers',
     'recharges':'subPageRecharges','shops':'subPageShops','announce':'subPageAnnounce',
-    'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService','ai':'subPageAi',
+    'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService','ai':'subPageAi','stickers':'subPageStickers',
     'dispatcher':'subPageDispatcher','categories':'subPageCategories',
     'banners':'subPageBanners','icons':'subPageIcons','myshop':'subPageMyShop','hall':'subPageHall','gifts':'subPageGifts'
   };
@@ -1147,6 +1174,7 @@ function openSubPage(page){
     case 'account':renderSubAccount();break;
     case 'service':renderSubService();break;
     case 'ai':renderSubAi();break;
+    case 'stickers':renderSubStickers();break;
     case 'dispatcher':renderSubDispatcher();break;
     case 'categories':renderSubCategories();break;
     case 'banners':renderSubBanners();break;
@@ -2303,6 +2331,7 @@ function renderMoreFunctions(){
       {icon:'fa-palette',label:'图标管理',action:"openSubPage('icons')"},
       {icon:'fa-gift',label:'礼物管理',action:"openSubPage('gifts')"},
       {icon:'fa-robot',label:'AI智能体小Q',action:"openSubPage('ai')"},
+      {icon:'fa-smile',label:'表情包管理',action:"openSubPage('stickers')"},
       {icon:'fa-paper-plane',label:'发布订单',action:"openSubPage('dispatcher')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
@@ -4492,6 +4521,92 @@ async function doChangeUserId(newId) {
 /* ============================================================
    子页面-客服
 ============================================================ */
+async function renderSubStickers(){
+  const container=document.getElementById('subStickersContent');
+  if(!container)return;
+  if(!currentUser||currentUser.role!=='admin'){
+    container.innerHTML='<div class="empty-state"><p>仅管理员可管理公共表情包</p></div>';
+    return;
+  }
+  container.innerHTML=`
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="far fa-smile"></i> 表情包管理</div>
+      <p style="font-size:12px;color:#536471;margin-bottom:10px;">管理员上传可设为公共表情；用户可在聊天里上传到「我的」表情。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn btn-primary btn-sm" onclick="adminUploadSticker('image')"><i class="fas fa-image"></i> 上传图片表情</button>
+        <button class="btn btn-outline btn-sm" onclick="adminUploadSticker('video')"><i class="fas fa-video"></i> 上传视频表情</button>
+        <button class="btn btn-outline btn-sm" onclick="renderSubStickers()"><i class="fas fa-sync"></i> 刷新</button>
+      </div>
+      <div id="adminStickerList"><div class="loading-box"><div class="loading-spinner"></div></div></div>
+    </div>`;
+  try{
+    const list=await apiRequest('/admin/stickers')||[];
+    const box=document.getElementById('adminStickerList');
+    if(!box)return;
+    if(!list.length){box.innerHTML='<div style="font-size:12px;color:#536471;">暂无表情包</div>';return;}
+    box.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">`+list.map(s=>{
+      const media=s.type==='video'
+        ?`<video src="${s.url}" muted loop playsinline style="width:100%;height:80px;object-fit:cover;border-radius:8px;"></video>`
+        :`<img src="${s.url}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;" />`;
+      return `<div style="background:#f7f9f9;border-radius:10px;padding:8px;border:1px solid #eff3f4;">
+        ${media}
+        <div style="font-size:11px;color:#536471;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.username||s.user_id||''}</div>
+        <div style="font-size:11px;margin-top:2px;">${Number(s.is_public)===1?'🌐 公共':'🔒 私有'}</div>
+        <div style="display:flex;gap:4px;margin-top:6px;">
+          <button class="btn btn-outline btn-xs" onclick="adminToggleStickerPublic('${s.id}',${Number(s.is_public)===1?0:1})">${Number(s.is_public)===1?'取消公共':'设公共'}</button>
+          <button class="btn btn-danger btn-xs" onclick="adminDeleteSticker('${s.id}')">删除</button>
+        </div>
+      </div>`;
+    }).join('')+`</div>`;
+  }catch(err){
+    const box=document.getElementById('adminStickerList');
+    if(box)box.innerHTML=`<div style="color:#f4212e;font-size:12px;">${err.message}</div>`;
+  }
+}
+function adminUploadSticker(type){
+  pendingStickerType=type==='video'?'video':'image';
+  // 管理员上传：上传后 is_public=1
+  const input=document.getElementById('stickerUploadInput');
+  if(!input){toast('请先打开一次聊天以初始化上传控件','warning');return;}
+  input.accept=pendingStickerType==='video'?'video/*':'image/*';
+  input.value='';
+  input.onchange=async function(e){
+    const file=e.target.files&&e.target.files[0];
+    if(!file)return;
+    try{
+      toast('上传中...','info');
+      const formData=new FormData();
+      formData.append('file',file);
+      const uploadRes=await fetch('/api/upload',{method:'POST',headers:{'Authorization':token||''},body:formData});
+      const data=await uploadRes.json();
+      if(!uploadRes.ok||!data.url)throw new Error(data.error||'上传失败');
+      await apiRequest('/stickers',{method:'POST',body:JSON.stringify({url:data.url,type:pendingStickerType,name:file.name||'',is_public:1})});
+      stickerCache=null;
+      toast('公共表情已添加','success');
+      renderSubStickers();
+    }catch(err){toast(err.message||'上传失败','error');}
+    input.onchange=onStickerFileSelected;
+  };
+  input.click();
+}
+async function adminToggleStickerPublic(id,val){
+  try{
+    await apiRequest('/admin/stickers/'+id+'/public',{method:'PUT',body:JSON.stringify({is_public:val})});
+    toast(val?'已设为公共':'已取消公共','success');
+    stickerCache=null;
+    renderSubStickers();
+  }catch(err){toast(err.message,'error');}
+}
+async function adminDeleteSticker(id){
+  if(!confirm('确认删除该表情？'))return;
+  try{
+    await apiRequest('/stickers/'+id,{method:'DELETE'});
+    toast('已删除','success');
+    stickerCache=null;
+    renderSubStickers();
+  }catch(err){toast(err.message,'error');}
+}
+
 async function renderSubAi(){
   const container=document.getElementById('subAiContent');
   if(!container)return;
@@ -5802,6 +5917,14 @@ function formatMsgContent(content){
     const url=content.slice(7);
     return `<audio src="${url}" controls style="max-width:200px;"></audio>`;
   }
+  if(content.startsWith('[sticker_video]')){
+    const url=content.slice(15);
+    return `<video src="${url}" autoplay loop muted playsinline style="max-width:120px;border-radius:8px;"></video>`;
+  }
+  if(content.startsWith('[sticker]')){
+    const url=content.slice(9);
+    return `<img src="${url}" style="max-width:120px;border-radius:8px;" />`;
+  }
   if(content.startsWith('[file]')){
     const url=content.slice(6);
     const name=url.split('/').pop()||'文件';
@@ -5973,18 +6096,18 @@ function closeChatPlusPanel(){
   if(panel)panel.style.display='none';
 }
 
+let currentEmojiTab='emoji';
+let stickerCache=null;
+let pendingStickerType='image';
+
 function toggleChatEmoji(){
   const panel=document.getElementById('wxEmojiPanel');
   if(!panel)return;
   closeChatPlusPanel();
   if(panel.style.display==='none'||!panel.style.display){
-    if(!panel.dataset.ready){
-      const emojis='😀 😁 😂 🤣 😊 😍 😘 😜 🤔 😮 😢 😭 😡 👍 👎 👏 🙏 🔥 ❤️ 💔 🎉 ✨ ✅ ❌ 🙏 💪 🤝 👋 👀 💯'.split(/\s+/);
-      panel.innerHTML=emojis.map(e=>`<span onclick="insertChatEmoji('${e}')">${e}</span>`).join('');
-      panel.dataset.ready='1';
-    }
-    panel.style.display='grid';
+    panel.style.display='flex';
     switchChatInputMode('text');
+    switchEmojiTab(currentEmojiTab||'emoji');
   }else{
     panel.style.display='none';
   }
@@ -5995,12 +6118,101 @@ function closeChatEmoji(){
   if(panel)panel.style.display='none';
 }
 
+function switchEmojiTab(tab){
+  currentEmojiTab=tab||'emoji';
+  document.querySelectorAll('.wx-emoji-tab').forEach(btn=>{
+    btn.classList.toggle('active',btn.dataset.tab===currentEmojiTab);
+  });
+  const body=document.getElementById('wxEmojiBody');
+  if(!body)return;
+  if(currentEmojiTab==='emoji'){
+    body.className='wx-emoji-body';
+    const emojis='😀 😁 😂 🤣 😃 😄 😅 😆 😉 😊 😋 😎 😍 😘 🥰 😗 😙 😚 ☺️ 🙂 🤗 🤩 🤔 🤨 😐 😑 😶 🙄 😏 😣 😥 😮 🤐 😯 😪 😫 🥱 😴 😌 😛 😜 😝 🤤 😒 😓 😔 😕 🙃 🤑 😲 ☹️ 🙁 😖 😞 😟 😤 😢 😭 😦 😧 😨 😩 🤯 😬 😰 😱 🥵 🥶 😳 🤪 😵 😡 😠 🤬 😷 🤒 🤕 🤢 🤮 🤧 😇 🥳 🥺 🤠 🤡 🤥 🤫 🤭 🧐 🤓 😈 👿 👹 👺 💀 👻 👽 🤖 💩 😺 😸 😹 😻 😼 😽 🙀 😿 😾 👋 🤚 🖐 ✋ 🖖 👌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 💪 🦾 🦿 🦵 🦶 👂 👃 🧠 🦷 🦴 👀 👁 👅 👄 💋 🩸 💘 💝 💖 💗 💓 💞 💕 💟 ❣️ 💔 ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🖤 🖤 💯 💢 💥 💫 💦 💨 🕳️ 💣 💬 👁️‍🗨️ 🗨 🗯 💭 💤 🎉 🎊 ✨ ⭐ 🌟 💫 🔥 ✅ ❌ ❓ ❗ 💬'.split(/\s+/).filter(Boolean);
+    body.innerHTML=emojis.map(e=>`<span onclick="insertChatEmoji('${e}')">${e}</span>`).join('');
+  }else{
+    body.className='wx-emoji-body sticker-grid';
+    body.innerHTML='<div class="loading-box" style="grid-column:1/-1;"><div class="loading-spinner"></div></div>';
+    loadStickersForPanel(currentEmojiTab);
+  }
+}
+
+async function loadStickersForPanel(tab){
+  const body=document.getElementById('wxEmojiBody');
+  if(!body)return;
+  try{
+    if(!stickerCache){
+      stickerCache=await apiRequest('/stickers')||[];
+    }
+    const me=currentUser&&currentUser.id;
+    let list=stickerCache.slice();
+    if(tab==='mine')list=list.filter(s=>s.user_id===me);
+    else if(tab==='public')list=list.filter(s=>Number(s.is_public)===1);
+    if(!list.length){
+      body.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#999;font-size:13px;padding:16px;">暂无表情包，可点击下方上传</div>';
+      return;
+    }
+    body.innerHTML=list.map(s=>{
+      if(s.type==='video'){
+        return `<div class="wx-sticker-item" onclick="sendStickerMsg('${s.url}','video')"><video src="${s.url}" muted loop playsinline></video></div>`;
+      }
+      return `<div class="wx-sticker-item" onclick="sendStickerMsg('${s.url}','image')"><img src="${s.url}" alt="" /></div>`;
+    }).join('');
+  }catch(e){
+    body.innerHTML='<div style="grid-column:1/-1;color:#f4212e;font-size:12px;text-align:center;">加载失败</div>';
+  }
+}
+
 function insertChatEmoji(emoji){
   const input=document.getElementById('fullscreenChatInput');
   if(!input)return;
   input.value=(input.value||'')+emoji;
   updateWxSendBtn();
   input.focus();
+}
+
+async function sendStickerMsg(url,type){
+  if(!fullscreenContactId||!currentUser){toast('请先打开聊天','warning');return;}
+  const prefix=type==='video'?'[sticker_video]':'[sticker]';
+  const content=prefix+url;
+  try{
+    if(fullscreenChatType==='order'&&fullscreenOrderId)await apiRequest('/orders/'+fullscreenOrderId+'/chat',{method:'POST',body:JSON.stringify({content})});
+    else await apiRequest('/messages/send',{method:'POST',body:JSON.stringify({receiverId:fullscreenContactId,content})});
+    closeChatEmoji();
+    await loadFullscreenMessages();
+  }catch(err){toast(err.message,'error');}
+}
+
+function uploadMySticker(type){
+  pendingStickerType=type==='video'?'video':'image';
+  const input=document.getElementById('stickerUploadInput');
+  if(!input)return;
+  input.accept=pendingStickerType==='video'?'video/*':'image/*';
+  input.value='';
+  input.click();
+}
+
+async function onStickerFileSelected(e){
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  if(!currentUser){toast('请先登录','warning');return;}
+  try{
+    toast('上传中...','info');
+    const formData=new FormData();
+    formData.append('file',file);
+    const uploadRes=await fetch('/api/upload',{method:'POST',headers:{'Authorization':token||''},body:formData});
+    const data=await uploadRes.json();
+    if(!uploadRes.ok||!data.url)throw new Error(data.error||'上传失败');
+    const isAdmin=currentUser.role==='admin';
+    await apiRequest('/stickers',{method:'POST',body:JSON.stringify({
+      url:data.url,
+      type:pendingStickerType,
+      name:file.name||'',
+      is_public:isAdmin?1:0
+    })});
+    stickerCache=null;
+    toast('表情已添加','success');
+    switchEmojiTab(isAdmin?'public':'mine');
+  }catch(err){toast(err.message||'上传失败','error');}
 }
 
 function updateWxSendBtn(){
@@ -6457,6 +6669,14 @@ window.closeChatPlusPanel=closeChatPlusPanel;
 window.toggleChatEmoji=toggleChatEmoji;
 window.insertChatEmoji=insertChatEmoji;
 window.updateWxSendBtn=updateWxSendBtn;
+window.switchEmojiTab=switchEmojiTab;
+window.sendStickerMsg=sendStickerMsg;
+window.uploadMySticker=uploadMySticker;
+window.onStickerFileSelected=onStickerFileSelected;
+window.renderSubStickers=renderSubStickers;
+window.adminToggleStickerPublic=adminToggleStickerPublic;
+window.adminDeleteSticker=adminDeleteSticker;
+window.adminUploadSticker=adminUploadSticker;
 window.saveAutoReply=saveAutoReply;
 window.deleteAutoReply=deleteAutoReply;
 window.onMainCategoryClick=onMainCategoryClick;
