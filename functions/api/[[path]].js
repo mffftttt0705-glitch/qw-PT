@@ -2884,8 +2884,22 @@ async function handleAdminDeductDiamond(env, authHeader, body) {
 //  打手列表
 // ============================================================
 async function handleGetHandlers(env) {
-  const result = await queryDB(env, 'SELECT id, username FROM users WHERE role = "handler" AND status = "active"');
-  return jsonResponse(result.results || []);
+  let result;
+  try {
+    result = await queryDB(env,
+      'SELECT id, username, avatar, is_accepting, last_active FROM users WHERE role = "handler" AND status = "active"');
+  } catch (e) {
+    result = await queryDB(env, 'SELECT id, username, avatar, is_accepting FROM users WHERE role = "handler" AND status = "active"');
+  }
+  const list = (result.results || []).map(h => ({
+    id: h.id,
+    username: h.username || '未知',
+    avatar: h.avatar || '',
+    is_accepting: Number(h.is_accepting) || 0,
+    online: typeof isUserOnline === 'function' ? isUserOnline(h) : false,
+    last_active: h.last_active || ''
+  }));
+  return jsonResponse(list);
 }
 
 /** 打手排行榜：好评次数 / 完成订单 / 赚取红钻 */
