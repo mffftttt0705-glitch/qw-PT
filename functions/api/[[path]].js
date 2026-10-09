@@ -1946,6 +1946,18 @@ async function ensureExtraTables(env) {
       key TEXT PRIMARY KEY, value TEXT
     )`);
   } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS stickers (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      url TEXT,
+      type TEXT,
+      name TEXT,
+      is_public INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      created_at TEXT
+    )`);
+  } catch (e) {}
   // 订单扩展字段（兼容已有表）
   const orderCols = [
     ['category_id', 'TEXT'],
@@ -2382,6 +2394,76 @@ async function handleListBannedWarnings(env, authHeader) {
   await ensureExtraTables(env);
   const r = await queryDB(env, 'SELECT * FROM banned_word_warnings ORDER BY created_at DESC LIMIT 100');
   return jsonResponse(r.results || []);
+}
+
+// ============================================================
+//  表情包 stickers
+// ============================================================
+async function handleListStickers(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  await ensureExtraTables(env);
+  // 公共 + 自己的
+  const r = await queryDB(env,
+    `SELECT * FROM stickers WHERE status = 'active' AND (is_public = 1 OR user_id = ?) ORDER BY created_at DESC LIMIT 200`,
+    [userId]);
+  return jsonResponse(r.results || []);
+}
+
+async function handleAddSticker(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  await ensureExtraTables(env);
+  const url = String(body.url || '').trim();
+  if (!url) return errorResponse('请上传表情资源');
+  const type = (body.type === 'video') ? 'video' : 'image';
+  const name = String(body.name || '').trim().slice(0, 40);
+  // 管理员上传可设为公共；普通用户默认私有
+  let isPublic = 0;
+  if (user.role === 'admin' && (body.is_public === 1 || body.is_public === true || body.is_public === '1')) {
+    isPublic = 1;
+  }
+  const id = generateId();
+  await runDB(env,
+    'INSERT INTO stickers (id, user_id, url, type, name, is_public, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, userId, url, type, name, isPublic, 'active', new Date().toISOString()]);
+  return jsonResponse({ success: true, id, message: '表情已添加' });
+}
+
+async function handleDeleteSticker(env, authHeader, stickerId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  await ensureExtraTables(env);
+  const r = await queryDB(env, 'SELECT * FROM stickers WHERE id = ?', [stickerId]);
+  const s = r.results && r.results[0];
+  if (!s) return errorResponse('表情不存在', 404);
+  if (s.user_id !== userId && user.role !== 'admin') return errorResponse('无权删除', 403);
+  await runDB(env, 'DELETE FROM stickers WHERE id = ?', [stickerId]);
+  return jsonResponse({ success: true, message: '已删除' });
+}
+
+async function handleAdminListStickers(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const r = await queryDB(env, 'SELECT s.*, u.username FROM stickers s LEFT JOIN users u ON u.id = s.user_id ORDER BY s.created_at DESC LIMIT 300');
+  return jsonResponse(r.results || []);
+}
+
+async function handleAdminSetStickerPublic(env, authHeader, stickerId, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  const isPublic = (body.is_public === 1 || body.is_public === true || body.is_public === '1') ? 1 : 0;
+  await runDB(env, 'UPDATE stickers SET is_public = ? WHERE id = ?', [isPublic, stickerId]);
+  return jsonResponse({ success: true, message: isPublic ? '已设为公共表情' : '已取消公共' });
 }
 
 async function handleGetContacts(env, authHeader) {
@@ -3408,6 +3490,16 @@ export async function onRequest(context) {
       return await handleDeleteBannedWord(env, authHeader, path.replace('/api/ai/banned-words/', ''));
     }
     if (path === '/api/ai/banned-warnings' && method === 'GET') return await handleListBannedWarnings(env, authHeader);
+    if (path === '/api/stickers' && method === 'GET') return await handleListStickers(env, authHeader);
+    if (path === '/api/stickers' && method === 'POST') return await handleAddSticker(env, authHeader, body);
+    if (path.startsWith('/api/stickers/') && method === 'DELETE') {
+      return await handleDeleteSticker(env, authHeader, path.replace('/api/stickers/', ''));
+    }
+    if (path === '/api/admin/stickers' && method === 'GET') return await handleAdminListStickers(env, authHeader);
+    if (path.startsWith('/api/admin/stickers/') && path.endsWith('/public') && method === 'PUT') {
+      const sid = path.replace('/api/admin/stickers/', '').replace('/public', '');
+      return await handleAdminSetStickerPublic(env, authHeader, sid, body);
+    }
 
     if (path.startsWith('/api/handlers/') && path.endsWith('/reviews') && method === 'GET') {
       const hId = path.replace('/api/handlers/', '').replace('/reviews', '');
