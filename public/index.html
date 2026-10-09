@@ -265,6 +265,24 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .chat-fullscreen .chat-footer{display:flex;gap:10px;padding-top:12px;border-top:1px solid var(--border-color);flex-shrink:0;}
 .chat-fullscreen .chat-footer input{flex:1;padding:10px 16px;border-radius:30px;border:1px solid var(--border-color);background:var(--bg-input);font-size:14px;outline:none;min-height:44px;}
 .chat-fullscreen .chat-footer button{padding:10px 20px;border-radius:30px;border:none;background:#0f1419;color:#fff;font-weight:600;cursor:pointer;min-height:44px;white-space:nowrap;}
+/* 微信风格聊天输入栏 */
+.wx-chat-bar{flex-shrink:0;background:#f7f7f7;border-top:1px solid #e5e5e5;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));}
+.wx-chat-row{display:flex;align-items:center;gap:8px;}
+.wx-icon-btn{width:36px;height:36px;border:none;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:#1a1a1a;cursor:pointer;flex-shrink:0;padding:0;}
+.wx-icon-btn:active{opacity:0.6;}
+.wx-input-wrap{flex:1;min-width:0;position:relative;display:flex;align-items:center;background:#fff;border-radius:8px;border:1px solid #e5e5e5;min-height:40px;}
+.wx-text-input{flex:1;border:none;background:transparent;padding:10px 36px 10px 12px;font-size:16px;outline:none;min-width:0;color:#1a1a1a;}
+.wx-mic-in-input{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#999;font-size:18px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.wx-hold-talk{flex:1;min-height:40px;border:1px solid #e5e5e5;background:#fff;border-radius:8px;font-size:16px;font-weight:500;color:#1a1a1a;user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;}
+.wx-hold-talk:active{background:#e8e8e8;}
+.wx-send-btn{border:none;background:#07c160;color:#fff;border-radius:6px;padding:0 14px;height:36px;font-size:15px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+.wx-plus-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:16px 12px 8px;background:#f7f7f7;border-top:1px solid #eee;}
+.wx-plus-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
+.wx-plus-icon{width:56px;height:56px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,0.04);}
+.wx-plus-label{font-size:12px;color:#666;}
+.wx-emoji-panel{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:10px 8px;max-height:160px;overflow-y:auto;background:#f7f7f7;border-top:1px solid #eee;font-size:22px;}
+.wx-emoji-panel span{text-align:center;cursor:pointer;padding:4px;border-radius:6px;}
+.wx-emoji-panel span:active{background:#e5e5e5;}
 .chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--product-img-bg);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted);overflow:hidden;flex-shrink:0;cursor:pointer;}
 .chat-avatar img{width:100%;height:100%;object-fit:cover;}
 .announce-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);justify-content:center;align-items:center;z-index:100000;padding:20px;}
@@ -719,17 +737,46 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <button id="csTransferBtn" onclick="requestHumanCS()" style="display:none;background:#0f1419;color:#fff;border:none;border-radius:16px;padding:4px 10px;font-size:12px;margin-right:8px;"><i class="fas fa-headset"></i> 转人工</button>
 </div>
 <div class="chat-body" id="fullscreenChatBody"></div>
-<div class="chat-toolbar" style="display:flex;gap:12px;padding:6px 12px;border-top:1px solid var(--border-light);background:var(--bg-secondary);align-items:center;">
-  <button type="button" onclick="chatPickMedia('image')" style="background:none;border:none;font-size:20px;color:#0f1419;cursor:pointer;" title="图片"><i class="fas fa-image"></i></button>
-  <button type="button" onclick="chatPickMedia('video')" style="background:none;border:none;font-size:20px;color:#0f1419;cursor:pointer;" title="视频"><i class="fas fa-video"></i></button>
-  <input type="file" id="chatMediaInput" accept="image/*,video/*" style="display:none;" onchange="chatMediaSelected(event)" />
-</div>
-<div class="chat-footer" style="display:flex;align-items:center;gap:8px;">
-<input type="text" id="fullscreenChatInput" placeholder="输入消息..." style="flex:1;" />
-<button type="button" id="voiceHoldBtn" style="background:#eff3f4;color:#0f1419;border:none;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:600;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;"
-  onmousedown="startVoiceHold(event)" onmouseup="endVoiceHold(event)" onmouseleave="cancelVoiceHold(event)"
-  ontouchstart="startVoiceHold(event)" ontouchend="endVoiceHold(event)" ontouchcancel="cancelVoiceHold(event)">按住 说话</button>
-<button onclick="sendFullscreenMessage()" style="background:#0f1419;"><i class="fas fa-paper-plane"></i> 发送</button>
+<input type="file" id="chatMediaInput" accept="image/*,video/*,*/*" style="display:none;" onchange="chatMediaSelected(event)" />
+<!-- 微信风格输入栏 -->
+<div class="wx-chat-bar" id="wxChatBar">
+  <!-- 文字模式 -->
+  <div class="wx-chat-row" id="wxTextMode">
+    <button type="button" class="wx-icon-btn" onclick="switchChatInputMode('voice')" title="语音"><i class="fas fa-wave-square"></i></button>
+    <div class="wx-input-wrap">
+      <input type="text" id="fullscreenChatInput" class="wx-text-input" placeholder="" autocomplete="off" />
+      <button type="button" class="wx-mic-in-input" onclick="switchChatInputMode('voice')" title="语音"><i class="fas fa-microphone"></i></button>
+    </div>
+    <button type="button" class="wx-icon-btn" onclick="toggleChatEmoji()" title="表情"><i class="far fa-smile"></i></button>
+    <button type="button" class="wx-icon-btn" id="wxPlusBtn" onclick="toggleChatPlusPanel()" title="更多"><i class="fas fa-plus"></i></button>
+    <button type="button" class="wx-send-btn" id="wxSendBtn" onclick="sendFullscreenMessage()" style="display:none;">发送</button>
+  </div>
+  <!-- 语音模式：按住说话 -->
+  <div class="wx-chat-row" id="wxVoiceMode" style="display:none;">
+    <button type="button" class="wx-icon-btn" onclick="switchChatInputMode('text')" title="键盘"><i class="fas fa-keyboard"></i></button>
+    <button type="button" id="voiceHoldBtn" class="wx-hold-talk"
+      onmousedown="startVoiceHold(event)" onmouseup="endVoiceHold(event)" onmouseleave="cancelVoiceHold(event)"
+      ontouchstart="startVoiceHold(event)" ontouchend="endVoiceHold(event)" ontouchcancel="cancelVoiceHold(event)">按住 说话</button>
+    <button type="button" class="wx-icon-btn" onclick="toggleChatEmoji()" title="表情"><i class="far fa-smile"></i></button>
+    <button type="button" class="wx-icon-btn" onclick="toggleChatPlusPanel()" title="更多"><i class="fas fa-plus"></i></button>
+  </div>
+  <!-- + 号展开：图片/文件/视频 -->
+  <div class="wx-plus-panel" id="wxPlusPanel" style="display:none;">
+    <div class="wx-plus-item" onclick="chatPickMedia('image');closeChatPlusPanel();">
+      <div class="wx-plus-icon"><i class="fas fa-image"></i></div>
+      <div class="wx-plus-label">图片</div>
+    </div>
+    <div class="wx-plus-item" onclick="chatPickMedia('video');closeChatPlusPanel();">
+      <div class="wx-plus-icon"><i class="fas fa-video"></i></div>
+      <div class="wx-plus-label">视频</div>
+    </div>
+    <div class="wx-plus-item" onclick="chatPickMedia('file');closeChatPlusPanel();">
+      <div class="wx-plus-icon"><i class="fas fa-folder"></i></div>
+      <div class="wx-plus-label">文件</div>
+    </div>
+  </div>
+  <!-- 简易表情 -->
+  <div class="wx-emoji-panel" id="wxEmojiPanel" style="display:none;"></div>
 </div>
 <div id="voiceRecordingTip" style="display:none;position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;padding:20px 28px;border-radius:16px;z-index:9999;text-align:center;font-size:14px;">
   <div style="font-size:36px;margin-bottom:8px;"><i class="fas fa-microphone"></i></div>
@@ -5755,6 +5802,11 @@ function formatMsgContent(content){
     const url=content.slice(7);
     return `<audio src="${url}" controls style="max-width:200px;"></audio>`;
   }
+  if(content.startsWith('[file]')){
+    const url=content.slice(6);
+    const name=url.split('/').pop()||'文件';
+    return `<a href="${url}" target="_blank" rel="noopener" style="color:#0c7abf;text-decoration:underline;"><i class="fas fa-paperclip"></i> ${name}</a>`;
+  }
   // 打手接单申请：[order_apply]appId|orderId|title|price|handlerName
   if(content.startsWith('[order_apply]')){
     const raw=content.slice(13);
@@ -5892,12 +5944,81 @@ async function requestHumanCS(){
   }catch(err){toast(err.message,'error');}
 }
 let chatMediaType='image';
+let chatInputMode='text'; // text | voice
+
+function switchChatInputMode(mode){
+  chatInputMode=mode==='voice'?'voice':'text';
+  const textRow=document.getElementById('wxTextMode');
+  const voiceRow=document.getElementById('wxVoiceMode');
+  if(textRow)textRow.style.display=chatInputMode==='text'?'flex':'none';
+  if(voiceRow)voiceRow.style.display=chatInputMode==='voice'?'flex':'none';
+  closeChatPlusPanel();
+  closeChatEmoji();
+  if(chatInputMode==='text'){
+    setTimeout(()=>{document.getElementById('fullscreenChatInput')?.focus();},50);
+  }
+  updateWxSendBtn();
+}
+
+function toggleChatPlusPanel(){
+  const panel=document.getElementById('wxPlusPanel');
+  if(!panel)return;
+  const open=panel.style.display==='none'||!panel.style.display;
+  closeChatEmoji();
+  panel.style.display=open?'grid':'none';
+}
+
+function closeChatPlusPanel(){
+  const panel=document.getElementById('wxPlusPanel');
+  if(panel)panel.style.display='none';
+}
+
+function toggleChatEmoji(){
+  const panel=document.getElementById('wxEmojiPanel');
+  if(!panel)return;
+  closeChatPlusPanel();
+  if(panel.style.display==='none'||!panel.style.display){
+    if(!panel.dataset.ready){
+      const emojis='😀 😁 😂 🤣 😊 😍 😘 😜 🤔 😮 😢 😭 😡 👍 👎 👏 🙏 🔥 ❤️ 💔 🎉 ✨ ✅ ❌ 🙏 💪 🤝 👋 👀 💯'.split(/\s+/);
+      panel.innerHTML=emojis.map(e=>`<span onclick="insertChatEmoji('${e}')">${e}</span>`).join('');
+      panel.dataset.ready='1';
+    }
+    panel.style.display='grid';
+    switchChatInputMode('text');
+  }else{
+    panel.style.display='none';
+  }
+}
+
+function closeChatEmoji(){
+  const panel=document.getElementById('wxEmojiPanel');
+  if(panel)panel.style.display='none';
+}
+
+function insertChatEmoji(emoji){
+  const input=document.getElementById('fullscreenChatInput');
+  if(!input)return;
+  input.value=(input.value||'')+emoji;
+  updateWxSendBtn();
+  input.focus();
+}
+
+function updateWxSendBtn(){
+  const input=document.getElementById('fullscreenChatInput');
+  const sendBtn=document.getElementById('wxSendBtn');
+  const plusBtn=document.getElementById('wxPlusBtn');
+  const hasText=!!(input&&input.value.trim());
+  if(sendBtn)sendBtn.style.display=hasText?'inline-flex':'none';
+  if(plusBtn)plusBtn.style.display=hasText?'none':'inline-flex';
+}
+
 function chatPickMedia(type){
-  chatMediaType=type;
+  chatMediaType=type||'image';
   const input=document.getElementById('chatMediaInput');
   if(!input)return;
   if(type==='image')input.accept='image/*';
-  else input.accept='video/*';
+  else if(type==='video')input.accept='video/*';
+  else input.accept='*/*';
   input.value='';
   input.click();
 }
@@ -5912,7 +6033,9 @@ async function chatMediaSelected(e){
     const uploadRes=await fetch('/api/upload',{method:'POST',headers:{'Authorization':token||''},body:formData});
     const data=await uploadRes.json();
     if(!uploadRes.ok||!data.url)throw new Error(data.error||'上传失败');
-    const prefix=chatMediaType==='image'?'[image]':'[video]';
+    let prefix='[file]';
+    if(chatMediaType==='image'||(file.type||'').startsWith('image/'))prefix='[image]';
+    else if(chatMediaType==='video'||(file.type||'').startsWith('video/'))prefix='[video]';
     const content=prefix+data.url;
     if(fullscreenChatType==='order'&&fullscreenOrderId)await apiRequest('/orders/'+fullscreenOrderId+'/chat',{method:'POST',body:JSON.stringify({content})});
     else await apiRequest('/messages/send',{method:'POST',body:JSON.stringify({receiverId:fullscreenContactId,content})});
@@ -5940,7 +6063,7 @@ async function startVoiceHold(e){
   const tip=document.getElementById('voiceRecordingTip');
   const btn=document.getElementById('voiceHoldBtn');
   if(tip){tip.style.display='block';document.getElementById('voiceRecordingText').textContent='松开发送，上滑取消';}
-  if(btn){btn.textContent='松开 结束';btn.style.background='#f4212e';btn.style.color='#fff';}
+  if(btn){btn.textContent='松开 结束';btn.style.background='#e8e8e8';btn.style.color='#1a1a1a';}
   try{
     voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
     voiceRecorder=new MediaRecorder(voiceStream);
@@ -5984,7 +6107,7 @@ async function startVoiceHold(e){
   }catch(err){
     voiceHolding=false;
     if(tip)tip.style.display='none';
-    if(btn){btn.textContent='按住 说话';btn.style.background='#eff3f4';btn.style.color='#0f1419';}
+    if(btn){btn.textContent='按住 说话';btn.style.background='#fff';btn.style.color='#1a1a1a';}
     toast('无法使用麦克风，请授权后重试','error');
   }
 }
@@ -5993,7 +6116,7 @@ function endVoiceHold(e){
   const tip=document.getElementById('voiceRecordingTip');
   const btn=document.getElementById('voiceHoldBtn');
   if(tip)tip.style.display='none';
-  if(btn){btn.textContent='按住 说话';btn.style.background='#eff3f4';btn.style.color='#0f1419';}
+  if(btn){btn.textContent='按住 说话';btn.style.background='#fff';btn.style.color='#1a1a1a';}
   if(window._voiceMoveHandler){
     document.removeEventListener('touchmove',window._voiceMoveHandler);
     document.removeEventListener('mousemove',window._voiceMoveHandler);
@@ -6262,9 +6385,13 @@ async function init(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   init();
-  document.getElementById('fullscreenChatInput')?.addEventListener('keydown',function(e){
-    if(e.key==='Enter'){e.preventDefault();sendFullscreenMessage();}
-  });
+  const chatInput=document.getElementById('fullscreenChatInput');
+  if(chatInput){
+    chatInput.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){e.preventDefault();sendFullscreenMessage();}
+    });
+    chatInput.addEventListener('input',updateWxSendBtn);
+  }
 });
 
 /* ============================================================
@@ -6324,6 +6451,12 @@ window.loadContacts=loadContacts;
 window.requestHumanCS=requestHumanCS;
 window.chatPickMedia=chatPickMedia;
 window.chatMediaSelected=chatMediaSelected;
+window.switchChatInputMode=switchChatInputMode;
+window.toggleChatPlusPanel=toggleChatPlusPanel;
+window.closeChatPlusPanel=closeChatPlusPanel;
+window.toggleChatEmoji=toggleChatEmoji;
+window.insertChatEmoji=insertChatEmoji;
+window.updateWxSendBtn=updateWxSendBtn;
 window.saveAutoReply=saveAutoReply;
 window.deleteAutoReply=deleteAutoReply;
 window.onMainCategoryClick=onMainCategoryClick;
