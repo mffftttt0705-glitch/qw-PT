@@ -2397,6 +2397,44 @@ async function handleListBannedWarnings(env, authHeader) {
 }
 
 // ============================================================
+//  全站皮肤主题（管理员发布，所有人可见）
+// ============================================================
+async function handleGetGlobalTheme(env) {
+  await ensureExtraTables(env);
+  const raw = await getAiSetting(env, 'global_skin', '');
+  if (!raw) return jsonResponse({ skin: null, has_global: false });
+  try {
+    const skin = JSON.parse(raw);
+    return jsonResponse({ skin, has_global: true });
+  } catch (e) {
+    return jsonResponse({ skin: null, has_global: false });
+  }
+}
+
+async function handleSaveGlobalTheme(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('仅管理员可发布全站皮肤', 403);
+  await ensureExtraTables(env);
+  if (!body || !body.skin || typeof body.skin !== 'object') {
+    return errorResponse('请提供皮肤配置');
+  }
+  await setAiSetting(env, 'global_skin', JSON.stringify(body.skin));
+  return jsonResponse({ success: true, message: '全站皮肤已发布，所有用户可见' });
+}
+
+async function handleResetGlobalTheme(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('仅管理员可恢复全站默认', 403);
+  await ensureExtraTables(env);
+  await setAiSetting(env, 'global_skin', '');
+  return jsonResponse({ success: true, message: '已恢复全站默认皮肤' });
+}
+
+// ============================================================
 //  表情包 stickers
 // ============================================================
 async function handleListStickers(env, authHeader) {
@@ -3484,6 +3522,9 @@ export async function onRequest(context) {
     }
     if (path === '/api/ai/settings' && method === 'GET') return await handleGetAiSettings(env, authHeader);
     if (path === '/api/ai/settings' && method === 'PUT') return await handleSaveAiSettings(env, authHeader, body);
+    if (path === '/api/theme' && method === 'GET') return await handleGetGlobalTheme(env);
+    if (path === '/api/theme' && method === 'PUT') return await handleSaveGlobalTheme(env, authHeader, body);
+    if (path === '/api/theme' && method === 'DELETE') return await handleResetGlobalTheme(env, authHeader);
     if (path === '/api/ai/banned-words' && method === 'GET') return await handleListBannedWords(env, authHeader);
     if (path === '/api/ai/banned-words' && method === 'POST') return await handleAddBannedWord(env, authHeader, body);
     if (path.startsWith('/api/ai/banned-words/') && method === 'DELETE') {
