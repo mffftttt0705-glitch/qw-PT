@@ -6619,6 +6619,14 @@ document.addEventListener('DOMContentLoaded',function(){
       if(e.key==='Enter'){e.preventDefault();sendFullscreenMessage();}
     });
     chatInput.addEventListener('input',updateWxSendBtn);
+    // 点击/聚焦文字框弹出键盘时，自动收起 + 面板和表情面板
+    const collapseChatPanels=function(){
+      if(typeof closeChatPlusPanel==='function')closeChatPlusPanel();
+      if(typeof closeChatEmoji==='function')closeChatEmoji();
+    };
+    chatInput.addEventListener('focus',collapseChatPanels);
+    chatInput.addEventListener('click',collapseChatPanels);
+    chatInput.addEventListener('touchstart',collapseChatPanels,{passive:true});
   }
 });
 
