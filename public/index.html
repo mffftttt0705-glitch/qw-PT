@@ -1211,7 +1211,9 @@ function openSubPage(page){
     case 'service':renderSubService();break;
     case 'ai':renderSubAi();break;
     case 'stickers':renderSubStickers();break;
-    case 'skin':renderSubSkin();break;
+    case 'skin':
+      if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可配置皮肤主题','error');closeSubPage();return;}
+      renderSubSkin();break;
     case 'dispatcher':renderSubDispatcher();break;
     case 'categories':renderSubCategories();break;
     case 'banners':renderSubBanners();break;
@@ -2379,7 +2381,6 @@ function renderMoreFunctions(){
       {icon:'fa-headset',label:'客服系统',action:"openSubPage('service')"},
       {icon:'fa-coins',label:'充值审核',action:"openSubPage('recharges')"},
       {icon:'fa-users',label:'用户管理',action:"openSubPage('users')"},
-      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='dispatcher'){
@@ -2388,7 +2389,6 @@ function renderMoreFunctions(){
       {icon:'fa-clipboard-list',label:'派单系统',action:"openSubPage('dispatcher')"},
       {icon:'fa-box',label:'商品管理',action:"openSubPage('products')"},
       {icon:'fa-chart-bar',label:'数据统计',action:"openSubPage('orders')"},
-      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='handler'){
@@ -2396,13 +2396,11 @@ function renderMoreFunctions(){
       {icon:'fa-gamepad',label:'打手工作台',action:"openSubPage('orders')"},
       {icon:'fa-store',label:'我的店铺',action:"openSubPage('myshop')"},
       {icon:'fa-coins',label:'提现',action:"openWithdraw()"},
-      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else{
     items=[
       {icon:'fa-clipboard-list',label:'我的订单',action:"openSubPage('orders')"},
-      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }
@@ -6614,9 +6612,9 @@ async function doAuthRegister(){
 }
 
 /* ============================================================
-   皮肤主题系统（本地保存，即时生效）
+   皮肤主题系统（仅管理员配置，全站生效）
 ============================================================ */
-const SKIN_STORAGE_KEY='qw_skin_v1';
+const SKIN_STORAGE_KEY='qw_skin_v1'; // 兼容旧数据，已不再作为个人覆盖
 const DEFAULT_SKIN={
   accent:'#0f1419',
   accentText:'#ffffff',
@@ -6663,12 +6661,31 @@ const SKIN_PRESETS={
     gradientFrom:'#dcfce7', gradientTo:'#f0fdf4', gradientAngle:'140', bgImage:'', bgOverlay:'rgba(255,255,255,0.15)', btnPrimaryBg:'#059669', btnPrimaryColor:'#fff', priceColor:'#dc2626'}
 };
 
+let globalSkinCache=null; // 服务端全站皮肤
+
 function getCurrentSkin(){
-  try{
-    const raw=localStorage.getItem(SKIN_STORAGE_KEY);
-    if(raw)return Object.assign({},DEFAULT_SKIN,JSON.parse(raw));
-  }catch(e){}
+  // 全站皮肤优先（管理员发布），否则默认
+  if(globalSkinCache)return Object.assign({},DEFAULT_SKIN,globalSkinCache);
   return Object.assign({},DEFAULT_SKIN);
+}
+
+async function loadGlobalSkin(){
+  try{
+    // 清除旧版个人皮肤缓存，统一走全站
+    try{localStorage.removeItem(SKIN_STORAGE_KEY);}catch(e){}
+    const r=await apiRequest('/theme');
+    if(r&&r.has_global&&r.skin){
+      globalSkinCache=r.skin;
+      applySkin(Object.assign({},DEFAULT_SKIN,r.skin));
+      return r;
+    }
+    globalSkinCache=null;
+    applySkin(DEFAULT_SKIN);
+    return r||{has_global:false};
+  }catch(e){
+    globalSkinCache=null;
+    return {has_global:false};
+  }
 }
 
 function applySkin(skin){
@@ -6730,14 +6747,13 @@ function applySkin(skin){
 }
 
 function saveSkin(skin){
-  localStorage.setItem(SKIN_STORAGE_KEY,JSON.stringify(skin));
+  // 仅预览到当前页面，真正生效需管理员发布全站
   applySkin(skin);
 }
 
 function resetSkin(){
-  localStorage.removeItem(SKIN_STORAGE_KEY);
   applySkin(DEFAULT_SKIN);
-  toast('已恢复默认皮肤','success');
+  toast('已预览默认皮肤（需点「恢复全站默认」才会让所有人恢复）','info');
   if(document.getElementById('subSkinContent'))renderSubSkin();
 }
 
@@ -6746,9 +6762,78 @@ function applySkinPreset(key){
   if(!p)return;
   const skin=Object.assign({},DEFAULT_SKIN,p);
   delete skin.name;
-  saveSkin(skin);
-  toast('已应用：'+(p.name||key),'success');
+  applySkin(skin);
+  // 填入表单：重新渲染后会用 getCurrentSkin，这里先写进 globalSkinCache 预览
+  globalSkinCache=skin;
+  toast('已预览：'+(p.name||key)+'，请点「发布到全站」让所有人生效','info');
   renderSubSkin();
+}
+
+function buildSkinFromForm(){
+  const v=(id)=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  const vt=(id)=>{const el=document.getElementById(id+'_t');return el&&el.value.trim()?el.value.trim():v(id);};
+  const gradOn=document.getElementById('skinGradEnable')?.checked;
+  const overlayHex=vt('skinBgOverlay')||'#ffffff';
+  const alpha=Math.min(100,Math.max(0,parseInt(document.getElementById('skinOverlayAlpha')?.value||'0',10)))/100;
+  let overlay='transparent';
+  if(alpha>0&&/^#([0-9a-f]{6})$/i.test(overlayHex)){
+    const h=overlayHex.slice(1);
+    const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+    overlay=`rgba(${r},${g},${b},${alpha})`;
+  }
+  return {
+    accent:vt('skinAccent'),
+    accentText:vt('skinBtnColor'),
+    iconColor:vt('skinIconColor'),
+    iconActive:vt('skinIconActive'),
+    navActive:vt('skinNavActive'),
+    tabActiveBg:vt('skinTabBg'),
+    tabActiveColor:vt('skinTabColor'),
+    chatMeBg:vt('skinChatMeBg'),
+    chatMeColor:vt('skinChatMeColor'),
+    chatOtherBg:vt('skinChatOtherBg'),
+    chatOtherColor:vt('skinChatOtherColor'),
+    bgPrimary:vt('skinBgPrimary'),
+    bgSecondary:vt('skinBgPrimary'),
+    bgCard:vt('skinBgCard'),
+    textPrimary:vt('skinTextPrimary'),
+    textSecondary:vt('skinTextSecondary'),
+    gradientFrom:gradOn?vt('skinGradFrom'):'',
+    gradientTo:gradOn?vt('skinGradTo'):'',
+    gradientAngle:v('skinGradAngle')||'135',
+    bgImage:v('skinBgImage'),
+    bgOverlay:overlay,
+    btnPrimaryBg:vt('skinBtnBg'),
+    btnPrimaryColor:vt('skinBtnColor'),
+    priceColor:vt('skinPrice')
+  };
+}
+
+async function publishGlobalSkin(){
+  if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可发布全站皮肤','error');return;}
+  const skin=buildSkinFromForm();
+  try{
+    toast('发布中...','info');
+    await apiRequest('/theme',{method:'PUT',body:JSON.stringify({skin})});
+    globalSkinCache=skin;
+    applySkin(skin);
+    try{localStorage.removeItem(SKIN_STORAGE_KEY);}catch(e){}
+    toast('已发布到全站，所有用户可见','success');
+    renderSubSkin();
+  }catch(err){toast(err.message||'发布失败','error');}
+}
+
+async function resetGlobalSkin(){
+  if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可操作','error');return;}
+  if(!confirm('确认恢复全站默认皮肤？所有用户将看到默认样式。'))return;
+  try{
+    await apiRequest('/theme',{method:'DELETE'});
+    globalSkinCache=null;
+    applySkin(DEFAULT_SKIN);
+    try{localStorage.removeItem(SKIN_STORAGE_KEY);}catch(e){}
+    toast('已恢复全站默认皮肤','success');
+    renderSubSkin();
+  }catch(err){toast(err.message||'操作失败','error');}
 }
 
 function skinColorRow(id,label,value){
@@ -6762,16 +6847,34 @@ function skinColorRow(id,label,value){
 async function renderSubSkin(){
   const container=document.getElementById('subSkinContent');
   if(!container)return;
+  if(!currentUser||currentUser.role!=='admin'){
+    container.innerHTML='<div class="empty-state"><p>仅管理员可配置皮肤主题</p></div>';
+    return;
+  }
+  let globalInfo={has_global:false};
+  try{globalInfo=await apiRequest('/theme')||{};}catch(e){}
+  if(globalInfo.has_global&&globalInfo.skin)globalSkinCache=globalInfo.skin;
   const s=getCurrentSkin();
   const presetsHtml=Object.keys(SKIN_PRESETS).map(k=>{
     const p=SKIN_PRESETS[k];
     return `<button class="btn btn-outline btn-sm" onclick="applySkinPreset('${k}')" style="margin:0 6px 6px 0;">${p.name||k}</button>`;
   }).join('');
   container.innerHTML=`
+    <div class="admin-card" style="border:1px solid var(--accent-color,#0f1419);">
+      <div class="admin-card-title"><i class="fas fa-globe"></i> 全站皮肤（所有人可见）</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+        配置完成后请点击<strong>发布到全站</strong>，所有用户刷新后都会看到此皮肤。<br/>
+        当前状态：${globalInfo.has_global?'<span style="color:#00ba7c;font-weight:600;">已发布全站皮肤</span>':'<span style="color:#536471;">未发布（所有人使用默认样式）</span>'}
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-success btn-sm" onclick="publishGlobalSkin()"><i class="fas fa-cloud-upload-alt"></i> 发布到全站（所有人可见）</button>
+        <button class="btn btn-outline btn-sm" onclick="resetGlobalSkin()"><i class="fas fa-undo"></i> 恢复全站默认</button>
+      </div>
+    </div>
     <div class="admin-card">
-      <div class="admin-card-title"><i class="fas fa-magic"></i> 快捷主题</div>
+      <div class="admin-card-title"><i class="fas fa-magic"></i> 快捷主题（预览）</div>
       <div>${presetsHtml}</div>
-      <button class="btn btn-outline btn-sm" onclick="resetSkin()" style="margin-top:8px;"><i class="fas fa-undo"></i> 恢复默认</button>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">点快捷主题仅预览，需再点「发布到全站」才对所有人生效</p>
     </div>
     <div class="admin-card">
       <div class="admin-card-title"><i class="fas fa-comment"></i> 聊天气泡皮肤</div>
@@ -6829,9 +6932,9 @@ async function renderSubSkin(){
       </div>
       <input type="file" id="skinBgFileInput" accept="image/*" style="display:none;" onchange="onSkinBgFile(event)" />
     </div>
-    <div style="padding:12px 0 24px;display:flex;gap:10px;">
-      <button class="btn btn-success" style="flex:1;" onclick="collectAndSaveSkin()"><i class="fas fa-save"></i> 保存并应用</button>
-      <button class="btn btn-outline" onclick="resetSkin()">重置</button>
+    <div style="padding:12px 0 24px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-success" style="flex:1;min-width:120px;" onclick="publishGlobalSkin()"><i class="fas fa-cloud-upload-alt"></i> 发布到全站</button>
+      <button class="btn btn-outline" onclick="resetSkin()">重置我的</button>
     </div>`;
   // 颜色选择器与文本联动
   container.querySelectorAll('input[type="color"]').forEach(c=>{
@@ -6841,46 +6944,9 @@ async function renderSubSkin(){
 }
 
 function collectAndSaveSkin(){
-  const v=(id)=>{const el=document.getElementById(id);return el?el.value.trim():'';};
-  const vt=(id)=>{const el=document.getElementById(id+'_t');return el&&el.value.trim()?el.value.trim():v(id);};
-  const gradOn=document.getElementById('skinGradEnable')?.checked;
-  const overlayHex=vt('skinBgOverlay')||'#ffffff';
-  const alpha=Math.min(100,Math.max(0,parseInt(document.getElementById('skinOverlayAlpha')?.value||'0',10)))/100;
-  // hex to rgba
-  let overlay='transparent';
-  if(alpha>0&&/^#([0-9a-f]{6})$/i.test(overlayHex)){
-    const h=overlayHex.slice(1);
-    const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
-    overlay=`rgba(${r},${g},${b},${alpha})`;
-  }
-  const skin={
-    accent:vt('skinAccent'),
-    accentText:vt('skinBtnColor'),
-    iconColor:vt('skinIconColor'),
-    iconActive:vt('skinIconActive'),
-    navActive:vt('skinNavActive'),
-    tabActiveBg:vt('skinTabBg'),
-    tabActiveColor:vt('skinTabColor'),
-    chatMeBg:vt('skinChatMeBg'),
-    chatMeColor:vt('skinChatMeColor'),
-    chatOtherBg:vt('skinChatOtherBg'),
-    chatOtherColor:vt('skinChatOtherColor'),
-    bgPrimary:vt('skinBgPrimary'),
-    bgSecondary:vt('skinBgPrimary'),
-    bgCard:vt('skinBgCard'),
-    textPrimary:vt('skinTextPrimary'),
-    textSecondary:vt('skinTextSecondary'),
-    gradientFrom:gradOn?vt('skinGradFrom'):'',
-    gradientTo:gradOn?vt('skinGradTo'):'',
-    gradientAngle:v('skinGradAngle')||'135',
-    bgImage:v('skinBgImage'),
-    bgOverlay:overlay,
-    btnPrimaryBg:vt('skinBtnBg'),
-    btnPrimaryColor:vt('skinBtnColor'),
-    priceColor:vt('skinPrice')
-  };
-  saveSkin(skin);
-  toast('皮肤已保存并应用','success');
+  if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可配置皮肤','error');return;}
+  // 默认直接发布到全站
+  publishGlobalSkin();
 }
 
 function uploadSkinBgImage(){
@@ -6907,10 +6973,11 @@ async function onSkinBgFile(e){
    初始化
 ============================================================ */
 async function init(){
-  // 尽早应用皮肤，避免闪默认样式
+  // 尽早应用缓存/默认，随后拉取全站皮肤
   try{applySkin(getCurrentSkin());}catch(e){}
   document.getElementById('authPage').style.display='none';
   document.getElementById('mainApp').classList.remove('hidden');
+  try{await loadGlobalSkin();}catch(e){}
   // 先加载全局图标，再渲染页面，保证所有人都能看到自定义图标
   await loadAppIcons();
   renderBottomNav();
@@ -7034,6 +7101,9 @@ window.saveSkin=saveSkin;
 window.resetSkin=resetSkin;
 window.applySkinPreset=applySkinPreset;
 window.collectAndSaveSkin=collectAndSaveSkin;
+window.publishGlobalSkin=publishGlobalSkin;
+window.resetGlobalSkin=resetGlobalSkin;
+window.loadGlobalSkin=loadGlobalSkin;
 window.uploadSkinBgImage=uploadSkinBgImage;
 window.onSkinBgFile=onSkinBgFile;
 window.saveAutoReply=saveAutoReply;
