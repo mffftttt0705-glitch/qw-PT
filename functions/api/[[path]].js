@@ -2399,16 +2399,33 @@ async function handleListBannedWarnings(env, authHeader) {
 // ============================================================
 //  全站皮肤主题（管理员发布，所有人可见）
 // ============================================================
-async function handleGetGlobalTheme(env) {
-  await ensureExtraTables(env);
-  const raw = await getAiSetting(env, 'global_skin', '');
-  if (!raw) return jsonResponse({ skin: null, has_global: false });
+function parseSkinJson(raw) {
+  if (!raw) return null;
   try {
     const skin = JSON.parse(raw);
-    return jsonResponse({ skin, has_global: true });
+    return skin && typeof skin === 'object' ? skin : null;
   } catch (e) {
-    return jsonResponse({ skin: null, has_global: false });
+    return null;
   }
+}
+
+async function handleGetGlobalTheme(env, authHeader) {
+  await ensureExtraTables(env);
+  const globalSkin = parseSkinJson(await getAiSetting(env, 'global_skin', ''));
+  let personal = null;
+  const userId = verifyAndGetUserId(authHeader);
+  if (userId) {
+    personal = parseSkinJson(await getAiSetting(env, 'user_skin_' + userId, ''));
+  }
+  // 生效优先级：个人 > 全站
+  const effective = personal || globalSkin;
+  return jsonResponse({
+    skin: effective,
+    has_global: !!globalSkin,
+    has_personal: !!personal,
+    global: globalSkin,
+    personal
+  });
 }
 
 async function handleSaveGlobalTheme(env, authHeader, body) {
@@ -2432,6 +2449,66 @@ async function handleResetGlobalTheme(env, authHeader) {
   await ensureExtraTables(env);
   await setAiSetting(env, 'global_skin', '');
   return jsonResponse({ success: true, message: '已恢复全站默认皮肤' });
+}
+
+/** 管理员：保存皮肤仅自己可用 */
+async function handleSavePersonalTheme(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('仅管理员可配置皮肤', 403);
+  await ensureExtraTables(env);
+  if (!body || !body.skin || typeof body.skin !== 'object') {
+    return errorResponse('请提供皮肤配置');
+  }
+  await setAiSetting(env, 'user_skin_' + userId, JSON.stringify(body.skin));
+  return jsonResponse({ success: true, message: '已保存为仅自己可用' });
+}
+
+async function handleResetPersonalTheme(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('仅管理员可操作', 403);
+  await ensureExtraTables(env);
+  await setAiSetting(env, 'user_skin_' + userId, '');
+  return jsonResponse({ success: true, message: '已清除个人皮肤' });
+}
+
+/** 管理员：为指定用户设置皮肤 */
+async function handleGetUserTheme(env, authHeader, targetId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const personal = parseSkinJson(await getAiSetting(env, 'user_skin_' + targetId, ''));
+  return jsonResponse({ userId: targetId, has_personal: !!personal, personal });
+}
+
+async function handleSaveUserTheme(env, authHeader, targetId, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  const target = await getUserById(env, targetId);
+  if (!target) return errorResponse('用户不存在', 404);
+  await ensureExtraTables(env);
+  if (!body || !body.skin || typeof body.skin !== 'object') {
+    return errorResponse('请提供皮肤配置');
+  }
+  await setAiSetting(env, 'user_skin_' + targetId, JSON.stringify(body.skin));
+  return jsonResponse({ success: true, message: '已为该用户设置皮肤' });
+}
+
+async function handleResetUserTheme(env, authHeader, targetId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  await setAiSetting(env, 'user_skin_' + targetId, '');
+  return jsonResponse({ success: true, message: '已清除该用户个人皮肤' });
 }
 
 // ============================================================
@@ -3522,9 +3599,20 @@ export async function onRequest(context) {
     }
     if (path === '/api/ai/settings' && method === 'GET') return await handleGetAiSettings(env, authHeader);
     if (path === '/api/ai/settings' && method === 'PUT') return await handleSaveAiSettings(env, authHeader, body);
-    if (path === '/api/theme' && method === 'GET') return await handleGetGlobalTheme(env);
+    if (path === '/api/theme' && method === 'GET') return await handleGetGlobalTheme(env, authHeader);
     if (path === '/api/theme' && method === 'PUT') return await handleSaveGlobalTheme(env, authHeader, body);
     if (path === '/api/theme' && method === 'DELETE') return await handleResetGlobalTheme(env, authHeader);
+    if (path === '/api/theme/personal' && method === 'PUT') return await handleSavePersonalTheme(env, authHeader, body);
+    if (path === '/api/theme/personal' && method === 'DELETE') return await handleResetPersonalTheme(env, authHeader);
+    if (path.startsWith('/api/theme/user/') && method === 'GET') {
+      return await handleGetUserTheme(env, authHeader, path.replace('/api/theme/user/', ''));
+    }
+    if (path.startsWith('/api/theme/user/') && method === 'PUT') {
+      return await handleSaveUserTheme(env, authHeader, path.replace('/api/theme/user/', ''), body);
+    }
+    if (path.startsWith('/api/theme/user/') && method === 'DELETE') {
+      return await handleResetUserTheme(env, authHeader, path.replace('/api/theme/user/', ''));
+    }
     if (path === '/api/ai/banned-words' && method === 'GET') return await handleListBannedWords(env, authHeader);
     if (path === '/api/ai/banned-words' && method === 'POST') return await handleAddBannedWord(env, authHeader, body);
     if (path.startsWith('/api/ai/banned-words/') && method === 'DELETE') {
