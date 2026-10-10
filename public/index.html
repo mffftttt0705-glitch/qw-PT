@@ -56,7 +56,35 @@
     --post-shadow: none;
     --primary-color: #0f1419;
     --gold-color: #d4af37;
+    /* 皮肤可配置 */
+    --accent-color: #0f1419;
+    --accent-text: #ffffff;
+    --icon-color: #536471;
+    --icon-active-color: #0f1419;
+    --nav-active-color: #0f1419;
+    --tab-active-bg: #0f1419;
+    --tab-active-color: #ffffff;
+    --tab-inactive-color: #536471;
+    --chat-bubble-me-bg: #0f1419;
+    --chat-bubble-me-color: #ffffff;
+    --chat-bubble-other-bg: #eff3f4;
+    --chat-bubble-other-color: #0f1419;
+    --page-bg-image: none;
+    --page-bg-gradient: none;
+    --page-overlay: transparent;
 }
+.app-wrapper.skin-bg{
+    background-image: var(--page-bg-image), var(--page-bg-gradient);
+    background-size: cover, cover;
+    background-position: center, center;
+    background-repeat: no-repeat, no-repeat;
+}
+.app-wrapper.skin-bg::before{
+    content:'';
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background:var(--page-overlay);
+}
+.app-wrapper.skin-bg > *{position:relative;z-index:1;}
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'Segoe UI','PingFang SC',Roboto,sans-serif;}
 html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hidden;background:var(--bg-primary);color:var(--text-primary);display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent;}
 .loading-spinner{display:inline-block;width:22px;height:22px;border:2.5px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad 0.7s linear infinite;vertical-align:middle;}
@@ -71,9 +99,9 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 @keyframes slideIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text-nav);font-size:10px;cursor:pointer;padding:4px 8px;border-radius:30px;background:transparent;border:none;font-family:inherit;position:relative;min-width:44px;-webkit-tap-highlight-color:transparent;}
-.nav-item i{font-size:20px;color:var(--text-muted);}
-.nav-item.active{color:var(--text-primary);}
-.nav-item.active i{color:#0f1419;}
+.nav-item i{font-size:20px;color:var(--icon-color);}
+.nav-item.active{color:var(--nav-active-color);}
+.nav-item.active i{color:var(--icon-active-color);}
 .nav-item .badge{position:absolute;top:-2px;right:-2px;background:#f4212e;color:#fff;border-radius:50%;font-size:9px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;}
 .banner-carousel{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:12px;background:var(--product-img-bg);aspect-ratio:16 / 6;}
 .banner-carousel .banner-track{display:flex;transition:transform 0.5s ease;height:100%;}
@@ -178,7 +206,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .profile-card .profile-stats .stat-item .label{font-size:11px;color:rgba(255,255,255,0.5);}
 .order-tabs{display:flex;gap:4px;background:var(--bg-card-hover);border-radius:30px;padding:4px;margin:8px 0 12px;}
 .order-tabs .tab-btn{flex:1;padding:6px 0;border:none;border-radius:30px;background:transparent;color:var(--text-muted);font-size:12px;font-weight:500;cursor:pointer;}
-.order-tabs .tab-btn.active{background:#0f1419;color:#fff;box-shadow:none;}
+.order-tabs .tab-btn.active{background:var(--tab-active-bg);color:var(--tab-active-color);box-shadow:none;}
 .more-functions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0;}
 .more-functions .func-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border-light);cursor:pointer;min-height:60px;}
 .more-functions .func-item .icon{font-size:20px;color:#0f1419;margin-bottom:2px;}
@@ -193,9 +221,9 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .admin-form-group{margin-bottom:10px;}
 .admin-form-group label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;}
 .admin-form-control{width:100%;background:var(--bg-input);border:1px solid var(--border-color);border-radius:10px;padding:8px 12px;color:var(--text-primary);font-size:14px;outline:none;-webkit-appearance:none;appearance:none;}
-.btn-primary{background:#0f1419;border:none;color:#fff;padding:8px 20px;border-radius:9999px;font-weight:500;font-size:13px;cursor:pointer;box-shadow:none;}
+.btn-primary{background:var(--btn-primary-bg);border:none;color:var(--btn-primary-color);padding:8px 20px;border-radius:9999px;font-weight:500;font-size:13px;cursor:pointer;box-shadow:none;}
 .btn-outline{background:#ffffff;border:1px solid #cfd9de;color:#0f1419;padding:8px 20px;border-radius:9999px;font-size:13px;cursor:pointer;}
-.btn-success{background:#0f1419;color:#fff;border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
+.btn-success{background:var(--btn-primary-bg);color:var(--btn-primary-color);border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
 .btn-danger{background:#f4212e;color:#fff;border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
 .btn-warning{background:#ffd400;color:#0f1419;border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
 .btn-sm{padding:4px 14px;font-size:12px;border-radius:9999px;}
@@ -259,8 +287,8 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .chat-fullscreen .chat-header .chat-sub{font-size:12px;color:var(--text-muted);}
 .chat-fullscreen .chat-body{flex:1;overflow-y:auto;padding:12px 4px;display:flex;flex-direction:column;gap:4px;}
 .chat-fullscreen .chat-body .chat-bubble{max-width:70%;padding:10px 14px;border-radius:18px;word-break:break-word;font-size:15px;line-height:1.4;}
-.chat-fullscreen .chat-body .chat-bubble.me{background:#0f1419 !important;color:#fff !important;align-self:flex-end;border-bottom-right-radius:4px;}
-.chat-fullscreen .chat-body .chat-bubble.other{background:#eff3f4 !important;color:#0f1419 !important;align-self:flex-start;border-bottom-left-radius:4px;}
+.chat-fullscreen .chat-body .chat-bubble.me{background:var(--chat-bubble-me-bg) !important;color:var(--chat-bubble-me-color) !important;align-self:flex-end;border-bottom-right-radius:4px;}
+.chat-fullscreen .chat-body .chat-bubble.other{background:var(--chat-bubble-other-bg) !important;color:var(--chat-bubble-other-color) !important;align-self:flex-start;border-bottom-left-radius:4px;}
 .chat-fullscreen .chat-body .chat-bubble .time{font-size:10px;opacity:0.7;margin-top:4px;display:block;}
 .chat-fullscreen .chat-footer{display:flex;gap:10px;padding-top:12px;border-top:1px solid var(--border-color);flex-shrink:0;}
 .chat-fullscreen .chat-footer input{flex:1;padding:10px 16px;border-radius:30px;border:1px solid var(--border-color);background:var(--bg-input);font-size:14px;outline:none;min-height:44px;}
@@ -319,10 +347,10 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .contact-item .unread-badge{background:#f4212e;color:#fff;border-radius:50%;font-size:10px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;display:inline-block;margin-left:6px;}
 .user-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
 .user-filter button{padding:7px 16px !important;border-radius:9999px !important;border:1px solid #cfd9de !important;background:#ffffff !important;color:#0f1419 !important;font-size:13px !important;font-weight:500 !important;line-height:1 !important;min-height:34px !important;height:auto !important;cursor:pointer;transition:all 0.15s;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;}
-.user-filter button.active{background:#0f1419 !important;color:#ffffff !important;border-color:#0f1419 !important;}
+.user-filter button.active{background:var(--tab-active-bg) !important;color:var(--tab-active-color) !important;border-color:var(--tab-active-bg) !important;}
 .action-group{display:flex;gap:4px;flex-wrap:wrap;}
 .category-btn{padding:4px 14px;border-radius:20px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
-.category-btn.active{background:#0f1419;color:#fff;border-color:#0f1419;}
+.category-btn.active{background:var(--tab-active-bg);color:var(--tab-active-color);border-color:var(--tab-active-bg);}
 .category-btn img,.hall-cat-icon{width:18px;height:18px;object-fit:cover;border-radius:4px;flex-shrink:0;display:inline-block;vertical-align:middle;}
 .post-actions-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
 .post-actions-bar button{padding:6px 16px;border-radius:20px;border:none;font-weight:500;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;}
@@ -364,15 +392,15 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .up-stat-num{font-size:16px;font-weight:700;}
 .up-stat-label{font-size:11px;color:var(--text-muted);}
 .up-actions{display:flex;gap:8px;margin-bottom:16px;}
-.up-btn-msg{flex:1;padding:10px;border-radius:12px;border:none;background:#0f1419;color:#fff;font-weight:600;cursor:pointer;font-size:14px;}
+.up-btn-msg{flex:1;padding:10px;border-radius:12px;border:none;background:var(--btn-primary-bg);color:var(--btn-primary-color);font-weight:600;cursor:pointer;font-size:14px;}
 .up-tabs{display:flex;gap:8px;border-bottom:1px solid var(--border-light);margin-bottom:12px;}
 .up-tab{flex:1;padding:10px;border:none;background:transparent;color:var(--text-muted);font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px;}
 .up-tab.active{color:#0f1419;border-bottom-color:#0f1419;background:transparent !important;}
 .up-post-list{padding-bottom:20px;}
 .shop-tab-bar{display:flex;gap:8px;margin:12px 0;}
 .shop-tab-btn{flex:1;padding:8px;border-radius:10px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;}
-.shop-tab-btn.active{background:#0f1419;color:#fff;border-color:#0f1419;}
-.cat-tab-btn.active{background:#0f1419 !important;color:#fff !important;border-color:#0f1419 !important;}
+.shop-tab-btn.active{background:var(--tab-active-bg);color:var(--tab-active-color);border-color:var(--tab-active-bg);}
+.cat-tab-btn.active{background:var(--tab-active-bg) !important;color:var(--tab-active-color) !important;border-color:var(--tab-active-bg) !important;}
 .shop-main-cat-wrap{display:flex;flex-direction:column;gap:4px;}
 .shop-main-cat{display:flex;align-items:center;gap:6px;background:#f7f9f9;padding:6px 10px;border-radius:10px;cursor:pointer;border:1px solid #eff3f4;transition:all 0.15s;}
 .shop-main-cat:hover{background:#eff3f4;}
@@ -732,6 +760,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="sub-page" id="subPageService"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-headset"></i> 客服系统</span></div><div id="subServiceContent"></div></div>
 <div class="sub-page" id="subPageAi"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-robot"></i> AI智能体小Q</span></div><div id="subAiContent"></div></div>
 <div class="sub-page" id="subPageStickers"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="far fa-smile"></i> 表情包管理</span></div><div id="subStickersContent"></div></div>
+<div class="sub-page" id="subPageSkin"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-magic"></i> 皮肤主题</span></div><div id="subSkinContent"></div></div>
 <div class="sub-page" id="subPageDispatcher"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-paper-plane"></i> 派单系统</span></div><div id="subDispatcherContent"></div></div>
 <div class="sub-page" id="subPageCategories"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-tags"></i> 分类管理</span></div><div id="subCategoriesContent"></div></div>
 <div class="sub-page" id="subPageBanners"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-image"></i> 广告管理</span></div><div id="subBannersContent"></div></div>
@@ -1162,7 +1191,7 @@ function openSubPage(page){
   const pageMap={
     'orders':'subPageOrders','products':'subPageProducts','users':'subPageUsers',
     'recharges':'subPageRecharges','shops':'subPageShops','announce':'subPageAnnounce',
-    'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService','ai':'subPageAi','stickers':'subPageStickers',
+    'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService','ai':'subPageAi','stickers':'subPageStickers','skin':'subPageSkin',
     'dispatcher':'subPageDispatcher','categories':'subPageCategories',
     'banners':'subPageBanners','icons':'subPageIcons','myshop':'subPageMyShop','hall':'subPageHall','gifts':'subPageGifts'
   };
@@ -1182,6 +1211,7 @@ function openSubPage(page){
     case 'service':renderSubService();break;
     case 'ai':renderSubAi();break;
     case 'stickers':renderSubStickers();break;
+    case 'skin':renderSubSkin();break;
     case 'dispatcher':renderSubDispatcher();break;
     case 'categories':renderSubCategories();break;
     case 'banners':renderSubBanners();break;
@@ -2340,6 +2370,7 @@ function renderMoreFunctions(){
       {icon:'fa-robot',label:'AI智能体小Q',action:"openSubPage('ai')"},
       {icon:'fa-smile',label:'表情包管理',action:"openSubPage('stickers')"},
       {icon:'fa-paper-plane',label:'发布订单',action:"openSubPage('dispatcher')"},
+      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='service'){
@@ -2348,6 +2379,7 @@ function renderMoreFunctions(){
       {icon:'fa-headset',label:'客服系统',action:"openSubPage('service')"},
       {icon:'fa-coins',label:'充值审核',action:"openSubPage('recharges')"},
       {icon:'fa-users',label:'用户管理',action:"openSubPage('users')"},
+      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='dispatcher'){
@@ -2356,6 +2388,7 @@ function renderMoreFunctions(){
       {icon:'fa-clipboard-list',label:'派单系统',action:"openSubPage('dispatcher')"},
       {icon:'fa-box',label:'商品管理',action:"openSubPage('products')"},
       {icon:'fa-chart-bar',label:'数据统计',action:"openSubPage('orders')"},
+      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='handler'){
@@ -2363,11 +2396,13 @@ function renderMoreFunctions(){
       {icon:'fa-gamepad',label:'打手工作台',action:"openSubPage('orders')"},
       {icon:'fa-store',label:'我的店铺',action:"openSubPage('myshop')"},
       {icon:'fa-coins',label:'提现',action:"openWithdraw()"},
+      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else{
     items=[
       {icon:'fa-clipboard-list',label:'我的订单',action:"openSubPage('orders')"},
+      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }
@@ -6579,9 +6614,301 @@ async function doAuthRegister(){
 }
 
 /* ============================================================
+   皮肤主题系统（本地保存，即时生效）
+============================================================ */
+const SKIN_STORAGE_KEY='qw_skin_v1';
+const DEFAULT_SKIN={
+  accent:'#0f1419',
+  accentText:'#ffffff',
+  iconColor:'#536471',
+  iconActive:'#0f1419',
+  navActive:'#0f1419',
+  tabActiveBg:'#0f1419',
+  tabActiveColor:'#ffffff',
+  chatMeBg:'#0f1419',
+  chatMeColor:'#ffffff',
+  chatOtherBg:'#eff3f4',
+  chatOtherColor:'#0f1419',
+  bgPrimary:'#ffffff',
+  bgSecondary:'#ffffff',
+  bgCard:'#ffffff',
+  textPrimary:'#0f1419',
+  textSecondary:'#536471',
+  gradientFrom:'',
+  gradientTo:'',
+  gradientAngle:'135',
+  bgImage:'',
+  bgOverlay:'rgba(255,255,255,0.0)',
+  btnPrimaryBg:'#0f1419',
+  btnPrimaryColor:'#ffffff',
+  priceColor:'#f4212e'
+};
+const SKIN_PRESETS={
+  default:{name:'默认白', ...DEFAULT_SKIN},
+  dark:{name:'暗黑', accent:'#1d9bf0', accentText:'#fff', iconColor:'#8b98a5', iconActive:'#1d9bf0', navActive:'#e7e9ea',
+    tabActiveBg:'#1d9bf0', tabActiveColor:'#fff', chatMeBg:'#1d9bf0', chatMeColor:'#fff', chatOtherBg:'#2f3336', chatOtherColor:'#e7e9ea',
+    bgPrimary:'#000000', bgSecondary:'#000000', bgCard:'#16181c', textPrimary:'#e7e9ea', textSecondary:'#8b98a5',
+    gradientFrom:'', gradientTo:'', bgImage:'', bgOverlay:'rgba(0,0,0,0)', btnPrimaryBg:'#1d9bf0', btnPrimaryColor:'#fff', priceColor:'#f4212e'},
+  pink:{name:'樱花粉', accent:'#ff6b9d', accentText:'#fff', iconColor:'#c45c7a', iconActive:'#ff6b9d', navActive:'#ff6b9d',
+    tabActiveBg:'#ff6b9d', tabActiveColor:'#fff', chatMeBg:'#ff6b9d', chatMeColor:'#fff', chatOtherBg:'#ffe4ec', chatOtherColor:'#5a1a30',
+    bgPrimary:'#fff5f8', bgSecondary:'#fff5f8', bgCard:'#ffffff', textPrimary:'#3d1f2b', textSecondary:'#8a5a6c',
+    gradientFrom:'#fff0f5', gradientTo:'#ffe4ec', gradientAngle:'160', bgImage:'', bgOverlay:'rgba(255,255,255,0.15)', btnPrimaryBg:'#ff6b9d', btnPrimaryColor:'#fff', priceColor:'#e91e63'},
+  blue:{name:'清新蓝', accent:'#2563eb', accentText:'#fff', iconColor:'#64748b', iconActive:'#2563eb', navActive:'#2563eb',
+    tabActiveBg:'#2563eb', tabActiveColor:'#fff', chatMeBg:'#2563eb', chatMeColor:'#fff', chatOtherBg:'#e0e7ff', chatOtherColor:'#1e3a5f',
+    bgPrimary:'#f0f7ff', bgSecondary:'#f0f7ff', bgCard:'#ffffff', textPrimary:'#0f172a', textSecondary:'#64748b',
+    gradientFrom:'#dbeafe', gradientTo:'#eff6ff', gradientAngle:'150', bgImage:'', bgOverlay:'rgba(255,255,255,0.2)', btnPrimaryBg:'#2563eb', btnPrimaryColor:'#fff', priceColor:'#dc2626'},
+  green:{name:'护眼绿', accent:'#059669', accentText:'#fff', iconColor:'#6b7280', iconActive:'#059669', navActive:'#059669',
+    tabActiveBg:'#059669', tabActiveColor:'#fff', chatMeBg:'#059669', chatMeColor:'#fff', chatOtherBg:'#d1fae5', chatOtherColor:'#064e3b',
+    bgPrimary:'#f0fdf4', bgSecondary:'#f0fdf4', bgCard:'#ffffff', textPrimary:'#14532d', textSecondary:'#4b5563',
+    gradientFrom:'#dcfce7', gradientTo:'#f0fdf4', gradientAngle:'140', bgImage:'', bgOverlay:'rgba(255,255,255,0.15)', btnPrimaryBg:'#059669', btnPrimaryColor:'#fff', priceColor:'#dc2626'}
+};
+
+function getCurrentSkin(){
+  try{
+    const raw=localStorage.getItem(SKIN_STORAGE_KEY);
+    if(raw)return Object.assign({},DEFAULT_SKIN,JSON.parse(raw));
+  }catch(e){}
+  return Object.assign({},DEFAULT_SKIN);
+}
+
+function applySkin(skin){
+  skin=Object.assign({},DEFAULT_SKIN,skin||{});
+  const root=document.documentElement;
+  const set=(k,v)=>{if(v!=null&&v!=='')root.style.setProperty(k,v);else root.style.removeProperty(k);};
+  set('--accent-color',skin.accent);
+  set('--accent-text',skin.accentText);
+  set('--icon-color',skin.iconColor);
+  set('--icon-active-color',skin.iconActive);
+  set('--nav-active-color',skin.navActive);
+  set('--tab-active-bg',skin.tabActiveBg);
+  set('--tab-active-color',skin.tabActiveColor);
+  set('--chat-bubble-me-bg',skin.chatMeBg);
+  set('--chat-bubble-me-color',skin.chatMeColor);
+  set('--chat-bubble-other-bg',skin.chatOtherBg);
+  set('--chat-bubble-other-color',skin.chatOtherColor);
+  set('--bg-primary',skin.bgPrimary);
+  set('--bg-secondary',skin.bgSecondary);
+  set('--bg-card',skin.bgCard);
+  set('--text-primary',skin.textPrimary);
+  set('--text-secondary',skin.textSecondary);
+  set('--text-muted',skin.textSecondary);
+  set('--text-nav',skin.iconColor);
+  set('--btn-primary-bg',skin.btnPrimaryBg||skin.accent);
+  set('--btn-primary-color',skin.btnPrimaryColor||skin.accentText);
+  set('--price-color',skin.priceColor);
+  set('--primary-color',skin.accent);
+  set('--admin-card-title',skin.textPrimary);
+  set('--product-title',skin.textPrimary);
+  set('--product-desc',skin.textSecondary);
+
+  // 渐变 / 背景图
+  let gradient='none';
+  if(skin.gradientFrom&&skin.gradientTo){
+    gradient=`linear-gradient(${skin.gradientAngle||135}deg, ${skin.gradientFrom}, ${skin.gradientTo})`;
+  }
+  const bgImage=skin.bgImage?`url("${skin.bgImage}")`:'none';
+  set('--page-bg-gradient',gradient);
+  set('--page-bg-image',bgImage);
+  set('--page-overlay',skin.bgOverlay||'transparent');
+
+  const wrap=document.querySelector('.app-wrapper');
+  if(wrap){
+    if((skin.bgImage&&skin.bgImage.trim())||(skin.gradientFrom&&skin.gradientTo)){
+      wrap.classList.add('skin-bg');
+      if(skin.bgImage)wrap.style.backgroundColor='transparent';
+      else if(skin.gradientFrom)wrap.style.backgroundColor=skin.gradientFrom;
+    }else{
+      wrap.classList.remove('skin-bg');
+      wrap.style.backgroundColor='';
+    }
+  }
+  // 同步消息页 tab 等内联 active 样式
+  document.querySelectorAll('.msg-tab-btn.active').forEach(el=>{
+    el.style.background=skin.tabActiveBg;
+    el.style.color=skin.tabActiveColor;
+  });
+}
+
+function saveSkin(skin){
+  localStorage.setItem(SKIN_STORAGE_KEY,JSON.stringify(skin));
+  applySkin(skin);
+}
+
+function resetSkin(){
+  localStorage.removeItem(SKIN_STORAGE_KEY);
+  applySkin(DEFAULT_SKIN);
+  toast('已恢复默认皮肤','success');
+  if(document.getElementById('subSkinContent'))renderSubSkin();
+}
+
+function applySkinPreset(key){
+  const p=SKIN_PRESETS[key];
+  if(!p)return;
+  const skin=Object.assign({},DEFAULT_SKIN,p);
+  delete skin.name;
+  saveSkin(skin);
+  toast('已应用：'+(p.name||key),'success');
+  renderSubSkin();
+}
+
+function skinColorRow(id,label,value){
+  return `<div class="admin-form-group" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <label style="flex:1;margin:0;font-size:13px;">${label}</label>
+    <input type="color" id="${id}" value="${value||'#000000'}" style="width:42px;height:32px;border:none;background:none;cursor:pointer;" />
+    <input type="text" id="${id}_t" value="${value||''}" class="admin-form-control" style="width:90px;padding:4px 8px;font-size:12px;" />
+  </div>`;
+}
+
+async function renderSubSkin(){
+  const container=document.getElementById('subSkinContent');
+  if(!container)return;
+  const s=getCurrentSkin();
+  const presetsHtml=Object.keys(SKIN_PRESETS).map(k=>{
+    const p=SKIN_PRESETS[k];
+    return `<button class="btn btn-outline btn-sm" onclick="applySkinPreset('${k}')" style="margin:0 6px 6px 0;">${p.name||k}</button>`;
+  }).join('');
+  container.innerHTML=`
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-magic"></i> 快捷主题</div>
+      <div>${presetsHtml}</div>
+      <button class="btn btn-outline btn-sm" onclick="resetSkin()" style="margin-top:8px;"><i class="fas fa-undo"></i> 恢复默认</button>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-comment"></i> 聊天气泡皮肤</div>
+      ${skinColorRow('skinChatMeBg','我的气泡背景',s.chatMeBg)}
+      ${skinColorRow('skinChatMeColor','我的气泡文字',s.chatMeColor)}
+      ${skinColorRow('skinChatOtherBg','对方气泡背景',s.chatOtherBg)}
+      ${skinColorRow('skinChatOtherColor','对方气泡文字',s.chatOtherColor)}
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-icons"></i> 图标 / 导航颜色</div>
+      ${skinColorRow('skinIconColor','图标默认色',s.iconColor)}
+      ${skinColorRow('skinIconActive','图标选中色',s.iconActive)}
+      ${skinColorRow('skinNavActive','导航文字选中',s.navActive)}
+      ${skinColorRow('skinAccent','主题强调色',s.accent)}
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-toggle-on"></i> 分类 / 切换按钮</div>
+      ${skinColorRow('skinTabBg','选中背景',s.tabActiveBg)}
+      ${skinColorRow('skinTabColor','选中文字',s.tabActiveColor)}
+      ${skinColorRow('skinBtnBg','主按钮背景',s.btnPrimaryBg)}
+      ${skinColorRow('skinBtnColor','主按钮文字',s.btnPrimaryColor)}
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-fill-drip"></i> 页面颜色</div>
+      ${skinColorRow('skinBgPrimary','页面底色',s.bgPrimary)}
+      ${skinColorRow('skinBgCard','卡片底色',s.bgCard)}
+      ${skinColorRow('skinTextPrimary','主文字',s.textPrimary)}
+      ${skinColorRow('skinTextSecondary','次文字',s.textSecondary)}
+      ${skinColorRow('skinPrice','价格色',s.priceColor)}
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-layer-group"></i> 背景渐变</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">设置起止颜色后生效；可与背景图叠加</p>
+      ${skinColorRow('skinGradFrom','渐变起点',s.gradientFrom||'#ffffff')}
+      ${skinColorRow('skinGradTo','渐变终点',s.gradientTo||'#f0f0f0')}
+      <div class="admin-form-group"><label>渐变角度 (0-360)</label>
+        <input class="admin-form-control" id="skinGradAngle" type="number" min="0" max="360" value="${s.gradientAngle||135}" />
+      </div>
+      <label style="font-size:12px;display:flex;align-items:center;gap:6px;margin-top:6px;">
+        <input type="checkbox" id="skinGradEnable" ${s.gradientFrom&&s.gradientTo?'checked':''}/> 启用渐变背景
+      </label>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-image"></i> 自定义背景图</div>
+      <div class="admin-form-group"><label>图片 URL</label>
+        <input class="admin-form-control" id="skinBgImage" value="${s.bgImage||''}" placeholder="https://... 或上传后自动填入" />
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-outline btn-sm" onclick="uploadSkinBgImage()"><i class="fas fa-upload"></i> 上传背景图</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('skinBgImage').value='';">清除图片</button>
+      </div>
+      ${skinColorRow('skinBgOverlay','背景遮罩(半透明白/黑)',s.bgOverlay&&s.bgOverlay.startsWith('#')?s.bgOverlay:'#ffffff')}
+      <div class="admin-form-group"><label>遮罩透明度 0-100</label>
+        <input class="admin-form-control" id="skinOverlayAlpha" type="number" min="0" max="100" value="${(()=>{const m=(s.bgOverlay||'').match(/[\d.]+(?=\))/);return m?Math.round(parseFloat(m[0])*100):0;})()}" />
+      </div>
+      <input type="file" id="skinBgFileInput" accept="image/*" style="display:none;" onchange="onSkinBgFile(event)" />
+    </div>
+    <div style="padding:12px 0 24px;display:flex;gap:10px;">
+      <button class="btn btn-success" style="flex:1;" onclick="collectAndSaveSkin()"><i class="fas fa-save"></i> 保存并应用</button>
+      <button class="btn btn-outline" onclick="resetSkin()">重置</button>
+    </div>`;
+  // 颜色选择器与文本联动
+  container.querySelectorAll('input[type="color"]').forEach(c=>{
+    const t=document.getElementById(c.id+'_t');
+    if(t){c.addEventListener('input',()=>{t.value=c.value;});t.addEventListener('change',()=>{if(/^#/.test(t.value))c.value=t.value;});}
+  });
+}
+
+function collectAndSaveSkin(){
+  const v=(id)=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  const vt=(id)=>{const el=document.getElementById(id+'_t');return el&&el.value.trim()?el.value.trim():v(id);};
+  const gradOn=document.getElementById('skinGradEnable')?.checked;
+  const overlayHex=vt('skinBgOverlay')||'#ffffff';
+  const alpha=Math.min(100,Math.max(0,parseInt(document.getElementById('skinOverlayAlpha')?.value||'0',10)))/100;
+  // hex to rgba
+  let overlay='transparent';
+  if(alpha>0&&/^#([0-9a-f]{6})$/i.test(overlayHex)){
+    const h=overlayHex.slice(1);
+    const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+    overlay=`rgba(${r},${g},${b},${alpha})`;
+  }
+  const skin={
+    accent:vt('skinAccent'),
+    accentText:vt('skinBtnColor'),
+    iconColor:vt('skinIconColor'),
+    iconActive:vt('skinIconActive'),
+    navActive:vt('skinNavActive'),
+    tabActiveBg:vt('skinTabBg'),
+    tabActiveColor:vt('skinTabColor'),
+    chatMeBg:vt('skinChatMeBg'),
+    chatMeColor:vt('skinChatMeColor'),
+    chatOtherBg:vt('skinChatOtherBg'),
+    chatOtherColor:vt('skinChatOtherColor'),
+    bgPrimary:vt('skinBgPrimary'),
+    bgSecondary:vt('skinBgPrimary'),
+    bgCard:vt('skinBgCard'),
+    textPrimary:vt('skinTextPrimary'),
+    textSecondary:vt('skinTextSecondary'),
+    gradientFrom:gradOn?vt('skinGradFrom'):'',
+    gradientTo:gradOn?vt('skinGradTo'):'',
+    gradientAngle:v('skinGradAngle')||'135',
+    bgImage:v('skinBgImage'),
+    bgOverlay:overlay,
+    btnPrimaryBg:vt('skinBtnBg'),
+    btnPrimaryColor:vt('skinBtnColor'),
+    priceColor:vt('skinPrice')
+  };
+  saveSkin(skin);
+  toast('皮肤已保存并应用','success');
+}
+
+function uploadSkinBgImage(){
+  document.getElementById('skinBgFileInput')?.click();
+}
+async function onSkinBgFile(e){
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  if(!token){toast('请先登录','warning');return;}
+  try{
+    toast('上传中...','info');
+    const formData=new FormData();
+    formData.append('file',file);
+    const uploadRes=await fetch('/api/upload',{method:'POST',headers:{'Authorization':token||''},body:formData});
+    const data=await uploadRes.json();
+    if(!uploadRes.ok||!data.url)throw new Error(data.error||'上传失败');
+    const input=document.getElementById('skinBgImage');
+    if(input)input.value=data.url;
+    toast('背景图已上传，请点保存','success');
+  }catch(err){toast(err.message||'上传失败','error');}
+}
+
+/* ============================================================
    初始化
 ============================================================ */
 async function init(){
+  // 尽早应用皮肤，避免闪默认样式
+  try{applySkin(getCurrentSkin());}catch(e){}
   document.getElementById('authPage').style.display='none';
   document.getElementById('mainApp').classList.remove('hidden');
   // 先加载全局图标，再渲染页面，保证所有人都能看到自定义图标
@@ -6701,6 +7028,14 @@ window.renderSubStickers=renderSubStickers;
 window.adminToggleStickerPublic=adminToggleStickerPublic;
 window.adminDeleteSticker=adminDeleteSticker;
 window.adminUploadSticker=adminUploadSticker;
+window.renderSubSkin=renderSubSkin;
+window.applySkin=applySkin;
+window.saveSkin=saveSkin;
+window.resetSkin=resetSkin;
+window.applySkinPreset=applySkinPreset;
+window.collectAndSaveSkin=collectAndSaveSkin;
+window.uploadSkinBgImage=uploadSkinBgImage;
+window.onSkinBgFile=onSkinBgFile;
 window.saveAutoReply=saveAutoReply;
 window.deleteAutoReply=deleteAutoReply;
 window.onMainCategoryClick=onMainCategoryClick;
