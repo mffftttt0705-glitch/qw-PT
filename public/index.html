@@ -793,12 +793,11 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
         <path d="M26 12.5c7.2 4.8 7.2 18.2 0 23" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
       </svg>
     </button>
-    <div class="wx-input-wrap" onclick="focusChatTextInput(event)">
+    <div class="wx-input-wrap">
       <input type="text" id="fullscreenChatInput" class="wx-text-input" placeholder=""
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        inputmode="text" enterkeyhint="send" name="qw_chat_message_field" data-lpignore="true" data-form-type="other"
-        onfocus="focusChatTextInput(event)" onclick="focusChatTextInput(event)" />
-      <button type="button" class="wx-mic-in-input" onclick="event.stopPropagation();switchChatInputMode('voice')" title="语音"><i class="fas fa-microphone"></i></button>
+        inputmode="text" enterkeyhint="send" name="qw_chat_message_field" data-lpignore="true" data-form-type="other" />
+      <button type="button" class="wx-mic-in-input" onclick="event.preventDefault();event.stopPropagation();switchChatInputMode('voice')" title="语音"><i class="fas fa-microphone"></i></button>
     </div>
     <button type="button" class="wx-icon-btn" onclick="toggleChatEmoji()" title="表情"><i class="far fa-smile"></i></button>
     <button type="button" class="wx-icon-btn" id="wxPlusBtn" onclick="toggleChatPlusPanel()" title="更多"><i class="fas fa-plus"></i></button>
@@ -6139,10 +6138,10 @@ function toggleChatPlusPanel(){
   const open=panel.style.display==='none'||!panel.style.display;
   closeChatEmoji();
   if(open){
-    // 打开 + 面板时收起系统键盘
-    const input=document.getElementById('fullscreenChatInput');
-    if(input)input.blur();
     panel.style.display='grid';
+    // 打开面板后再 blur，避免和输入框 focus 抢焦点
+    const input=document.getElementById('fullscreenChatInput');
+    if(input&&document.activeElement===input)input.blur();
   }else{
     panel.style.display='none';
   }
@@ -6163,17 +6162,20 @@ function toggleChatEmoji(){
   closeChatPlusPanel();
   const isOpen=panel.style.display==='flex'||panel.classList.contains('open');
   if(!isOpen){
-    // 保证在文字模式；打开表情时收起系统键盘
+    // 保证在文字模式
     chatInputMode='text';
     const textRow=document.getElementById('wxTextMode');
     const voiceRow=document.getElementById('wxVoiceMode');
     if(textRow)textRow.style.display='flex';
     if(voiceRow)voiceRow.style.display='none';
-    const input=document.getElementById('fullscreenChatInput');
-    if(input)input.blur();
     panel.style.display='flex';
     panel.classList.add('open');
     switchEmojiTab(currentEmojiTab||'emoji');
+    // 打开表情后再收起键盘（不要在 focus 流程里 blur）
+    const input=document.getElementById('fullscreenChatInput');
+    if(input&&document.activeElement===input){
+      setTimeout(function(){try{input.blur();}catch(err){}},0);
+    }
   }else{
     panel.style.display='none';
     panel.classList.remove('open');
@@ -6188,20 +6190,15 @@ function closeChatEmoji(){
   }
 }
 
-/** 点击文字输入框：收起表情/+ 面板，并确保弹出键盘 */
+/** 输入框获得焦点时：只收起表情/+，不要再次 focus（否则手机键盘会弹一下又收起） */
 function focusChatTextInput(e){
-  if(e){
-    // 避免点到输入框内麦克风按钮时误处理
-    if(e.target&&e.target.closest&&e.target.closest('.wx-mic-in-input'))return;
-  }
-  closeChatPlusPanel();
-  closeChatEmoji();
-  const input=document.getElementById('fullscreenChatInput');
-  if(!input)return;
-  // 先收起面板再聚焦，保证移动端键盘能弹出
-  setTimeout(function(){
-    try{input.focus();}catch(err){}
-  },30);
+  if(e&&e.target&&e.target.closest&&e.target.closest('.wx-mic-in-input'))return;
+  const plus=document.getElementById('wxPlusPanel');
+  const emoji=document.getElementById('wxEmojiPanel');
+  const plusOpen=plus&&plus.style.display!=='none'&&getComputedStyle(plus).display!=='none';
+  const emojiOpen=emoji&&(emoji.classList.contains('open')||(emoji.style.display==='flex'));
+  if(plusOpen)closeChatPlusPanel();
+  if(emojiOpen)closeChatEmoji();
 }
 
 function switchEmojiTab(tab){
@@ -7147,10 +7144,10 @@ document.addEventListener('DOMContentLoaded',function(){
       if(e.key==='Enter'){e.preventDefault();sendFullscreenMessage();}
     });
     chatInput.addEventListener('input',updateWxSendBtn);
-    // 点击/聚焦/触摸文字框：收起表情与 + 面板，弹出键盘
-    chatInput.addEventListener('focus',function(e){focusChatTextInput(e);});
-    chatInput.addEventListener('click',function(e){focusChatTextInput(e);});
-    chatInput.addEventListener('touchstart',function(e){focusChatTextInput(e);},{passive:true});
+    // 只在真正获得焦点时收起面板，不要在 touchstart 里干预，否则键盘会弹起又收起
+    chatInput.addEventListener('focus',function(){
+      focusChatTextInput();
+    });
   }
 });
 
