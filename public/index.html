@@ -87,7 +87,7 @@
 .app-wrapper.skin-bg > *{position:relative;z-index:1;}
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'Segoe UI','PingFang SC',Roboto,sans-serif;}
 html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hidden;background:var(--bg-primary);color:var(--text-primary);display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent;}
-.loading-spinner{display:inline-block;width:22px;height:22px;border:2.5px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad 0.7s linear infinite;vertical-align:middle;}
+.loading-spinner{display:inline-block;width:22px;height:22px;border:2.5px solid #eff3f4;border-top-color:var(--accent-color,#0f1419);border-radius:50%;animation:spinLoad 0.7s linear infinite;vertical-align:middle;}
 @keyframes spinLoad{to{transform:rotate(360deg);}}
 .loading-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 12px;color:#536471;font-size:13px;}
 .chat-send-pending{opacity:0.55;}
@@ -128,7 +128,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .product-card:active{transform:scale(0.97);}
 .product-card .product-img{width:100%;aspect-ratio:1 / 1;background:var(--product-img-bg);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--product-img-icon);overflow:hidden;position:relative;}
 .product-card .product-img img{width:100%;height:100%;object-fit:cover;}
-.product-card .product-img .tag{position:absolute;top:6px;left:6px;background:#0f1419;color:#ffffff;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;}
+.product-card .product-img .tag{position:absolute;top:6px;left:6px;background:var(--accent-color,#0f1419);color:var(--accent-text,#fff);padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;}
 .product-card .product-body{flex:1;padding:8px 10px;display:flex;flex-direction:column;justify-content:space-between;min-height:70px;}
 .product-card .product-title{font-size:13px;font-weight:600;color:var(--product-title);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px;}
 .product-card .product-desc{font-size:11px;color:var(--product-desc);margin-top:2px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;min-height:16px;}
@@ -140,7 +140,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .category-horizontal-scroll::-webkit-scrollbar{display:none;}
 .category-card-h{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border-light);cursor:pointer;transition:all 0.15s;box-shadow:0 2px 8px rgba(0,0,0,0.04);flex-shrink:0;min-width:110px;}
 .category-card-h:active{transform:scale(0.96);}
-.category-card-h.active{border-color:#0f1419;box-shadow:none;background:#f7f9f9;}
+.category-card-h.active{border-color:var(--accent-color,#0f1419);box-shadow:none;background:var(--bg-card-hover,#f7f9f9);}
 .category-card-h .cat-icon-h{width:32px;height:32px;border-radius:8px;background:var(--product-img-bg);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;flex-shrink:0;}
 .category-card-h .cat-icon-h img{width:100%;height:100%;object-fit:cover;}
 .category-card-h .cat-name-h{font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;}
@@ -164,7 +164,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .product-detail-modal .pd-body .pd-desc{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;}
 .product-detail-modal .pd-body .pd-stock{font-size:13px;color:var(--text-muted);margin-bottom:16px;}
 .product-detail-modal .pd-footer{padding-top:12px;border-top:1px solid var(--border-color);flex-shrink:0;}
-.product-detail-modal .pd-footer .btn-block{width:100%;padding:12px;border-radius:30px;border:none;background:#0f1419;color:#fff;font-weight:600;font-size:16px;cursor:pointer;}
+.product-detail-modal .pd-footer .btn-block{width:100%;padding:12px;border-radius:30px;border:none;background:var(--btn-primary-bg,#0f1419);color:var(--btn-primary-color,#fff);font-weight:600;font-size:16px;cursor:pointer;}
 .post-card{background:var(--post-bg);border-radius:12px;border:1px solid var(--post-border);box-shadow:var(--post-shadow);padding:14px;margin-bottom:12px;}
 .post-card .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .post-card .post-avatar{width:40px;height:40px;border-radius:50%;background:var(--product-img-bg);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-muted);overflow:hidden;flex-shrink:0;}
@@ -190,8 +190,8 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .post-card .post-comments .comment-body .time{font-size:10px;color:var(--text-muted);margin-left:6px;}
 .post-card .post-comment-input{display:flex;gap:8px;margin-top:8px;}
 .post-card .post-comment-input input{flex:1;padding:6px 12px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-input);font-size:13px;outline:none;}
-.post-card .post-comment-input button{padding:6px 16px;border-radius:20px;border:none;background:#0f1419;color:#fff;font-weight:500;cursor:pointer;font-size:13px;}
-.profile-card{background:#0f1419;border-radius:16px;padding:20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden;}
+.post-card .post-comment-input button{padding:6px 16px;border-radius:20px;border:none;background:var(--btn-primary-bg,#0f1419);color:var(--btn-primary-color,#fff);font-weight:500;cursor:pointer;font-size:13px;}
+.profile-card{background:var(--profile-card-bg,var(--accent-color,#0f1419));border-radius:16px;padding:20px;color:var(--profile-card-color,#fff);margin-bottom:12px;position:relative;overflow:hidden;}
 .profile-card .profile-top{display:flex;align-items:center;gap:14px;}
 .profile-card .profile-avatar{width:56px;height:56px;border-radius:50%;background:#cfd9de;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#0f1419;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,0.3);position:relative;}
 .profile-card .profile-avatar img{width:100%;height:100%;object-fit:cover;}
@@ -209,11 +209,11 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .order-tabs .tab-btn.active{background:var(--tab-active-bg);color:var(--tab-active-color);box-shadow:none;}
 .more-functions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0;}
 .more-functions .func-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border-light);cursor:pointer;min-height:60px;}
-.more-functions .func-item .icon{font-size:20px;color:#0f1419;margin-bottom:2px;}
+.more-functions .func-item .icon{font-size:20px;color:var(--icon-active-color,var(--accent-color,#0f1419));margin-bottom:2px;}
 .more-functions .func-item .label{font-size:10px;color:var(--text-secondary);text-align:center;font-weight:500;}
 .menu-list .menu-item{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--border-light);cursor:pointer;}
 .menu-list .menu-item .left{display:flex;align-items:center;gap:12px;}
-.menu-list .menu-item .left .icon{font-size:16px;color:#0f1419;width:24px;text-align:center;}
+.menu-list .menu-item .left .icon{font-size:16px;color:var(--icon-active-color,var(--accent-color,#0f1419));width:24px;text-align:center;}
 .menu-list .menu-item .left .text{font-size:14px;color:var(--text-secondary);}
 .menu-list .menu-item .right{color:var(--text-muted);font-size:14px;}
 .admin-card{background:var(--admin-card-bg);border-radius:16px;padding:14px 12px;margin-bottom:10px;border:1px solid var(--admin-card-border);box-shadow:var(--admin-card-shadow);}
@@ -222,7 +222,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .admin-form-group label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;}
 .admin-form-control{width:100%;background:var(--bg-input);border:1px solid var(--border-color);border-radius:10px;padding:8px 12px;color:var(--text-primary);font-size:14px;outline:none;-webkit-appearance:none;appearance:none;}
 .btn-primary{background:var(--btn-primary-bg);border:none;color:var(--btn-primary-color);padding:8px 20px;border-radius:9999px;font-weight:500;font-size:13px;cursor:pointer;box-shadow:none;}
-.btn-outline{background:#ffffff;border:1px solid #cfd9de;color:#0f1419;padding:8px 20px;border-radius:9999px;font-size:13px;cursor:pointer;}
+.btn-outline{background:#ffffff;border:1px solid #cfd9de;color:var(--text-primary,#0f1419);padding:8px 20px;border-radius:9999px;font-size:13px;cursor:pointer;}
 .btn-success{background:var(--btn-primary-bg);color:var(--btn-primary-color);border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
 .btn-danger{background:#f4212e;color:#fff;border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
 .btn-warning{background:#ffd400;color:#0f1419;border:none;padding:6px 16px;border-radius:9999px;font-size:12px;cursor:pointer;}
@@ -313,7 +313,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .wx-voice-svg{display:block;color:#1a1a1a;}
 .wx-emoji-tabs{display:flex;gap:0;border-bottom:1px solid #eee;flex-shrink:0;}
 .wx-emoji-tab{flex:1;border:none;background:transparent;padding:8px;font-size:13px;color:#666;cursor:pointer;}
-.wx-emoji-tab.active{color:#0f1419;font-weight:600;border-bottom:2px solid #0f1419;}
+.wx-emoji-tab.active{color:var(--accent-color,#0f1419);font-weight:600;border-bottom:2px solid var(--accent-color,#0f1419);}
 .wx-emoji-body{flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(8,1fr);gap:6px;font-size:22px;min-height:100px;}
 .wx-emoji-body.sticker-grid{grid-template-columns:repeat(5,1fr);}
 .wx-emoji-body span{text-align:center;cursor:pointer;padding:4px;border-radius:6px;}
@@ -335,7 +335,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .announce-modal-box .images img{max-width:80px;max-height:80px;border-radius:8px;border:1px solid var(--border-color);cursor:pointer;}
 .announce-modal-box .footer{margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
 .announce-modal-box .footer label{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;}
-.announce-modal-box .footer .close-modal-btn{padding:8px 24px;border-radius:30px;border:none;background:#0f1419;color:#fff;font-weight:600;cursor:pointer;font-size:14px;}
+.announce-modal-box .footer .close-modal-btn{padding:8px 24px;border-radius:30px;border:none;background:var(--btn-primary-bg,#0f1419);color:var(--btn-primary-color,#fff);font-weight:600;cursor:pointer;font-size:14px;}
 .inline-modal{display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:14px;margin-bottom:12px;}
 .inline-modal.active{display:block;}
 .inline-modal .modal-title{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:600;margin-bottom:10px;gap:8px;}
@@ -491,13 +491,13 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="view" id="view-category">
 <!-- 最上方：分类 / 排名 切换 -->
 <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid #eff3f4;">
-<button type="button" id="catMainTabCategory" onclick="switchCatMainTab('category')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:700;color:#0f1419;cursor:pointer;position:relative;">
+<button type="button" id="catMainTabCategory" onclick="switchCatMainTab('category')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:700;color:var(--nav-active-color,#0f1419);cursor:pointer;position:relative;">
 分类
-<span style="display:block;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:#0f1419;border-radius:2px;" id="catMainUnderlineCategory"></span>
+<span style="display:block;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:var(--accent-color,#0f1419);border-radius:2px;" id="catMainUnderlineCategory"></span>
 </button>
 <button type="button" id="catMainTabRank" onclick="switchCatMainTab('rank')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:500;color:#536471;cursor:pointer;position:relative;">
 排名
-<span style="display:none;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:#0f1419;border-radius:2px;" id="catMainUnderlineRank"></span>
+<span style="display:none;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:var(--accent-color,#0f1419);border-radius:2px;" id="catMainUnderlineRank"></span>
 </button>
 </div>
 
@@ -560,7 +560,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;">
 <div class="msg-switch-tabs" style="display:flex;gap:4px;background:var(--border-light,#eff3f4);border-radius:20px;padding:3px;">
 <button type="button" class="msg-tab-btn" id="msgTabPosts" onclick="switchMsgTab('posts')" style="padding:6px 14px;border-radius:16px;border:none;background:transparent;color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;">帖子</button>
-<button type="button" class="msg-tab-btn active" id="msgTabMessages" onclick="switchMsgTab('messages')" style="padding:6px 14px;border-radius:16px;border:none;background:#0f1419;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">消息</button>
+<button type="button" class="msg-tab-btn active" id="msgTabMessages" onclick="switchMsgTab('messages')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--tab-active-bg,#0f1419);color:var(--tab-active-color,#fff);font-size:13px;font-weight:600;cursor:pointer;">消息</button>
 </div>
 <span style="font-size:12px;color:var(--text-muted);" id="msgHeaderRight"><span id="msgUnreadTotal"></span><span id="postCount" style="display:none;">0</span></span>
 </div>
@@ -649,11 +649,11 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="admin-card" style="padding:4px 12px;">
 <div class="menu-list">
 <div class="menu-item" onclick="if(!currentUser){toast('请先登录','warning');return;}openChat('cs_bot','AI智能体小Q','contact')">
-<div class="left"><i class="fas fa-robot icon" style="color:#0f1419;"></i><span class="text">联系小Q客服</span></div>
+<div class="left"><i class="fas fa-robot icon" style="color:var(--accent-color,#0f1419);"></i><span class="text">联系小Q客服</span></div>
 <div class="right"><i class="fas fa-chevron-right"></i></div>
 </div>
 <div class="menu-item" onclick="showLoginModal()">
-<div class="left"><i class="fas fa-sign-in-alt icon" style="color:#0f1419;"></i><span class="text">账号设置</span></div>
+<div class="left"><i class="fas fa-sign-in-alt icon" style="color:var(--accent-color,#0f1419);"></i><span class="text">账号设置</span></div>
 <div class="right"><i class="fas fa-chevron-right"></i></div>
 </div>
 </div>
@@ -683,7 +683,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="pd-stock" id="pdStock">库存：0</div>
 </div>
 <div class="pd-footer">
-<button class="btn-block" onclick="buyFromDetail()" style="background:#0f1419;"><i class="fas fa-shopping-cart"></i> 立即购买</button>
+<button class="btn-block" onclick="buyFromDetail()" style="background:var(--btn-primary-bg,#0f1419);"><i class="fas fa-shopping-cart"></i> 立即购买</button>
 </div>
 </div>
 
@@ -1136,16 +1136,19 @@ function switchMsgTab(tab){
   const postCountEl=document.getElementById('postCount');
   const msgUnreadEl=document.getElementById('msgUnreadTotal');
   if(postsBtn&&msgsBtn){
+    const cs=getComputedStyle(document.documentElement);
+    const tabBg=cs.getPropertyValue('--tab-active-bg').trim()||'#0f1419';
+    const tabColor=cs.getPropertyValue('--tab-active-color').trim()||'#fff';
     if(currentMsgTab==='posts'){
-      postsBtn.style.background='#0f1419';
-      postsBtn.style.color='#fff';
+      postsBtn.style.background=tabBg;
+      postsBtn.style.color=tabColor;
       msgsBtn.style.background='transparent';
       msgsBtn.style.color='var(--text-muted)';
       postsBtn.classList.add('active');
       msgsBtn.classList.remove('active');
     }else{
-      msgsBtn.style.background='#0f1419';
-      msgsBtn.style.color='#fff';
+      msgsBtn.style.background=tabBg;
+      msgsBtn.style.color=tabColor;
       postsBtn.style.background='transparent';
       postsBtn.style.color='var(--text-muted)';
       msgsBtn.classList.add('active');
@@ -1712,13 +1715,16 @@ function switchCatMainTab(tab){
   const rankUnderline=document.getElementById('catMainUnderlineRank');
   const catPanel=document.getElementById('catMainPanelCategory');
   const rankPanel=document.getElementById('catMainPanelRank');
+  const cs=getComputedStyle(document.documentElement);
+  const activeColor=cs.getPropertyValue('--nav-active-color').trim()||cs.getPropertyValue('--accent-color').trim()||'#0f1419';
+  const mutedColor=cs.getPropertyValue('--text-muted').trim()||'#536471';
   if(catBtn){
     catBtn.style.fontWeight=isCat?'700':'500';
-    catBtn.style.color=isCat?'#0f1419':'#536471';
+    catBtn.style.color=isCat?activeColor:mutedColor;
   }
   if(rankBtn){
     rankBtn.style.fontWeight=!isCat?'700':'500';
-    rankBtn.style.color=!isCat?'#0f1419':'#536471';
+    rankBtn.style.color=!isCat?activeColor:mutedColor;
   }
   if(catUnderline)catUnderline.style.display=isCat?'block':'none';
   if(rankUnderline)rankUnderline.style.display=!isCat?'block':'none';
@@ -1729,12 +1735,16 @@ function switchCatMainTab(tab){
 
 function switchRankTab(by){
   currentRankBy=by;
+  const cs=getComputedStyle(document.documentElement);
+  const tabBg=cs.getPropertyValue('--tab-active-bg').trim()||'#0f1419';
+  const tabColor=cs.getPropertyValue('--tab-active-color').trim()||'#fff';
+  const muted=cs.getPropertyValue('--text-muted').trim()||'#536471';
   document.querySelectorAll('.rank-sub-btn').forEach(btn=>{
     const on=btn.dataset.rank===by;
     btn.classList.toggle('active',on);
-    btn.style.background=on?'#0f1419':'transparent';
-    btn.style.color=on?'#fff':'#536471';
-    btn.style.borderColor=on?'#0f1419':'#eff3f4';
+    btn.style.background=on?tabBg:'transparent';
+    btn.style.color=on?tabColor:muted;
+    btn.style.borderColor=on?tabBg:'#eff3f4';
   });
   renderHandlerRank(by);
 }
@@ -2521,7 +2531,7 @@ async function viewUserProfile(userId){
     if(currentUser && currentUser.id!==userId){
       const act=document.getElementById('upActions');
       if(act && !act.innerHTML.includes('赠送礼物')){
-        act.innerHTML += `<button class="up-btn-msg" onclick="openGiftModal('${userId}')" style="background:#0f1419;color:#fff;"><i class="fas fa-gift"></i> 赠送礼物</button>`;
+        act.innerHTML += `<button class="up-btn-msg" onclick="openGiftModal('${userId}')" style="background:var(--btn-primary-bg,#0f1419);color:var(--btn-primary-color,#fff);"><i class="fas fa-gift"></i> 赠送礼物</button>`;
       }
     }
     // 打手显示评价 Tab
@@ -6639,7 +6649,9 @@ const DEFAULT_SKIN={
   bgOverlay:'rgba(255,255,255,0.0)',
   btnPrimaryBg:'#0f1419',
   btnPrimaryColor:'#ffffff',
-  priceColor:'#f4212e'
+  priceColor:'#f4212e',
+  profileCardBg:'#0f1419',
+  profileCardColor:'#ffffff'
 };
 const SKIN_PRESETS={
   default:{name:'默认白', ...DEFAULT_SKIN},
@@ -6661,30 +6673,29 @@ const SKIN_PRESETS={
     gradientFrom:'#dcfce7', gradientTo:'#f0fdf4', gradientAngle:'140', bgImage:'', bgOverlay:'rgba(255,255,255,0.15)', btnPrimaryBg:'#059669', btnPrimaryColor:'#fff', priceColor:'#dc2626'}
 };
 
-let globalSkinCache=null; // 服务端全站皮肤
+let globalSkinCache=null;
+let personalSkinCache=null;
+let skinEditTargetUserId='';
 
 function getCurrentSkin(){
-  // 全站皮肤优先（管理员发布），否则默认
+  if(personalSkinCache)return Object.assign({},DEFAULT_SKIN,personalSkinCache);
   if(globalSkinCache)return Object.assign({},DEFAULT_SKIN,globalSkinCache);
   return Object.assign({},DEFAULT_SKIN);
 }
 
 async function loadGlobalSkin(){
   try{
-    // 清除旧版个人皮肤缓存，统一走全站
     try{localStorage.removeItem(SKIN_STORAGE_KEY);}catch(e){}
     const r=await apiRequest('/theme');
-    if(r&&r.has_global&&r.skin){
-      globalSkinCache=r.skin;
-      applySkin(Object.assign({},DEFAULT_SKIN,r.skin));
-      return r;
-    }
-    globalSkinCache=null;
-    applySkin(DEFAULT_SKIN);
-    return r||{has_global:false};
+    globalSkinCache=(r&&r.global)||null;
+    personalSkinCache=(r&&r.personal)||null;
+    // 兼容旧字段
+    if(!globalSkinCache&&r&&r.has_global&&r.skin&&!r.personal)globalSkinCache=r.skin;
+    if(r&&r.skin)applySkin(Object.assign({},DEFAULT_SKIN,r.skin));
+    else applySkin(DEFAULT_SKIN);
+    return r||{has_global:false,has_personal:false};
   }catch(e){
-    globalSkinCache=null;
-    return {has_global:false};
+    return {has_global:false,has_personal:false};
   }
 }
 
@@ -6717,6 +6728,8 @@ function applySkin(skin){
   set('--admin-card-title',skin.textPrimary);
   set('--product-title',skin.textPrimary);
   set('--product-desc',skin.textSecondary);
+  set('--profile-card-bg',skin.profileCardBg||skin.accent||skin.btnPrimaryBg);
+  set('--profile-card-color',skin.profileCardColor||skin.accentText||'#ffffff');
 
   // 渐变 / 背景图
   let gradient='none';
@@ -6739,10 +6752,25 @@ function applySkin(skin){
       wrap.style.backgroundColor='';
     }
   }
-  // 同步消息页 tab 等内联 active 样式
+  // 同步消息页 / 分类页 tab 等内联 active 样式
   document.querySelectorAll('.msg-tab-btn.active').forEach(el=>{
     el.style.background=skin.tabActiveBg;
     el.style.color=skin.tabActiveColor;
+  });
+  document.querySelectorAll('.rank-sub-btn.active,.cat-tab-btn.active,.shop-tab-btn.active,.tab-btn.active').forEach(el=>{
+    el.style.background=skin.tabActiveBg;
+    el.style.color=skin.tabActiveColor;
+    el.style.borderColor=skin.tabActiveBg;
+  });
+  const catTab=document.getElementById('catMainTabCategory');
+  const rankTab=document.getElementById('catMainTabRank');
+  if(catTab&&catTab.style.fontWeight==='700')catTab.style.color=skin.navActive||skin.accent;
+  ['catMainUnderlineCategory','catMainUnderlineRank'].forEach(id=>{
+    const u=document.getElementById(id);
+    if(u)u.style.background=skin.accent;
+  });
+  document.querySelectorAll('.more-functions .func-item .icon, .menu-list .menu-item .left .icon').forEach(el=>{
+    el.style.color=skin.iconActive||skin.accent;
   });
 }
 
@@ -6805,7 +6833,9 @@ function buildSkinFromForm(){
     bgOverlay:overlay,
     btnPrimaryBg:vt('skinBtnBg'),
     btnPrimaryColor:vt('skinBtnColor'),
-    priceColor:vt('skinPrice')
+    priceColor:vt('skinPrice'),
+    profileCardBg:vt('skinProfileBg')||vt('skinAccent'),
+    profileCardColor:vt('skinProfileColor')||vt('skinBtnColor')||'#ffffff'
   };
 }
 
@@ -6816,24 +6846,81 @@ async function publishGlobalSkin(){
     toast('发布中...','info');
     await apiRequest('/theme',{method:'PUT',body:JSON.stringify({skin})});
     globalSkinCache=skin;
-    applySkin(skin);
-    try{localStorage.removeItem(SKIN_STORAGE_KEY);}catch(e){}
+    // 发布全站后仍保留个人覆盖逻辑：若无个人皮肤则直接应用全站
+    if(!personalSkinCache)applySkin(skin);
+    else applySkin(Object.assign({},DEFAULT_SKIN,personalSkinCache));
     toast('已发布到全站，所有用户可见','success');
     renderSubSkin();
   }catch(err){toast(err.message||'发布失败','error');}
 }
 
+async function savePersonalSkinOnly(){
+  if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可配置','error');return;}
+  const skin=buildSkinFromForm();
+  try{
+    toast('保存中...','info');
+    if(skinEditTargetUserId&&skinEditTargetUserId!==currentUser.id){
+      await apiRequest('/theme/user/'+skinEditTargetUserId,{method:'PUT',body:JSON.stringify({skin})});
+      toast('已为该用户保存皮肤（仅该用户可见）','success');
+    }else{
+      await apiRequest('/theme/personal',{method:'PUT',body:JSON.stringify({skin})});
+      personalSkinCache=skin;
+      applySkin(skin);
+      toast('已保存为仅自己可用','success');
+    }
+    renderSubSkin();
+  }catch(err){toast(err.message||'保存失败','error');}
+}
+
 async function resetGlobalSkin(){
   if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可操作','error');return;}
-  if(!confirm('确认恢复全站默认皮肤？所有用户将看到默认样式。'))return;
+  if(!confirm('确认恢复全站默认皮肤？未设置个人皮肤的用户将看到默认样式。'))return;
   try{
     await apiRequest('/theme',{method:'DELETE'});
     globalSkinCache=null;
-    applySkin(DEFAULT_SKIN);
-    try{localStorage.removeItem(SKIN_STORAGE_KEY);}catch(e){}
+    applySkin(getCurrentSkin());
     toast('已恢复全站默认皮肤','success');
     renderSubSkin();
   }catch(err){toast(err.message||'操作失败','error');}
+}
+
+async function clearPersonalSkin(){
+  if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可操作','error');return;}
+  try{
+    if(skinEditTargetUserId&&skinEditTargetUserId!==currentUser.id){
+      await apiRequest('/theme/user/'+skinEditTargetUserId,{method:'DELETE'});
+      toast('已清除该用户个人皮肤','success');
+    }else{
+      await apiRequest('/theme/personal',{method:'DELETE'});
+      personalSkinCache=null;
+      applySkin(getCurrentSkin());
+      toast('已清除自己的个人皮肤','success');
+    }
+    renderSubSkin();
+  }catch(err){toast(err.message||'操作失败','error');}
+}
+
+async function loadSkinTargetUser(){
+  const input=document.getElementById('skinTargetUserId');
+  const uid=(input&&input.value.trim())||'';
+  if(!uid){
+    skinEditTargetUserId='';
+    toast('已切换为编辑自己的皮肤','info');
+    renderSubSkin();
+    return;
+  }
+  try{
+    const r=await apiRequest('/theme/user/'+uid);
+    skinEditTargetUserId=uid;
+    if(r&&r.personal){
+      applySkin(Object.assign({},DEFAULT_SKIN,r.personal));
+      toast('已加载该用户皮肤到编辑区（预览）','success');
+    }else{
+      applySkin(getCurrentSkin());
+      toast('该用户暂无个人皮肤，显示当前生效皮肤','info');
+    }
+    renderSubSkin();
+  }catch(err){toast(err.message||'加载失败','error');}
 }
 
 function skinColorRow(id,label,value){
@@ -6851,30 +6938,49 @@ async function renderSubSkin(){
     container.innerHTML='<div class="empty-state"><p>仅管理员可配置皮肤主题</p></div>';
     return;
   }
-  let globalInfo={has_global:false};
+  let globalInfo={has_global:false,has_personal:false};
   try{globalInfo=await apiRequest('/theme')||{};}catch(e){}
-  if(globalInfo.has_global&&globalInfo.skin)globalSkinCache=globalInfo.skin;
+  if(globalInfo.global)globalSkinCache=globalInfo.global;
+  else if(globalInfo.has_global&&globalInfo.skin&&!globalInfo.personal)globalSkinCache=globalInfo.skin;
+  if(globalInfo.personal)personalSkinCache=globalInfo.personal;
+  else if(globalInfo.has_personal===false)personalSkinCache=null;
   const s=getCurrentSkin();
   const presetsHtml=Object.keys(SKIN_PRESETS).map(k=>{
     const p=SKIN_PRESETS[k];
     return `<button class="btn btn-outline btn-sm" onclick="applySkinPreset('${k}')" style="margin:0 6px 6px 0;">${p.name||k}</button>`;
   }).join('');
+  const targetHint=skinEditTargetUserId?`当前编辑用户：<strong>${skinEditTargetUserId}</strong>`:'当前编辑：<strong>自己</strong>';
   container.innerHTML=`
     <div class="admin-card" style="border:1px solid var(--accent-color,#0f1419);">
-      <div class="admin-card-title"><i class="fas fa-globe"></i> 全站皮肤（所有人可见）</div>
+      <div class="admin-card-title"><i class="fas fa-globe"></i> 发布范围</div>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
-        配置完成后请点击<strong>发布到全站</strong>，所有用户刷新后都会看到此皮肤。<br/>
-        当前状态：${globalInfo.has_global?'<span style="color:#00ba7c;font-weight:600;">已发布全站皮肤</span>':'<span style="color:#536471;">未发布（所有人使用默认样式）</span>'}
+        全站：${globalInfo.has_global?'<span style="color:#00ba7c;font-weight:600;">已发布</span>':'未发布'}　
+        个人：${globalInfo.has_personal?'<span style="color:#00ba7c;font-weight:600;">已设置</span>':'未设置'}<br/>
+        ${targetHint}
       </p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-success btn-sm" onclick="publishGlobalSkin()"><i class="fas fa-cloud-upload-alt"></i> 发布到全站（所有人可见）</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn btn-success btn-sm" onclick="publishGlobalSkin()"><i class="fas fa-cloud-upload-alt"></i> 发布到全站</button>
+        <button class="btn btn-primary btn-sm" onclick="savePersonalSkinOnly()"><i class="fas fa-user-lock"></i> 仅自己可用</button>
         <button class="btn btn-outline btn-sm" onclick="resetGlobalSkin()"><i class="fas fa-undo"></i> 恢复全站默认</button>
+        <button class="btn btn-outline btn-sm" onclick="clearPersonalSkin()"><i class="fas fa-eraser"></i> 清除个人皮肤</button>
+      </div>
+      <div class="admin-form-group" style="margin:0;">
+        <label>指定用户皮肤（填用户ID，保存用「仅自己可用」会写到该用户）</label>
+        <div style="display:flex;gap:8px;">
+          <input class="admin-form-control" id="skinTargetUserId" value="${skinEditTargetUserId||''}" placeholder="用户ID，空=自己" />
+          <button class="btn btn-outline btn-sm" type="button" onclick="loadSkinTargetUser()">加载</button>
+        </div>
       </div>
     </div>
     <div class="admin-card">
       <div class="admin-card-title"><i class="fas fa-magic"></i> 快捷主题（预览）</div>
       <div>${presetsHtml}</div>
-      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">点快捷主题仅预览，需再点「发布到全站」才对所有人生效</p>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">点快捷主题仅预览，需再点「发布到全站」或「仅自己可用」</p>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-title"><i class="fas fa-id-card"></i> 我的页名片背景</div>
+      ${skinColorRow('skinProfileBg','名片背景色',s.profileCardBg||s.accent)}
+      ${skinColorRow('skinProfileColor','名片文字色',s.profileCardColor||s.accentText||'#ffffff')}
     </div>
     <div class="admin-card">
       <div class="admin-card-title"><i class="fas fa-comment"></i> 聊天气泡皮肤</div>
@@ -6933,7 +7039,8 @@ async function renderSubSkin(){
       <input type="file" id="skinBgFileInput" accept="image/*" style="display:none;" onchange="onSkinBgFile(event)" />
     </div>
     <div style="padding:12px 0 24px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-success" style="flex:1;min-width:120px;" onclick="publishGlobalSkin()"><i class="fas fa-cloud-upload-alt"></i> 发布到全站</button>
+      <button class="btn btn-success" style="flex:1;min-width:100px;" onclick="publishGlobalSkin()"><i class="fas fa-cloud-upload-alt"></i> 发布全站</button>
+      <button class="btn btn-primary" style="flex:1;min-width:100px;" onclick="savePersonalSkinOnly()"><i class="fas fa-user-lock"></i> 仅自己</button>
       <button class="btn btn-outline" onclick="resetSkin()">重置我的</button>
     </div>`;
   // 颜色选择器与文本联动
@@ -7102,7 +7209,10 @@ window.resetSkin=resetSkin;
 window.applySkinPreset=applySkinPreset;
 window.collectAndSaveSkin=collectAndSaveSkin;
 window.publishGlobalSkin=publishGlobalSkin;
+window.savePersonalSkinOnly=savePersonalSkinOnly;
 window.resetGlobalSkin=resetGlobalSkin;
+window.clearPersonalSkin=clearPersonalSkin;
+window.loadSkinTargetUser=loadSkinTargetUser;
 window.loadGlobalSkin=loadGlobalSkin;
 window.uploadSkinBgImage=uploadSkinBgImage;
 window.onSkinBgFile=onSkinBgFile;
