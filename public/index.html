@@ -1909,9 +1909,11 @@ function buyFromDetail(){if(currentProductId)showBuyWithHandler(currentProductId
    购买
 ============================================================ */
 let selectedBuyHandlerId='';
+let pendingBuyProductId='';
 async function showBuyWithHandler(productId){
   if(!currentUser){toast('请先登录','warning');return;}
   selectedBuyHandlerId='';
+  pendingBuyProductId=productId;
   showCustomModal(`
     <h3><i class="fas fa-shopping-cart"></i> 选择打手</h3>
     <p style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">仅显示「在线」或「接单中」的打手，也可不指定由打手自行接单</p>
@@ -1920,8 +1922,8 @@ async function showBuyWithHandler(productId){
     </div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
-      <button class="btn btn-outline" onclick="selectedBuyHandlerId='';doBuyWithHandler('${productId}')">不指定打手</button>
-      <button class="btn btn-success" onclick="doBuyWithHandler('${productId}')">确认购买</button>
+      <button class="btn btn-outline" onclick="goBuyRemarkStep('${productId}',true)">不指定打手</button>
+      <button class="btn btn-success" onclick="confirmBuyHandlerPick('${productId}')">确认</button>
     </div>`);
   try{
     const handlers=await apiRequest('/handlers')||[];
@@ -1967,15 +1969,47 @@ function pickBuyHandler(id,el){
     if(c)c.style.color='#00ba7c';
   }
 }
+/** 选打手弹窗点「确认」：必须已选打手，再进入备注 */
+function confirmBuyHandlerPick(productId){
+  if(!selectedBuyHandlerId){
+    toast('您还没有选择打手，如果不想选择打手可以点击旁边的不指定打手按钮','warning');
+    return;
+  }
+  goBuyRemarkStep(productId,false);
+}
+/** 进入填写备注步骤（可不填） */
+function goBuyRemarkStep(productId,noHandler){
+  if(noHandler)selectedBuyHandlerId='';
+  const pid=productId||pendingBuyProductId;
+  if(!pid){toast('商品信息丢失，请重试','error');return;}
+  const handlerTip=selectedBuyHandlerId
+    ? '<span style="color:#00ba7c;">已指定打手</span>'
+    : '<span style="color:var(--text-muted);">不指定打手（由打手自行接单）</span>';
+  showCustomModal(`
+    <h3><i class="fas fa-edit"></i> 填写备注</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">${handlerTip}</p>
+    <p style="color:var(--text-muted);font-size:12px;margin-bottom:10px;">备注选填，可填写游戏ID、段位、特殊要求等</p>
+    <div class="admin-form-group" style="margin-bottom:14px;">
+      <textarea class="admin-form-control" id="buyOrderRemark" rows="4" placeholder="选填：备注信息（可不填）" style="width:100%;resize:vertical;"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showBuyWithHandler('${pid}')">返回选打手</button>
+      <button class="btn btn-success" onclick="doBuyWithHandler('${pid}')">确认购买</button>
+    </div>`);
+}
 async function doBuyWithHandler(productId) {
   const handlerId = selectedBuyHandlerId || '';
+  const remarkEl=document.getElementById('buyOrderRemark');
+  const remark=remarkEl?String(remarkEl.value||'').trim():'';
   closeCustomModal();
   try {
     const data = await apiRequest('/orders/buy', {
       method: 'POST',
-      body: JSON.stringify({ productId, assignedHandlerId: handlerId || null })
+      body: JSON.stringify({ productId, assignedHandlerId: handlerId || null, remark })
     });
     toast('购买成功！订单号：' + data.orderId, 'success');
+    selectedBuyHandlerId='';
+    pendingBuyProductId='';
     try {
       const user = await apiRequest('/me');
       currentUser = { ...currentUser, ...user };
@@ -7329,6 +7363,11 @@ window.closeProductDetail=closeProductDetail;
 window.openShopDetail=openShopDetail;
 window.closeShopDetail=closeShopDetail;
 window.buyFromDetail=buyFromDetail;
+window.confirmBuyHandlerPick=confirmBuyHandlerPick;
+window.goBuyRemarkStep=goBuyRemarkStep;
+window.pickBuyHandler=pickBuyHandler;
+window.doBuyWithHandler=doBuyWithHandler;
+window.showBuyWithHandler=showBuyWithHandler;
 window.showBuyWithHandler=showBuyWithHandler;
 window.doBuyWithHandler=doBuyWithHandler;
 window.filterProductsByCategory=filterProductsByCategory;
