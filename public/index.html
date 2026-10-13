@@ -4927,11 +4927,37 @@ async function renderSubDispatcher(){
   try{
     const stats=await apiRequest('/dispatcher/stats');
     const orders=await apiRequest('/dispatcher/orders');
+    let templates=[];
+    try{templates=await apiRequest('/dispatcher/templates')||[];}catch(e){templates=[];}
     let hallCatOpts='<option value="">-- 请选择分类 --</option>';
     try{
       const hcats=await apiRequest('/hall/categories')||[];
       hcats.forEach(c=>{hallCatOpts+=`<option value="${c.id}">${c.name}</option>`;});
     }catch(e){}
+    window._dispatcherHallCatOpts=hallCatOpts;
+    let tplHtml='';
+    if(!templates.length){
+      tplHtml='<div class="empty-state" style="padding:12px 0;"><p style="font-size:13px;color:var(--text-muted);">暂无模板，可在下方保存新模板</p></div>';
+    }else{
+      tplHtml='<div style="display:flex;flex-direction:column;gap:10px;">'+templates.map(t=>{
+        const safeName=String(t.name||t.title||'未命名').replace(/</g,'&lt;');
+        const safeTitle=String(t.title||'').replace(/</g,'&lt;');
+        return `<div style="border:1px solid var(--border-color,#eff3f4);border-radius:12px;padding:12px;background:var(--bg-card,#fff);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${safeName}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">标题：${safeTitle}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${t.game||''} · ${t.price||0} 红钻 · ${t.urgency||'普通'} · x${t.quantity||1}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-warning btn-xs" onclick="confirmPublishOrderTemplate('${t.id}','${String(t.title||'').replace(/'/g,"\\'")}')"><i class="fas fa-paper-plane"></i> 发布</button>
+              <button class="btn btn-outline btn-xs" onclick="editOrderTemplate('${t.id}')"><i class="fas fa-edit"></i> 编辑</button>
+              <button class="btn btn-outline btn-xs" style="color:#f4212e;border-color:#f4212e;" onclick="confirmDeleteOrderTemplate('${t.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')+'</div>';
+    }
     container.innerHTML=`
       <div class="admin-card">
         <div class="admin-card-title"><i class="fas fa-chart-bar"></i> 派单仪表盘</div>
@@ -4943,10 +4969,39 @@ async function renderSubDispatcher(){
         </div>
       </div>
       <div class="admin-card">
+        <div class="admin-card-title"><i class="fas fa-layer-group"></i> 按模板发布</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">保存常用订单为模板，需要时点「发布」确认后即可快速生成正式订单。</p>
+        <div id="dispatcherTemplateList">${tplHtml}</div>
+      </div>
+      <div class="admin-card">
+        <div class="admin-card-title"><i class="fas fa-save"></i> <span id="dispatcherTplFormTitle">新建/编辑模板</span></div>
+        <input type="hidden" id="dispatcherTplEditId" value="" />
+        <div class="admin-form-group"><label>模板名称</label><input class="admin-form-control" id="dispatcherTplName" placeholder="例如：暗区护航常用" /></div>
+        <div class="admin-form-group"><label>订单标题 *</label><input class="admin-form-control" id="dispatcherTplTitle" placeholder="例如：暗区上分护航" /></div>
+        <div class="admin-form-group"><label>游戏</label><input class="admin-form-control" id="dispatcherTplGame" value="暗区突围" /></div>
+        <div class="admin-form-group"><label>接单分类</label><select class="admin-form-control" id="dispatcherTplCategory">${hallCatOpts}</select></div>
+        <div class="admin-form-group"><label>价格（红钻）*</label><input class="admin-form-control" id="dispatcherTplPrice" type="number" min="1" placeholder="订单价格" /></div>
+        <div class="admin-form-group"><label>数量</label><input class="admin-form-control" id="dispatcherTplQuantity" type="number" min="1" value="1" /></div>
+        <div class="admin-form-group"><label>紧急程度</label>
+          <select class="admin-form-control" id="dispatcherTplUrgency">
+            <option value="普通">普通</option>
+            <option value="较急">较急</option>
+            <option value="加急">加急</option>
+          </select>
+        </div>
+        <div class="admin-form-group"><label>详细描述</label><textarea class="admin-form-control" id="dispatcherTplDesc" rows="3" placeholder="段位要求、服务内容、预计时长等"></textarea></div>
+        <div class="admin-form-group"><label>备注</label><textarea class="admin-form-control" id="dispatcherTplRemark" rows="2" placeholder="特殊要求、注意事项等"></textarea></div>
+        <div class="admin-form-group"><label>联系方式</label><input class="admin-form-control" id="dispatcherTplContact" placeholder="微信/QQ/游戏ID（选填）" /></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" style="flex:1;" onclick="saveOrderTemplate()"><i class="fas fa-save"></i> 保存模板</button>
+          <button class="btn btn-outline" onclick="resetOrderTemplateForm()">清空表单</button>
+        </div>
+      </div>
+      <div class="admin-card">
         <div class="admin-card-title"><i class="fas fa-clipboard-list"></i> 直接发布订单</div>
         <div class="admin-form-group"><label>订单标题 *</label><input class="admin-form-control" id="dispatcherDirectTitleSub" placeholder="例如：暗区上分护航" /></div>
         <div class="admin-form-group"><label>游戏</label><input class="admin-form-control" id="dispatcherDirectGameSub" value="暗区突围" /></div>
-        <div class="admin-form-group"><label>接单分类</label><select class="admin-form-control" id="dispatcherDirectCategorySub"><option value="">加载中...</option></select></div>
+        <div class="admin-form-group"><label>接单分类</label><select class="admin-form-control" id="dispatcherDirectCategorySub">${hallCatOpts}</select></div>
         <div class="admin-form-group"><label>价格（红钻）*</label><input class="admin-form-control" id="dispatcherDirectPriceSub" type="number" min="1" placeholder="订单价格" /></div>
         <div class="admin-form-group"><label>数量</label><input class="admin-form-control" id="dispatcherDirectQuantitySub" type="number" min="1" value="1" /></div>
         <div class="admin-form-group"><label>紧急程度</label>
@@ -4962,10 +5017,8 @@ async function renderSubDispatcher(){
         <button class="btn btn-warning btn-block" onclick="dispatcherDirectPublishSub()">发布订单</button>
       </div>
       <div class="admin-card"><div class="admin-card-title"><i class="fas fa-clipboard-list"></i> 我发布的订单</div><div id="dispatcherOrdersListSub"></div></div>`;
-    const catSel=document.getElementById('dispatcherDirectCategorySub');
-    if(catSel)catSel.innerHTML=hallCatOpts;
     const listContainer=document.getElementById('dispatcherOrdersListSub');
-    if(orders.length===0){listContainer.innerHTML='<div class="empty-state"><p>暂无订单</p></div>';return;}
+    if(!orders.length){listContainer.innerHTML='<div class="empty-state"><p>暂无订单</p></div>';return;}
     let listHtml='<div class="table-wrap"><table><thead><tr><th>订单号</th><th>标题</th><th>金额</th><th>状态</th><th>操作</th></tr></thead><tbody>';
     for(const o of orders){
       let actions='';
@@ -4976,7 +5029,101 @@ async function renderSubDispatcher(){
     }
     listHtml+='</tbody></table></div>';
     listContainer.innerHTML=listHtml;
-  }catch(err){}
+  }catch(err){container.innerHTML=`<div class="empty-state"><p>${err.message||'加载失败'}</p></div>`;}
+}
+
+function resetOrderTemplateForm(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('dispatcherTplEditId','');
+  set('dispatcherTplName','');
+  set('dispatcherTplTitle','');
+  set('dispatcherTplGame','暗区突围');
+  set('dispatcherTplCategory','');
+  set('dispatcherTplPrice','');
+  set('dispatcherTplQuantity','1');
+  set('dispatcherTplUrgency','普通');
+  set('dispatcherTplDesc','');
+  set('dispatcherTplRemark','');
+  set('dispatcherTplContact','');
+  const titleEl=document.getElementById('dispatcherTplFormTitle');
+  if(titleEl)titleEl.textContent='新建/编辑模板';
+}
+
+async function saveOrderTemplate(){
+  const id=(document.getElementById('dispatcherTplEditId')?.value||'').trim();
+  const name=(document.getElementById('dispatcherTplName')?.value||'').trim();
+  const title=(document.getElementById('dispatcherTplTitle')?.value||'').trim();
+  const game=(document.getElementById('dispatcherTplGame')?.value||'').trim()||'暗区突围';
+  const category_id=document.getElementById('dispatcherTplCategory')?.value||null;
+  const price=parseFloat(document.getElementById('dispatcherTplPrice')?.value);
+  const quantity=parseInt(document.getElementById('dispatcherTplQuantity')?.value,10)||1;
+  const urgency=document.getElementById('dispatcherTplUrgency')?.value||'普通';
+  const description=(document.getElementById('dispatcherTplDesc')?.value||'').trim();
+  const remark=(document.getElementById('dispatcherTplRemark')?.value||'').trim();
+  const contact_info=(document.getElementById('dispatcherTplContact')?.value||'').trim();
+  if(!title||!price){toast('请填写标题和价格','error');return;}
+  try{
+    const body={name:name||title,title,game,category_id,price,quantity,urgency,description,remark,contact_info};
+    if(id){
+      await apiRequest('/dispatcher/templates/'+id,{method:'PUT',body:JSON.stringify(body)});
+      toast('模板已更新','success');
+    }else{
+      await apiRequest('/dispatcher/templates',{method:'POST',body:JSON.stringify(body)});
+      toast('模板已保存','success');
+    }
+    resetOrderTemplateForm();
+    renderSubDispatcher();
+  }catch(err){toast(err.message||'保存失败','error');}
+}
+
+async function editOrderTemplate(id){
+  try{
+    const list=await apiRequest('/dispatcher/templates')||[];
+    const t=list.find(x=>x.id===id);
+    if(!t){toast('模板不存在','error');return;}
+    const set=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v==null?'':v;};
+    set('dispatcherTplEditId',t.id);
+    set('dispatcherTplName',t.name||'');
+    set('dispatcherTplTitle',t.title||'');
+    set('dispatcherTplGame',t.game||'暗区突围');
+    set('dispatcherTplCategory',t.category_id||'');
+    set('dispatcherTplPrice',t.price||'');
+    set('dispatcherTplQuantity',t.quantity||1);
+    set('dispatcherTplUrgency',t.urgency||'普通');
+    set('dispatcherTplDesc',t.description||'');
+    set('dispatcherTplRemark',t.remark||'');
+    set('dispatcherTplContact',t.contact_info||'');
+    const titleEl=document.getElementById('dispatcherTplFormTitle');
+    if(titleEl)titleEl.textContent='编辑模板';
+    const formCard=document.getElementById('dispatcherTplFormTitle');
+    if(formCard&&formCard.scrollIntoView)formCard.scrollIntoView({behavior:'smooth',block:'center'});
+    toast('已加载模板到编辑区','info');
+  }catch(err){toast(err.message||'加载失败','error');}
+}
+
+function confirmPublishOrderTemplate(id,title){
+  const showTitle=title||'该模板';
+  confirmAction('确认发布订单','是否按模板「'+showTitle+'」发布为正式订单？','确认发布',`doPublishOrderTemplate('${id}')`);
+}
+
+async function doPublishOrderTemplate(id){
+  try{
+    const r=await apiRequest('/dispatcher/templates/'+id+'/publish',{method:'POST',body:JSON.stringify({})});
+    toast(r.message||'订单已发布','success');
+    renderSubDispatcher();
+  }catch(err){toast(err.message||'发布失败','error');}
+}
+
+function confirmDeleteOrderTemplate(id){
+  confirmAction('删除模板','确定删除该订单模板？删除后不可恢复。','确认删除',`doDeleteOrderTemplate('${id}')`);
+}
+
+async function doDeleteOrderTemplate(id){
+  try{
+    await apiRequest('/dispatcher/templates/'+id,{method:'DELETE'});
+    toast('模板已删除','success');
+    renderSubDispatcher();
+  }catch(err){toast(err.message||'删除失败','error');}
 }
 async function dispatcherDirectPublishSub(){
   const game=document.getElementById('dispatcherDirectGameSub').value.trim()||'暗区突围';
@@ -7383,6 +7530,13 @@ window.editPostCategory=editPostCategory;
 window.doEditPostCategory=doEditPostCategory;
 window.createBanner=createBanner;
 window.dispatcherDirectPublishSub=dispatcherDirectPublishSub;
+window.saveOrderTemplate=saveOrderTemplate;
+window.editOrderTemplate=editOrderTemplate;
+window.resetOrderTemplateForm=resetOrderTemplateForm;
+window.confirmPublishOrderTemplate=confirmPublishOrderTemplate;
+window.doPublishOrderTemplate=doPublishOrderTemplate;
+window.confirmDeleteOrderTemplate=confirmDeleteOrderTemplate;
+window.doDeleteOrderTemplate=doDeleteOrderTemplate;
 window.doChangeName=doChangeName;
 window.doChangeBanner=doChangeBanner;
 window.changeUserId=changeUserId;
