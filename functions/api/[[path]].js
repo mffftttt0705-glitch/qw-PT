@@ -1297,7 +1297,7 @@ async function handleBuyProduct(env, authHeader, body) {
   if (!userId) return errorResponse('请先登录', 401);
   const user = await getUserById(env, userId);
   if (!user) return errorResponse('用户不存在', 404);
-  const { productId, assignedHandlerId } = body;
+  const { productId, assignedHandlerId, remark } = body || {};
   if (!productId) return errorResponse('请选择商品');
   const prodResult = await queryDB(env, 'SELECT * FROM products WHERE id = ?', [productId]);
   const product = (prodResult.results && prodResult.results[0]) || null;
@@ -1311,13 +1311,25 @@ async function handleBuyProduct(env, authHeader, body) {
   }
   await runDB(env, 'UPDATE users SET diamond = diamond - ? WHERE id = ?', [diamondCost, userId]);
   const orderId = generateId();
-  await runDB(env,
-    `INSERT INTO orders (id, product_id, boss_id, status, price, game, title, description, messages, handler_id)
-     VALUES (?, ?, ?, "pending", ?, ?, ?, ?, ?, ?)`,
-    [orderId, productId, userId, product.price, product.game, product.title, product.desc || '',
-     JSON.stringify([{ sender: 'system', content: '订单已创建', time: new Date().toISOString() }]),
-     assignedHandlerId || null]
-  );
+  const remarkText = String(remark || '').trim();
+  const msgList = [{ sender: 'system', content: '订单已创建', time: new Date().toISOString() }];
+  if (remarkText) msgList.push({ sender: 'boss', content: '备注：' + remarkText, time: new Date().toISOString() });
+  try {
+    await ensureExtraTables(env);
+    await runDB(env,
+      `INSERT INTO orders (id, product_id, boss_id, status, price, game, title, description, messages, handler_id, remark)
+       VALUES (?, ?, ?, "pending", ?, ?, ?, ?, ?, ?, ?)`,
+      [orderId, productId, userId, product.price, product.game, product.title, product.desc || '',
+       JSON.stringify(msgList), assignedHandlerId || null, remarkText]
+    );
+  } catch (e) {
+    await runDB(env,
+      `INSERT INTO orders (id, product_id, boss_id, status, price, game, title, description, messages, handler_id)
+       VALUES (?, ?, ?, "pending", ?, ?, ?, ?, ?, ?)`,
+      [orderId, productId, userId, product.price, product.game, product.title, product.desc || '',
+       JSON.stringify(msgList), assignedHandlerId || null]
+    );
+  }
   await runDB(env, 'UPDATE products SET sold = sold + 1 WHERE id = ?', [productId]);
   return jsonResponse({ orderId, message: '购买成功' });
 }
