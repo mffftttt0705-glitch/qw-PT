@@ -1535,6 +1535,93 @@ async function handleDispatcherOrders(env, authHeader) {
   const result = await queryDB(env, 'SELECT * FROM orders WHERE boss_id = ? ORDER BY created_at DESC', [userId]);
   return jsonResponse(result.results || []);
 }
+// ============================================================
+//  派单订单模板
+// ============================================================
+async function handleListOrderTemplates(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || (user.role !== 'dispatcher' && user.role !== 'admin')) return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const r = await queryDB(env, 'SELECT * FROM order_templates WHERE user_id = ? ORDER BY updated_at DESC, created_at DESC', [userId]);
+  return jsonResponse(r.results || []);
+}
+
+async function handleSaveOrderTemplate(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || (user.role !== 'dispatcher' && user.role !== 'admin')) return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const name = String(body.name || body.title || '').trim();
+  const title = String(body.title || '').trim();
+  const price = parseFloat(body.price);
+  if (!title) return errorResponse('请填写订单标题');
+  if (!price || price < 1) return errorResponse('价格至少为1红钻');
+  const now = new Date().toISOString();
+  const payload = {
+    name: name || title,
+    title,
+    game: String(body.game || '暗区突围').trim(),
+    description: String(body.description || body.desc || '').trim(),
+    price,
+    category_id: body.category_id || null,
+    remark: String(body.remark || '').trim(),
+    contact_info: String(body.contact_info || '').trim(),
+    urgency: body.urgency || '普通',
+    quantity: parseInt(body.quantity, 10) || 1
+  };
+  if (body.id) {
+    const exist = await queryDB(env, 'SELECT * FROM order_templates WHERE id = ? AND user_id = ?', [body.id, userId]);
+    if (!exist.results || !exist.results[0]) return errorResponse('模板不存在', 404);
+    await runDB(env,
+      `UPDATE order_templates SET name=?, title=?, game=?, description=?, price=?, category_id=?, remark=?, contact_info=?, urgency=?, quantity=?, updated_at=? WHERE id=? AND user_id=?`,
+      [payload.name, payload.title, payload.game, payload.description, payload.price, payload.category_id, payload.remark, payload.contact_info, payload.urgency, payload.quantity, now, body.id, userId]);
+    return jsonResponse({ success: true, id: body.id, message: '模板已更新' });
+  }
+  const id = generateId();
+  await runDB(env,
+    `INSERT INTO order_templates (id, user_id, name, title, game, description, price, category_id, remark, contact_info, urgency, quantity, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, userId, payload.name, payload.title, payload.game, payload.description, payload.price, payload.category_id, payload.remark, payload.contact_info, payload.urgency, payload.quantity, now, now]);
+  return jsonResponse({ success: true, id, message: '模板已保存' });
+}
+
+async function handleDeleteOrderTemplate(env, authHeader, templateId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || (user.role !== 'dispatcher' && user.role !== 'admin')) return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const exist = await queryDB(env, 'SELECT id FROM order_templates WHERE id = ? AND user_id = ?', [templateId, userId]);
+  if (!exist.results || !exist.results[0]) return errorResponse('模板不存在', 404);
+  await runDB(env, 'DELETE FROM order_templates WHERE id = ? AND user_id = ?', [templateId, userId]);
+  return jsonResponse({ success: true, message: '模板已删除' });
+}
+
+async function handlePublishOrderTemplate(env, authHeader, templateId) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || (user.role !== 'dispatcher' && user.role !== 'admin')) return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const r = await queryDB(env, 'SELECT * FROM order_templates WHERE id = ? AND user_id = ?', [templateId, userId]);
+  const t = r.results && r.results[0];
+  if (!t) return errorResponse('模板不存在', 404);
+  return await handleDispatcherPublish(env, authHeader, {
+    game: t.game,
+    title: t.title,
+    description: t.description,
+    price: t.price,
+    category_id: t.category_id,
+    remark: t.remark,
+    contact_info: t.contact_info,
+    urgency: t.urgency,
+    quantity: t.quantity
+  });
+}
+
 async function handleDispatcherConfirmComplete(env, authHeader, orderId) {
   const userId = verifyAndGetUserId(authHeader);
   if (!userId) return errorResponse('请先登录', 401);
@@ -1956,6 +2043,24 @@ async function ensureExtraTables(env) {
       is_public INTEGER DEFAULT 0,
       status TEXT DEFAULT 'active',
       created_at TEXT
+    )`);
+  } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS order_templates (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      name TEXT,
+      title TEXT,
+      game TEXT,
+      description TEXT,
+      price REAL,
+      category_id TEXT,
+      remark TEXT,
+      contact_info TEXT,
+      urgency TEXT,
+      quantity INTEGER,
+      created_at TEXT,
+      updated_at TEXT
     )`);
   } catch (e) {}
   // 订单扩展字段（兼容已有表）
@@ -3581,6 +3686,19 @@ export async function onRequest(context) {
     if (path === '/api/dispatcher/stats' && method === 'GET') return await handleDispatcherStats(env, authHeader);
     if (path === '/api/dispatcher/orders' && method === 'GET') return await handleDispatcherOrders(env, authHeader);
     if (path === '/api/dispatcher/publish' && method === 'POST') return await handleDispatcherPublish(env, authHeader, body);
+    if (path === '/api/dispatcher/templates' && method === 'GET') return await handleListOrderTemplates(env, authHeader);
+    if (path === '/api/dispatcher/templates' && method === 'POST') return await handleSaveOrderTemplate(env, authHeader, body);
+    if (path.startsWith('/api/dispatcher/templates/') && path.endsWith('/publish') && method === 'POST') {
+      const tid = path.replace('/api/dispatcher/templates/', '').replace('/publish', '');
+      return await handlePublishOrderTemplate(env, authHeader, tid);
+    }
+    if (path.startsWith('/api/dispatcher/templates/') && method === 'PUT') {
+      const tid = path.replace('/api/dispatcher/templates/', '');
+      return await handleSaveOrderTemplate(env, authHeader, Object.assign({}, body, { id: tid }));
+    }
+    if (path.startsWith('/api/dispatcher/templates/') && method === 'DELETE') {
+      return await handleDeleteOrderTemplate(env, authHeader, path.replace('/api/dispatcher/templates/', ''));
+    }
     if (path === '/api/withdraw/request' && method === 'POST') return await handleRequestWithdraw(env, authHeader, body);
     if (path === '/api/recharge/custom' && method === 'POST') return await handleCustomRecharge(env, authHeader, body);
     if (path === '/api/recharge/my' && method === 'GET') return await handleGetMyRecharges(env, authHeader);
