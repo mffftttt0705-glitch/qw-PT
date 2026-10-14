@@ -17,9 +17,15 @@
 <meta name="msapplication-TileImage" href="/icons/icon-144x144.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" media="all" onerror="document.documentElement.classList.add('no-fa')" />
 <style>
-/* 内置 SVG 图标：WebView/APK 无外网时也能显示 */
-.svg-ico{display:inline-block;vertical-align:-0.15em;width:1em;height:1em;flex-shrink:0;}
+/* 内置 SVG 图标：按文字字号放大，接近原 FontAwesome 观感 */
+.svg-ico{display:inline-block;vertical-align:-0.2em;width:1.15em;height:1.15em;flex-shrink:0;}
 .svg-ico.fa-spin{animation:spinLoad 0.8s linear infinite;}
+.bottom-nav .nav-item .svg-ico{width:26px;height:26px;}
+.more-functions .func-item .svg-ico,.more-functions .func-item .icon.svg-ico{width:26px;height:26px;margin-bottom:4px;}
+.menu-list .menu-item .left .svg-ico{width:20px;height:20px;}
+.product-price .svg-ico{width:1em;height:1em;color:#f4212e;}
+.inline-load{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 16px;gap:10px;color:var(--text-muted);font-size:13px;}
+.inline-load .gl-spinner{width:28px;height:28px;border:3px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad 0.7s linear infinite;}
 i.fas,i.far,i.fa{display:inline-block;}
 html.no-fa i.fas:before,html.no-fa i.far:before,html.no-fa i.fa:before{content:''!important;}
 #globalLoading{position:fixed;inset:0;z-index:99999;background:rgba(255,255,255,0.55);display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
@@ -949,8 +955,8 @@ const FA_SVG_PATHS={
   'fa-comment':'<path d="M5 6h14a2 2 0 012 2v7a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   'fa-user':'<circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   'fa-users':'<circle cx="9" cy="8" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18c1-3 2.8-4.5 5.5-4.5S13 15 14 18M14 18c.6-2 1.8-3 3.8-3 1.5 0 2.7.7 3.7 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-  'fa-gem':'<path d="M6 9l6 11 6-11-3-4H9L6 9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 9h12M9 5l-3 4 6 11M15 5l3 4-6 11" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>',
-  'fa-coins':'<ellipse cx="10" cy="15" rx="6" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 15V10c0-1.7 2.7-3 6-3s6 1.3 6 3v5" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="14" cy="11" rx="6" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 11V7c0-1.7-2.7-3-6-3" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-gem':'<path d="M3.5 9.2L7.2 4.5h9.6l3.7 4.7-8.5 11.3L3.5 9.2z" fill="currentColor"/><path d="M3.5 9.2h17M7.2 4.5l4.8 4.7 4.8-4.7M12 9.2v11.3" fill="none" stroke="#fff" stroke-width="1.1" opacity=".55"/>',
+  'fa-coins':'<ellipse cx="9.5" cy="14.5" rx="5.5" ry="2.8" fill="currentColor" opacity=".35"/><ellipse cx="9.5" cy="12.2" rx="5.5" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 12.2v4.5c0 1.5 2.5 2.8 5.5 2.8s5.5-1.3 5.5-2.8v-4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="14.5" cy="9.5" rx="5.5" ry="2.8" fill="currentColor" opacity=".4"/><ellipse cx="14.5" cy="7.2" rx="5.5" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 7.2v4.2c0 1.5 2.5 2.8 5.5 2.8s5.5-1.3 5.5-2.8V7.2" fill="none" stroke="currentColor" stroke-width="1.6"/>',
   'fa-plus':'<path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   'fa-plus-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   'fa-minus-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
@@ -1031,14 +1037,15 @@ const FA_SVG_PATHS={
   'fa-box-open':'<path d="M3 10l9-4 9 4-9 4-9-4zM3 10v8l9 4 9-4v-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
 };
 function svgIcon(name,size){
-  size=size||18;
+  size=size||22;
   let key=String(name||'').trim();
   const parts=key.split(/\s+/);
   key=parts.find(p=>p.indexOf('fa-')===0&&p!=='fa-spin'&&p!=='fa-solid'&&p!=='fa-regular')||parts[parts.length-1]||'fa-store';
   if(key.indexOf('fa-')!==0)key='fa-'+key;
   const path=FA_SVG_PATHS[key]||FA_SVG_PATHS['fa-star'];
   const spin=parts.indexOf('fa-spin')>=0||key==='fa-spinner'||key==='fa-spin';
-  return `<svg class="svg-ico${spin?' fa-spin':''}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${path}</svg>`;
+  const colorStyle=key==='fa-gem'?' style="color:#f4212e"':'';
+  return `<svg class="svg-ico${spin?' fa-spin':''}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"${colorStyle}>${path}</svg>`;
 }
 function hydrateIcons(root){
   try{
@@ -1049,8 +1056,11 @@ function hydrateIcons(root){
       const name=cls.find(c=>c.indexOf('fa-')===0&&c!=='fa-spin'&&c!=='fa-solid'&&c!=='fa-regular'&&c!=='fa-fw');
       if(!name)return;
       const spin=cls.indexOf('fa-spin')>=0||name==='fa-spinner';
-      const size=Math.max(12,parseInt(window.getComputedStyle(el).fontSize,10)||16);
-      const svg=svgIcon(spin?name+' fa-spin':name,size);
+      const fs=parseInt(window.getComputedStyle(el).fontSize,10)||16;
+      const size=Math.max(18,Math.round(fs*1.25));
+      const keepClass=cls.filter(c=>c==='icon').join(' ');
+      let svg=svgIcon(spin?name+' fa-spin':name,size);
+      if(keepClass)svg=svg.replace('class="svg-ico','class="svg-ico '+keepClass);
       el.setAttribute('data-svg','1');
       el.outerHTML=svg;
     });
@@ -1302,7 +1312,7 @@ function renderBottomNav(){
   ];
   nav.innerHTML=items.map(item=>`
     <button class="nav-item" data-target="${item.id}">
-      ${typeof svgIcon==='function'?svgIcon(item.icon,22):`<i class="fas ${item.icon}"></i>`}
+      ${typeof svgIcon==='function'?svgIcon(item.icon,26):`<i class="fas ${item.icon}"></i>`}
       <span>${item.label}</span>
       ${item.badge?`<span class="badge" id="${item.badge}" style="display:none;">0</span>`:''}
     </button>`).join('');
@@ -1358,6 +1368,8 @@ function navigateTo(target){
   closeProductDetail();
   closeChatFullscreen();
   closeUserProfile();
+  // 整页不盖全局加载：先展示页面骨架，由各模块自己显示局部加载
+  hideGlobalLoading(true);
   document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.target===target));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const viewMap={'home':'view-home','category':'view-category','hall':'view-hall','messages':'view-messages','account':'view-account'};
@@ -1366,38 +1378,27 @@ function navigateTo(target){
     const viewEl=document.getElementById(viewId);
     if(viewEl){
       viewEl.classList.add('active');
-      const now=Date.now();
-      const last=_navCache[target]||0;
-      const fresh=now-last<12000;
-      const run=async function(){
-        try{
-          switch(target){
-            case 'home':
-              if(!fresh){showGlobalLoading('加载商城...');await renderHomePage();hideGlobalLoading();}
-              else {renderHomePage();}
-              startBannerAuto();
-              break;
-            case 'category':
-              if(!fresh){showGlobalLoading('加载分类...');await Promise.resolve(renderCategoryPage());hideGlobalLoading();}
-              else renderCategoryPage();
-              break;
-            case 'hall':
-              showGlobalLoading('加载接单大厅...');
-              await Promise.resolve(renderHallPage());
-              hideGlobalLoading();
-              break;
-            case 'messages':
-              switchMsgTab(currentMsgTab||'messages');
-              break;
-            case 'account':
-              if(!fresh){showGlobalLoading('加载中...');await Promise.resolve(renderMyPage());hideGlobalLoading();}
-              else renderMyPage();
-              break;
-          }
-          _navCache[target]=Date.now();
-        }catch(e){hideGlobalLoading(true);}
-      };
-      run();
+      try{
+        switch(target){
+          case 'home':
+            renderHomePage();
+            startBannerAuto();
+            break;
+          case 'category':
+            renderCategoryPage();
+            break;
+          case 'hall':
+            renderHallPage();
+            break;
+          case 'messages':
+            switchMsgTab(currentMsgTab||'messages');
+            break;
+          case 'account':
+            renderMyPage();
+            break;
+        }
+        _navCache[target]=Date.now();
+      }catch(e){}
     }
   }
 }
@@ -2669,7 +2670,36 @@ function renderMoreFunctions(){
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }
-  container.innerHTML=items.map(item=>`<div class="func-item" onclick="${item.action}"><i class="fas ${item.icon} icon"></i><span class="label">${item.label}</span></div>`).join('');
+  // 末尾统一加「刷新新版本」，Cloudflare 更新后点此清缓存重载
+  items.push({icon:'fa-sync',label:'刷新版本',action:"forceRefreshApp()"});
+  container.innerHTML=items.map(item=>{
+    const ico=typeof svgIcon==='function'?svgIcon(item.icon,26):`<i class="fas ${item.icon} icon"></i>`;
+    return `<div class="func-item" onclick="${item.action}">${ico.replace('class="svg-ico"','class="svg-ico icon"')}<span class="label">${item.label}</span></div>`;
+  }).join('');
+}
+
+/** 前端版本号：每次你部署重要更新可改这一串，用于提示刷新 */
+const APP_VERSION='20261014b';
+function forceRefreshApp(){
+  confirmAction('刷新新版本','将清除本地缓存并重新加载页面，以获取 Cloudflare 最新代码。是否继续？','立即刷新','doForceRefreshApp()');
+}
+async function doForceRefreshApp(){
+  try{
+    showGlobalLoading('正在刷新...');
+    try{localStorage.setItem('qw_app_version',APP_VERSION);}catch(e){}
+    if(window.caches&&caches.keys){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  try{
+    const u=new URL(location.href);
+    u.searchParams.set('_v',APP_VERSION);
+    u.searchParams.set('_t',String(Date.now()));
+    location.replace(u.toString());
+  }catch(e){
+    location.reload();
+  }
 }
 
 /* ============================================================
@@ -6360,7 +6390,7 @@ async function renderHallPage() {
   if (pubBtn) {
     pubBtn.style.display = (role === 'boss' || role === 'admin' || role === 'service') ? 'inline-flex' : 'none';
   }
-  container.innerHTML = '<div class="empty-state"><p>加载中...</p></div>';
+  container.innerHTML = '<div class="inline-load"><div class="gl-spinner"></div><div>接单大厅加载中...</div></div>';
   try {
     try {
       const cats = await apiRequest('/hall/categories') || [];
@@ -7235,43 +7265,37 @@ function logout(){
 async function afterLogin(){
   document.getElementById('authPage').style.display='none';
   document.getElementById('mainApp').classList.remove('hidden');
-  showGlobalLoading('正在进入...');
+  hideGlobalLoading(true);
   try{
-    try{
-      const user=await apiRequest('/me');
-      currentUser=user;
-      currentUserRole=user.role;
-    }catch(err){}
-    renderBottomNav();
-    hydrateIcons(document.getElementById('bottomNav'));
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    document.getElementById('view-home').classList.add('active');
-    document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.target==='home'));
-    // 分批渲染，避免登录后一次性卡死
-    await renderHomePage();
-    hideGlobalLoading(true);
-    setTimeout(function(){try{renderCategoryPage();}catch(e){}},30);
-    setTimeout(function(){try{renderMyPage();}catch(e){}},60);
-    setTimeout(function(){try{renderPosts();}catch(e){}},100);
-    setTimeout(function(){try{loadContacts();}catch(e){}},140);
-    setTimeout(function(){try{updateBadges();requestMsgNotificationPermission();}catch(e){}},180);
-    setTimeout(()=>{loadAnnounceData().then(()=>showAnnounceModal());},500);
-    if(window._badgeTimer)clearInterval(window._badgeTimer);
-    // 未读轮询更勤一点，便于通知
-    window._badgeTimer=setInterval(updateBadges,15000);
-    if(window._heartbeatTimer)clearInterval(window._heartbeatTimer);
-    const doHeartbeat=()=>{if(token)apiRequest('/heartbeat',{method:'POST'}).catch(()=>{});};
-    doHeartbeat();
-    window._heartbeatTimer=setInterval(doHeartbeat,60000);
-    document.addEventListener('visibilitychange',function(){
-      if(document.visibilityState==='visible'){
-        try{document.title=document.title.replace(/^\(\d+\+?\)\s*/,'');}catch(e){}
-        updateBadges();
-      }
-    });
-  }catch(e){
-    hideGlobalLoading(true);
-  }
+    const user=await apiRequest('/me');
+    currentUser=user;
+    currentUserRole=user.role;
+  }catch(err){}
+  renderBottomNav();
+  hydrateIcons(document.getElementById('bottomNav'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-home').classList.add('active');
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.target==='home'));
+  // 先展示首页，其它后台慢慢补，不挡整页
+  try{renderHomePage();}catch(e){}
+  setTimeout(function(){try{renderCategoryPage();}catch(e){}},40);
+  setTimeout(function(){try{renderMyPage();}catch(e){}},80);
+  setTimeout(function(){try{renderPosts();}catch(e){}},120);
+  setTimeout(function(){try{loadContacts();}catch(e){}},160);
+  setTimeout(function(){try{updateBadges();requestMsgNotificationPermission();}catch(e){}},200);
+  setTimeout(()=>{loadAnnounceData().then(()=>showAnnounceModal());},500);
+  if(window._badgeTimer)clearInterval(window._badgeTimer);
+  window._badgeTimer=setInterval(updateBadges,15000);
+  if(window._heartbeatTimer)clearInterval(window._heartbeatTimer);
+  const doHeartbeat=()=>{if(token)apiRequest('/heartbeat',{method:'POST'}).catch(()=>{});};
+  doHeartbeat();
+  window._heartbeatTimer=setInterval(doHeartbeat,60000);
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'){
+      try{document.title=document.title.replace(/^\(\d+\+?\)\s*/,'');}catch(e){}
+      updateBadges();
+    }
+  });
 }
 async function doAuthLogin(){
   const username=document.getElementById('authUsername').value.trim();
@@ -7835,6 +7859,8 @@ window.showGlobalLoading=showGlobalLoading;
 window.hideGlobalLoading=hideGlobalLoading;
 window.withLoading=withLoading;
 window.requestMsgNotificationPermission=requestMsgNotificationPermission;
+window.forceRefreshApp=forceRefreshApp;
+window.doForceRefreshApp=doForceRefreshApp;
 window.filterHallByCategory=filterHallByCategory;
 window.showPublishDemand=showPublishDemand;
 window.submitPublishDemand=submitPublishDemand;
