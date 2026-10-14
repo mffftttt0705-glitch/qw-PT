@@ -123,6 +123,8 @@ async function handleLogin(env, body) {
       username: user.username,
       role: user.role || 'boss',
       diamond: user.diamond || 0,
+      bound_diamond: Number(user.bound_diamond) || 0,
+      coin: Number(user.coin) || 0,
       balance: user.balance || 0,
       status: user.status || 'active',
       banner: user.banner || '',
@@ -145,7 +147,133 @@ async function handleGetMe(env, authHeader) {
   const avatar = avatarResult.results?.[0]?.avatar_url || user.avatar || '';
   const { password, ...rest } = user;
   rest.avatar = avatar;
+  rest.diamond = Number(rest.diamond) || 0;
+  rest.bound_diamond = Number(rest.bound_diamond) || 0;
+  rest.coin = Number(rest.coin) || 0;
   return jsonResponse(rest);
+}
+
+// ============================================================
+//  签到 / 金币 / 优惠券
+// ============================================================
+async function handleGetCheckinStatus(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  await ensureExtraTables(env);
+  const today = new Date().toISOString().slice(0, 10);
+  const done = await queryDB(env, 'SELECT id FROM checkin_records WHERE user_id = ? AND checkin_date = ?', [userId, today]);
+  const rewards = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 ORDER BY sort_order ASC, created_at ASC');
+  const coupons = await queryDB(env, `SELECT * FROM user_coupons WHERE user_id = ? ORDER BY obtained_at DESC LIMIT 50`, [userId]);
+  const user = await getUserById(env, userId);
+  return jsonResponse({
+    checked_today: !!(done.results && done.results[0]),
+    rewards: rewards.results || [],
+    coupons: coupons.results || [],
+    coin: Number(user && user.coin) || 0,
+    diamond: Number(user && user.diamond) || 0,
+    bound_diamond: Number(user && user.bound_diamond) || 0
+  });
+}
+
+async function handleDoCheckin(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  await ensureExtraTables(env);
+  const today = new Date().toISOString().slice(0, 10);
+  const done = await queryDB(env, 'SELECT id FROM checkin_records WHERE user_id = ? AND checkin_date = ?', [userId, today]);
+  if (done.results && done.results[0]) return errorResponse('今日已签到');
+  const rewardsRes = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 ORDER BY sort_order ASC');
+  const rewards = rewardsRes.results || [];
+  if (!rewards.length) {
+    // 默认奖励：金币+10
+    rewards.push({ reward_type: 'coin', reward_value: 10, reward_name: '金币' });
+  }
+  const got = [];
+  for (const r of rewards) {
+    const type = r.reward_type || 'coin';
+    const val = Number(r.reward_value) || 0;
+    const name = r.reward_name || '';
+    if (type === 'coin' && val > 0) {
+      await runDB(env, 'UPDATE users SET coin = COALESCE(coin,0) + ? WHERE id = ?', [val, userId]);
+      got.push({ type: 'coin', value: val, name: name || '金币' });
+    } else if (type === 'diamond' && val > 0) {
+      await runDB(env, 'UPDATE users SET diamond = COALESCE(diamond,0) + ? WHERE id = ?', [val, userId]);
+      got.push({ type: 'diamond', value: val, name: name || '红钻' });
+    } else if (type === 'bound_diamond' && val > 0) {
+      await creditHandlerBoundDiamond(env, userId, val);
+      got.push({ type: 'bound_diamond', value: val, name: name || '绑定红钻' });
+    } else if (type === 'coupon') {
+      const cname = name || '优惠券';
+      await runDB(env,
+        `INSERT INTO user_coupons (id, user_id, name, description, status, source, obtained_at) VALUES (?, ?, ?, ?, 'unused', 'checkin', ?)`,
+        [generateId(), userId, cname, r.coupon_desc || '', new Date().toISOString()]);
+      got.push({ type: 'coupon', value: 1, name: cname });
+    }
+  }
+  await runDB(env,
+    `INSERT INTO checkin_records (id, user_id, checkin_date, rewards_json, created_at) VALUES (?, ?, ?, ?, ?)`,
+    [generateId(), userId, today, JSON.stringify(got), new Date().toISOString()]);
+  return jsonResponse({ success: true, message: '签到成功', rewards: got });
+}
+
+async function handleListCheckinRewards(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const r = await queryDB(env, 'SELECT * FROM checkin_rewards ORDER BY sort_order ASC, created_at ASC');
+  return jsonResponse(r.results || []);
+}
+
+async function handleSaveCheckinReward(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const reward_type = body.reward_type || 'coin';
+  const reward_value = Number(body.reward_value) || 0;
+  const reward_name = String(body.reward_name || '').trim();
+  const coupon_desc = String(body.coupon_desc || '').trim();
+  const sort_order = parseInt(body.sort_order, 10) || 0;
+  const enabled = body.enabled === 0 || body.enabled === false ? 0 : 1;
+  if (body.id) {
+    await runDB(env,
+      `UPDATE checkin_rewards SET reward_type=?, reward_value=?, reward_name=?, coupon_desc=?, sort_order=?, enabled=? WHERE id=?`,
+      [reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, body.id]);
+    return jsonResponse({ success: true, message: '已更新' });
+  }
+  const id = generateId();
+  await runDB(env,
+    `INSERT INTO checkin_rewards (id, reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, new Date().toISOString()]);
+  return jsonResponse({ success: true, id, message: '已添加' });
+}
+
+async function handleDeleteCheckinReward(env, authHeader, rid) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await runDB(env, 'DELETE FROM checkin_rewards WHERE id = ?', [rid]);
+  return jsonResponse({ success: true, message: '已删除' });
+}
+
+async function handleGetMyWallet(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  await ensureExtraTables(env);
+  const user = await getUserById(env, userId);
+  if (!user) return errorResponse('用户不存在', 404);
+  const coupons = await queryDB(env, `SELECT * FROM user_coupons WHERE user_id = ? ORDER BY obtained_at DESC LIMIT 100`, [userId]);
+  return jsonResponse({
+    diamond: Number(user.diamond) || 0,
+    bound_diamond: Number(user.bound_diamond) || 0,
+    coin: Number(user.coin) || 0,
+    coupons: coupons.results || []
+  });
 }
 
 async function handleGetUserPublic(env, userId) {
@@ -1442,6 +1570,7 @@ async function handleBossConfirm(env, authHeader, orderId) {
   if (order.boss_id !== userId && user.role !== 'admin' && user.role !== 'service') return errorResponse('不是你的订单', 403);
   if (order.status !== 'review') return errorResponse('只有待验收可确认');
   await runDB(env, 'UPDATE orders SET status = "completed", end_time = ? WHERE id = ?', [new Date().toISOString(), orderId]);
+  await settleOrderToHandler(env, order);
   return jsonResponse({ message: '已确认完成' });
 }
 async function handleRefundRequest(env, authHeader, orderId, body) {
@@ -1467,16 +1596,20 @@ async function handleRefundRequest(env, authHeader, orderId, body) {
 async function handleAdminConfirm(env, orderId) {
   const result = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [orderId]);
   if (!result.results || result.results.length === 0) return errorResponse('订单不存在', 404);
+  const order = result.results[0];
   await runDB(env, 'UPDATE orders SET status = "completed", end_time = ? WHERE id = ?',
     [new Date().toISOString(), orderId]);
+  await settleOrderToHandler(env, order);
   return jsonResponse({ message: '验收通过' });
 }
 
 async function handleAdminForceComplete(env, orderId) {
   const result = await queryDB(env, 'SELECT * FROM orders WHERE id = ?', [orderId]);
   if (!result.results || result.results.length === 0) return errorResponse('订单不存在', 404);
+  const order = result.results[0];
   await runDB(env, 'UPDATE orders SET status = "completed", end_time = ? WHERE id = ?',
     [new Date().toISOString(), orderId]);
+  await settleOrderToHandler(env, order);
   return jsonResponse({ message: '强制完成成功' });
 }
 
@@ -1646,6 +1779,11 @@ async function handleDispatcherConfirmComplete(env, authHeader, orderId) {
   if (order.status !== 'ongoing' && order.status !== 'pending') return errorResponse('订单状态不可确认', 400);
   // 已清除派单确认时的扣红钻、给打手加钻逻辑
   await runDB(env, 'UPDATE orders SET status = "completed", end_time = ?, settled = 1 WHERE id = ?', [new Date().toISOString(), orderId]);
+  // settled=1 时 settleOrderToHandler 不会重复加钻；此处需先加绑定红钻
+  if (order.handler_id && Number(order.settled) !== 1) {
+    const price = Number(order.price) || 0;
+    if (price > 0) await creditHandlerBoundDiamond(env, order.handler_id, price);
+  }
   return jsonResponse({ success: true, message: `验收完成` });
 }
 async function handleSendChat(env, authHeader, orderId, body) {
@@ -2090,6 +2228,64 @@ async function ensureExtraTables(env) {
   }
   // 用户性别字段
   try { await runDB(env, `ALTER TABLE users ADD COLUMN gender TEXT`); } catch (e) {}
+  try { await runDB(env, `ALTER TABLE users ADD COLUMN coin INTEGER DEFAULT 0`); } catch (e) {}
+  try { await runDB(env, `ALTER TABLE users ADD COLUMN bound_diamond REAL DEFAULT 0`); } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS checkin_rewards (
+      id TEXT PRIMARY KEY,
+      reward_type TEXT,
+      reward_value REAL,
+      reward_name TEXT,
+      coupon_desc TEXT,
+      sort_order INTEGER DEFAULT 0,
+      enabled INTEGER DEFAULT 1,
+      created_at TEXT
+    )`);
+  } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS checkin_records (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      checkin_date TEXT,
+      rewards_json TEXT,
+      created_at TEXT
+    )`);
+  } catch (e) {}
+  try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS user_coupons (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      name TEXT,
+      description TEXT,
+      status TEXT DEFAULT 'unused',
+      source TEXT,
+      obtained_at TEXT,
+      used_at TEXT
+    )`);
+  } catch (e) {}
+}
+
+/** 打手获得收益 → 绑定红钻 */
+async function creditHandlerBoundDiamond(env, handlerId, amount) {
+  if (!handlerId || !amount || amount <= 0) return;
+  await ensureExtraTables(env);
+  try {
+    await runDB(env, 'UPDATE users SET bound_diamond = COALESCE(bound_diamond, 0) + ? WHERE id = ?', [amount, handlerId]);
+  } catch (e) {
+    try { await runDB(env, 'ALTER TABLE users ADD COLUMN bound_diamond REAL DEFAULT 0'); } catch (e2) {}
+    await runDB(env, 'UPDATE users SET bound_diamond = COALESCE(bound_diamond, 0) + ? WHERE id = ?', [amount, handlerId]);
+  }
+}
+
+/** 订单完成时给打手加绑定红钻（仅未结算过） */
+async function settleOrderToHandler(env, order) {
+  if (!order || !order.handler_id) return;
+  if (Number(order.settled) === 1) return;
+  const price = Number(order.price) || 0;
+  if (price > 0) await creditHandlerBoundDiamond(env, order.handler_id, price);
+  try {
+    await runDB(env, 'UPDATE orders SET settled = 1 WHERE id = ?', [order.id]);
+  } catch (e) {}
 }
 
 /** 用户自己设置性别：仅允许设置一次（已设置则不可改） */
@@ -2876,7 +3072,13 @@ async function handleSendGift(env, authHeader, body) {
   if ((user.diamond || 0) < (g.price || 0)) return errorResponse('红钻不足');
   if (g.price > 0) {
     await runDB(env, 'UPDATE users SET diamond = diamond - ? WHERE id = ?', [g.price, userId]);
-    await runDB(env, 'UPDATE users SET diamond = diamond + ? WHERE id = ?', [g.price, to_user_id]);
+    // 打手收到礼物红钻进入绑定红钻；其他人仍加普通红钻
+    const target = await getUserById(env, to_user_id);
+    if (target && target.role === 'handler') {
+      await creditHandlerBoundDiamond(env, to_user_id, g.price);
+    } else {
+      await runDB(env, 'UPDATE users SET diamond = diamond + ? WHERE id = ?', [g.price, to_user_id]);
+    }
   }
   await runDB(env,
     'INSERT INTO gift_records (id, gift_id, from_user_id, to_user_id, created_at) VALUES (?, ?, ?, ?, ?)',
@@ -2909,12 +3111,13 @@ async function handleRequestWithdraw(env, authHeader, body) {
   if (user.role !== 'handler') return errorResponse('只有打手可申请提现', 403);
   const { amount } = body;
   if (!amount || amount < 1) return errorResponse('请输入有效数量');
-  // 取消冻结100红钻限制，可提现全部余额
-  const available = Math.max(0, Number(user.diamond) || 0);
-  if (amount > available) return errorResponse(`可提现红钻不足，可用：${available}`, 400);
+  // 打手提现使用绑定红钻
+  await ensureExtraTables(env);
+  const available = Math.max(0, Number(user.bound_diamond) || 0);
+  if (amount > available) return errorResponse(`可提现绑定红钻不足，可用：${available}`, 400);
   const id = generateId();
   await runDB(env, 'INSERT INTO withdraw_requests (id, user_id, amount, status, created_at) VALUES (?, ?, ?, "pending", ?)', [id, userId, amount, new Date().toISOString()]);
-  return jsonResponse({ success: true, message: '提现申请已提交' });
+  return jsonResponse({ success: true, message: '提现申请已提交（将从绑定红钻扣除）' });
 }
 async function handleAdminGetWithdrawals(env, authHeader) {
   const userId = verifyAndGetUserId(authHeader);
@@ -2933,7 +3136,12 @@ async function handleAdminApproveWithdraw(env, authHeader, withdrawId) {
   if (!result.results || result.results.length === 0) return errorResponse('提现申请不存在', 404);
   const withdraw = result.results[0];
   if (withdraw.status !== 'pending') return errorResponse('已处理', 400);
-  await runDB(env, 'UPDATE users SET diamond = diamond - ? WHERE id = ?', [withdraw.amount, withdraw.user_id]);
+  // 优先扣绑定红钻（打手收益）
+  try {
+    await runDB(env, 'UPDATE users SET bound_diamond = COALESCE(bound_diamond,0) - ? WHERE id = ? AND COALESCE(bound_diamond,0) >= ?', [withdraw.amount, withdraw.user_id, withdraw.amount]);
+  } catch (e) {
+    await runDB(env, 'UPDATE users SET diamond = diamond - ? WHERE id = ?', [withdraw.amount, withdraw.user_id]);
+  }
   await runDB(env, 'UPDATE withdraw_requests SET status = "approved", handled_at = ? WHERE id = ?', [new Date().toISOString(), withdrawId]);
   return jsonResponse({ success: true, message: `提现已通过` });
 }
@@ -3684,6 +3892,17 @@ export async function onRequest(context) {
     if (path.startsWith('/api/products/') && method === 'GET') return await handleGetProductDetail(env, path.replace('/api/products/', ''));
 
     if (path === '/api/me' && method === 'GET') return await handleGetMe(env, authHeader);
+    if (path === '/api/wallet' && method === 'GET') return await handleGetMyWallet(env, authHeader);
+    if (path === '/api/checkin' && method === 'GET') return await handleGetCheckinStatus(env, authHeader);
+    if (path === '/api/checkin' && method === 'POST') return await handleDoCheckin(env, authHeader);
+    if (path === '/api/admin/checkin-rewards' && method === 'GET') return await handleListCheckinRewards(env, authHeader);
+    if (path === '/api/admin/checkin-rewards' && method === 'POST') return await handleSaveCheckinReward(env, authHeader, body);
+    if (path.startsWith('/api/admin/checkin-rewards/') && method === 'PUT') {
+      return await handleSaveCheckinReward(env, authHeader, Object.assign({}, body, { id: path.replace('/api/admin/checkin-rewards/', '') }));
+    }
+    if (path.startsWith('/api/admin/checkin-rewards/') && method === 'DELETE') {
+      return await handleDeleteCheckinReward(env, authHeader, path.replace('/api/admin/checkin-rewards/', ''));
+    }
     if (path === '/api/upload' && method === 'POST') return await handleUploadFile(env, authHeader, request);
     if (path === '/api/user-id' && method === 'PUT') return await handleChangeUserId(env, authHeader, body);
     if (path === '/api/user/avatar' && method === 'POST') return await handleUploadAvatar(env, authHeader, body);
