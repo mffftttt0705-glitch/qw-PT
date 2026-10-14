@@ -15,8 +15,18 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="msapplication-TileColor" content="#0f1419">
 <meta name="msapplication-TileImage" href="/icons/icon-144x144.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" media="all" onerror="document.documentElement.classList.add('no-fa')" />
 <style>
+/* 内置 SVG 图标：WebView/APK 无外网时也能显示 */
+.svg-ico{display:inline-block;vertical-align:-0.15em;width:1em;height:1em;flex-shrink:0;}
+.svg-ico.fa-spin{animation:spinLoad 0.8s linear infinite;}
+i.fas,i.far,i.fa{display:inline-block;}
+html.no-fa i.fas:before,html.no-fa i.far:before,html.no-fa i.fa:before{content:''!important;}
+#globalLoading{position:fixed;inset:0;z-index:99999;background:rgba(255,255,255,0.55);display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+#globalLoading.show{display:flex;}
+#globalLoading .gl-box{background:#fff;border-radius:16px;padding:18px 22px;box-shadow:0 8px 28px rgba(15,20,25,0.12);display:flex;align-items:center;gap:12px;font-size:14px;color:#0f1419;font-weight:600;}
+#globalLoading .gl-spinner{width:22px;height:22px;border:3px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad 0.7s linear infinite;}
+img[loading="lazy"]{content-visibility:auto;}
 :root {
     --bg-primary: #ffffff;
     --bg-secondary: #ffffff;
@@ -863,6 +873,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 
 <div class="modal-overlay" id="customModal"><div class="modal-box" id="customModalContent"></div></div>
 <div id="toast" class="toast"></div>
+<div id="globalLoading" aria-hidden="true"><div class="gl-box"><div class="gl-spinner"></div><span id="globalLoadingText">加载中...</span></div></div>
 <script>
 /* ============================================================
    全局状态
@@ -899,12 +910,13 @@ async function loadAppIcons() {
     });
   } catch (e) { /* 忽略加载失败 */ }
 }
-/** 获取自定义图标 HTML，无则返回 fallback 的 fontawesome 图标 */
+/** 获取自定义图标 HTML，无则返回内置 SVG（APK/WebView 不依赖外网字体） */
 function getAppIconHtml(key, fallbackClass) {
   if (appIcons[key]) {
-    return `<img src="${appIcons[key]}" style="width:100%;height:100%;object-fit:cover;" alt="" />`;
+    return `<img src="${appIcons[key]}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" alt="" />`;
   }
-  return `<i class="${fallbackClass || 'fas fa-store'}"></i>`;
+  const name=(fallbackClass||'fa-store').split(/\s+/).find(c=>c.indexOf('fa-')===0&&c!=='fa-spin')||'fa-store';
+  return typeof svgIcon==='function'?svgIcon(name,22):`<i class="${fallbackClass || 'fas fa-store'}"></i>`;
 }
 /** 头像：有用户头像用用户的，否则用自定义默认头像，再否则用首字母 */
 function getAvatarHtml(avatarUrl, username) {
@@ -926,6 +938,182 @@ let allPostsCache=[];
 /* ============================================================
    工具函数
 ============================================================ */
+/* ========== 内置 SVG 图标（解决 WebToApp/APK 外网 FontAwesome 不显示） ========== */
+const FA_SVG_PATHS={
+  'fa-arrow-left':'<path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-chevron-right':'<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-store':'<path d="M4 10h16v10H4zM3 6l1.5 4h15L21 6M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 6h16l-1 3H5z" fill="currentColor" opacity=".25"/>',
+  'fa-th-large':'<rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"/>',
+  'fa-bullseye':'<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>',
+  'fa-comment-dots':'<path d="M5 6h14a2 2 0 012 2v7a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="11" r="1.1" fill="currentColor"/><circle cx="12" cy="11" r="1.1" fill="currentColor"/><circle cx="15" cy="11" r="1.1" fill="currentColor"/>',
+  'fa-comment':'<path d="M5 6h14a2 2 0 012 2v7a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-user':'<circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-users':'<circle cx="9" cy="8" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18c1-3 2.8-4.5 5.5-4.5S13 15 14 18M14 18c.6-2 1.8-3 3.8-3 1.5 0 2.7.7 3.7 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-gem':'<path d="M6 9l6 11 6-11-3-4H9L6 9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 9h12M9 5l-3 4 6 11M15 5l3 4-6 11" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>',
+  'fa-coins':'<ellipse cx="10" cy="15" rx="6" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 15V10c0-1.7 2.7-3 6-3s6 1.3 6 3v5" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="14" cy="11" rx="6" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 11V7c0-1.7-2.7-3-6-3" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-plus':'<path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  'fa-plus-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-minus-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-times':'<path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  'fa-check-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12l3 3 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-edit':'<path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-trash':'<path d="M5 8h14M9 8V6h6v2M7 8l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-search':'<circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  'fa-image':'<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="11" r="1.8" fill="currentColor"/><path d="M3 16l5-4 4 3 3-2 6 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-video':'<rect x="3" y="7" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15 10l6-3v10l-6-3V10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-camera':'<path d="M4 8h3l2-2h6l2 2h3v11H4V8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-microphone':'<rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-paper-plane':'<path d="M4 12l16-8-6 16-2-6-8-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-smile':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="15" cy="10" r="1.1" fill="currentColor"/><path d="M8 14c1.2 2 2.8 3 4 3s2.8-1 4-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-gift':'<rect x="4" y="10" width="16" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10v10M4 14h16M8 10c0-2 1.2-3.5 3-3.5S12 9 12 10c0-1 .8-3.5 3-3.5S16 8 16 10" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-robot':'<rect x="6" y="8" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 4v4M9 13h.01M15 13h.01M9 17h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="13" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/>',
+  'fa-cog':'<circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2.5M12 18.5V21M4.9 6.5l1.8 1.8M17.3 15.7l1.8 1.8M3 12h2.5M18.5 12H21M4.9 17.5l1.8-1.8M17.3 8.3l1.8-1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-star':'<path d="M12 3l2.4 6.2H21l-5 4.2 1.8 6.6L12 16.5 6.2 20l1.8-6.6-5-4.2h6.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-heart':'<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-fire':'<path d="M12 21c4 0 6-3 6-6 0-3-2-5-3-7-1 2-1.5 3-3 3s-2-1-3-3c-1 2-3 4-3 7 0 3 2 6 6 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-tags':'<path d="M3 12V5h7l9 9-7 7-9-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.2" fill="currentColor"/>',
+  'fa-tag':'<path d="M3 12V5h7l9 9-7 7-9-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.2" fill="currentColor"/>',
+  'fa-box':'<path d="M4 8l8-3 8 3v10l-8 3-8-3V8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 3 8-3M12 11v10" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-shopping-cart':'<circle cx="9" cy="20" r="1.3" fill="currentColor"/><circle cx="17" cy="20" r="1.3" fill="currentColor"/><path d="M3 4h2l2.5 11h10l2-7H7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-clipboard-list':'<rect x="6" y="4" width="12" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 2h6v3H9zM9 11h6M9 15h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-inbox':'<path d="M3 12l2-7h14l2 7v6H3v-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3 12h5l2 3h4l2-3h5" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-headset':'<path d="M4 13v-1a8 8 0 0116 0v1M4 13h3v5H5a1 1 0 01-1-1v-4zm16 0h-3v5h2a1 1 0 001-1v-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-trophy':'<path d="M8 4h8v4a4 4 0 01-8 0V4zM8 4H5v2a3 3 0 003 3M16 4h3v2a3 3 0 01-3 3M10 16h4v3H10zM8 21h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-calendar-day':'<rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4M12 14v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-calendar-check':'<rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4M9 16l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-download':'<path d="M12 4v10M8 10l4 4 4-4M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-upload':'<path d="M12 14V4M8 8l4-4 4 4M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-sync':'<path d="M20 12a8 8 0 11-2.3-5.6M20 5v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-spinner':'<path d="M12 3a9 9 0 019 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  'fa-spin':'<path d="M12 3a9 9 0 019 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  'fa-lock':'<rect x="6" y="11" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-sign-in-alt':'<path d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5M15 8l4 4-4 4M9 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-sign-out-alt':'<path d="M13 4h5a2 2 0 012 2v12a2 2 0 01-2 2h-5M9 8l-4 4 4 4M5 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-user-plus':'<circle cx="10" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 19c1.2-3 3.2-4.5 7-4.5S15.8 16 17 19M17 8h4M19 6v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-credit-card':'<rect x="3" y="6" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 11h18" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-save':'<path d="M5 4h11l3 3v13H5V4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 18v-5h8v5" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-exclamation-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  'fa-exclamation-triangle':'<path d="M12 4l9 16H3L12 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  'fa-info-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  'fa-keyboard':'<rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-layer-group':'<path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-paperclip':'<path d="M8 12V7a3 3 0 016 0v9a4 4 0 01-8 0V9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-phone':'<path d="M7 3h3l1 4-2 1a11 11 0 005 5l1-2 4 1v3a2 2 0 01-2 2A14 14 0 015 5a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-gamepad':'<rect x="3" y="8" width="18" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 13h.01M11 13h.01M9.5 11v4M15 12h.01M17 14h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  'fa-crosshairs':'<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-home':'<path d="M4 11l8-7 8 7v9H4v-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-ellipsis-h':'<circle cx="6" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18" cy="12" r="1.5" fill="currentColor"/>',
+  'fa-ban':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 6.5l11 11" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-undo':'<path d="M5 10h8a5 5 0 110 10H9M5 10l3-3M5 10l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-receipt':'<path d="M6 3h12v18l-2-1-2 1-2-1-2 1-2-1-2 1V3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-user-slash':'<circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 19c1.5-3.2 4-5 7-5s5.5 1.8 7 5M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-folder':'<path d="M3 7h6l2 2h10v10H3V7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-globe':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18" fill="none" stroke="currentColor" stroke-width="1.4"/>',
+  'fa-palette':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="10" r="1.3" fill="currentColor"/><circle cx="14" cy="9" r="1.3" fill="currentColor"/><circle cx="15" cy="14" r="1.3" fill="currentColor"/><circle cx="10" cy="15" r="1.3" fill="currentColor"/>',
+  'fa-magic':'<path d="M5 19L15 9M13 7l2 2M8 20l-3-3M16 4l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-bullhorn':'<path d="M4 10v4h3l7 4V6L7 10H4zM18 9a3 3 0 010 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-id-card':'<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M13 10h5M13 14h4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-chart-bar':'<path d="M4 20h16M7 16V9M12 16V5M17 16v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-thumbs-up':'<path d="M8 11v9H5v-9h3zm0 0l3-6a2 2 0 012-1h1v5h5l-1 8H8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-hand-paper':'<path d="M8 11V6a1.5 1.5 0 013 0v5M11 10V5a1.5 1.5 0 013 0v6M14 11V6.5a1.5 1.5 0 013 0V14c0 3-2 5-5 5h-1c-3 0-5-2.5-5-5v-3a1.5 1.5 0 013 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  'fa-venus-mars':'<circle cx="9" cy="10" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.5 6.5L18 2M15 2h3v3M9 14v5M7 17h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-user-edit':'<circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 19c1.2-3 3-4.5 6-4.5M14 15l5 5 2-2-5-5-2 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-user-lock':'<circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 19c1.2-3 3-4.5 6-4.5M16 14v-1.5a2 2 0 114 0V14m-5 0h6v5h-6v-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-clipboard-check':'<rect x="6" y="4" width="12" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 2h6v3H9zM9 14l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-cloud-upload-alt':'<path d="M8 18h9a4 4 0 00.5-8 6 6 0 00-11.5 2A3.5 3.5 0 008 18z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 15V9M10 11l2-2 2 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-newspaper':'<rect x="4" y="4" width="16" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 8h6M7 12h10M7 16h10" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-sticky-note':'<path d="M6 4h9l5 5v11H6V4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15 4v5h5" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-toggle-on':'<rect x="2" y="8" width="20" height="8" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="12" r="3" fill="currentColor"/>',
+  'fa-fill-drip':'<path d="M12 3l7 7-7 11H5L12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="18" r="2" fill="currentColor"/>',
+  'fa-eraser':'<path d="M16 4l4 4L10 18H6l-2-2L16 4zM7 18h13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-icons':'<rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="7" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 20l4-6 3 3 3-5 4 8" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-pen':'<path d="M4 20h4L18 10l-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8l4 4" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-box-open':'<path d="M3 10l9-4 9 4-9 4-9-4zM3 10v8l9 4 9-4v-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
+};
+function svgIcon(name,size){
+  size=size||18;
+  let key=String(name||'').trim();
+  const parts=key.split(/\s+/);
+  key=parts.find(p=>p.indexOf('fa-')===0&&p!=='fa-spin'&&p!=='fa-solid'&&p!=='fa-regular')||parts[parts.length-1]||'fa-store';
+  if(key.indexOf('fa-')!==0)key='fa-'+key;
+  const path=FA_SVG_PATHS[key]||FA_SVG_PATHS['fa-star'];
+  const spin=parts.indexOf('fa-spin')>=0||key==='fa-spinner'||key==='fa-spin';
+  return `<svg class="svg-ico${spin?' fa-spin':''}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${path}</svg>`;
+}
+function hydrateIcons(root){
+  try{
+    const scope=root||document;
+    scope.querySelectorAll('i.fas,i.far,i.fa,i.fa-solid,i.fa-regular').forEach(el=>{
+      if(el.getAttribute('data-svg')==='1')return;
+      const cls=[...el.classList];
+      const name=cls.find(c=>c.indexOf('fa-')===0&&c!=='fa-spin'&&c!=='fa-solid'&&c!=='fa-regular'&&c!=='fa-fw');
+      if(!name)return;
+      const spin=cls.indexOf('fa-spin')>=0||name==='fa-spinner';
+      const size=Math.max(12,parseInt(window.getComputedStyle(el).fontSize,10)||16);
+      const svg=svgIcon(spin?name+' fa-spin':name,size);
+      el.setAttribute('data-svg','1');
+      el.outerHTML=svg;
+    });
+  }catch(e){}
+}
+let _iconObserver=null;
+function startIconObserver(){
+  if(_iconObserver||typeof MutationObserver==='undefined')return;
+  _iconObserver=new MutationObserver(function(muts){
+    let need=false;
+    for(let i=0;i<muts.length;i++){
+      const m=muts[i];
+      if(m.addedNodes&&m.addedNodes.length){need=true;break;}
+    }
+    if(need){
+      if(window._iconHydrateTimer)clearTimeout(window._iconHydrateTimer);
+      window._iconHydrateTimer=setTimeout(function(){hydrateIcons(document);},40);
+    }
+  });
+  _iconObserver.observe(document.body,{childList:true,subtree:true});
+}
+/* ========== 全局加载动画 ========== */
+let _loadingDepth=0;
+function showGlobalLoading(text){
+  _loadingDepth++;
+  const el=document.getElementById('globalLoading');
+  const t=document.getElementById('globalLoadingText');
+  if(t)t.textContent=text||'加载中...';
+  if(el){el.classList.add('show');el.setAttribute('aria-hidden','false');}
+}
+function hideGlobalLoading(force){
+  _loadingDepth=force?0:Math.max(0,_loadingDepth-1);
+  if(_loadingDepth>0)return;
+  const el=document.getElementById('globalLoading');
+  if(el){el.classList.remove('show');el.setAttribute('aria-hidden','true');}
+}
+async function withLoading(fn,text){
+  showGlobalLoading(text||'加载中...');
+  try{return await fn();}finally{hideGlobalLoading();}
+}
+/* ========== 消息通知（浏览器 / WebToApp） ========== */
+let _lastUnreadCount=0;
+let _notifyPermAsked=false;
+function requestMsgNotificationPermission(){
+  try{
+    if(typeof Notification==='undefined')return;
+    if(Notification.permission==='granted'){_notifyPermAsked=true;return;}
+    if(Notification.permission!=='denied'&&!_notifyPermAsked){
+      _notifyPermAsked=true;
+      Notification.requestPermission().catch(function(){});
+    }
+  }catch(e){}
+}
+function notifyNewMessage(unread){
+  try{
+    if(typeof Notification==='undefined')return;
+    if(Notification.permission!=='granted')return;
+    if(document.visibilityState==='visible')return;
+    const n=new Notification('QW电竞',{body:'你有 '+(unread>99?'99+':unread)+' 条未读消息',tag:'qw-msg-unread',renotify:true});
+    n.onclick=function(){try{window.focus();}catch(e){}n.close();};
+    setTimeout(function(){try{n.close();}catch(e){}},5000);
+  }catch(e){}
+}
 function toast(msg,type){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -1114,7 +1302,7 @@ function renderBottomNav(){
   ];
   nav.innerHTML=items.map(item=>`
     <button class="nav-item" data-target="${item.id}">
-      <i class="fas ${item.icon}"></i>
+      ${typeof svgIcon==='function'?svgIcon(item.icon,22):`<i class="fas ${item.icon}"></i>`}
       <span>${item.label}</span>
       ${item.badge?`<span class="badge" id="${item.badge}" style="display:none;">0</span>`:''}
     </button>`).join('');
@@ -1163,6 +1351,7 @@ function switchMsgTab(tab){
   if(currentMsgTab==='posts')renderPosts();
   else loadContacts();
 }
+let _navCache={};
 function navigateTo(target){
   closeSubPage();
   closeShopDetail();
@@ -1177,13 +1366,38 @@ function navigateTo(target){
     const viewEl=document.getElementById(viewId);
     if(viewEl){
       viewEl.classList.add('active');
-      switch(target){
-        case 'home':renderHomePage();startBannerAuto();break;
-        case 'category':renderCategoryPage();break;
-        case 'hall':renderHallPage();break;
-        case 'messages':switchMsgTab(currentMsgTab||'messages');break;
-        case 'account':renderMyPage();break;
-      }
+      const now=Date.now();
+      const last=_navCache[target]||0;
+      const fresh=now-last<12000;
+      const run=async function(){
+        try{
+          switch(target){
+            case 'home':
+              if(!fresh){showGlobalLoading('加载商城...');await renderHomePage();hideGlobalLoading();}
+              else {renderHomePage();}
+              startBannerAuto();
+              break;
+            case 'category':
+              if(!fresh){showGlobalLoading('加载分类...');await Promise.resolve(renderCategoryPage());hideGlobalLoading();}
+              else renderCategoryPage();
+              break;
+            case 'hall':
+              showGlobalLoading('加载接单大厅...');
+              await Promise.resolve(renderHallPage());
+              hideGlobalLoading();
+              break;
+            case 'messages':
+              switchMsgTab(currentMsgTab||'messages');
+              break;
+            case 'account':
+              if(!fresh){showGlobalLoading('加载中...');await Promise.resolve(renderMyPage());hideGlobalLoading();}
+              else renderMyPage();
+              break;
+          }
+          _navCache[target]=Date.now();
+        }catch(e){hideGlobalLoading(true);}
+      };
+      run();
     }
   }
 }
@@ -6853,12 +7067,30 @@ async function updateBadges(){
   if(!currentUser)return;
   try{
     const result=await apiRequest('/messages/unread');
-    const unread=result.unread||0;
+    const unread=Number(result.unread)||0;
     const badge=document.getElementById('msgBadge');
     if(badge){
       if(unread>0){badge.style.display='inline-block';badge.textContent=unread>99?'99+':unread;badge.style.background='#f4212e';}
       else badge.style.display='none';
     }
+    const msgUnreadEl=document.getElementById('msgUnreadTotal');
+    if(msgUnreadEl){
+      if(unread>0){msgUnreadEl.style.display='';msgUnreadEl.textContent=unread>99?'99+':String(unread);}
+      else if(msgUnreadEl.dataset.keep!=='1'){/* 保持由 switchMsgTab 控制 */}
+    }
+    if(unread>_lastUnreadCount&&_lastUnreadCount>=0){
+      notifyNewMessage(unread);
+      try{
+        if(document.visibilityState!=='visible'){
+          const base=document.title.replace(/^\(\d+\+?\)\s*/,'');
+          document.title='('+(unread>99?'99+':unread)+') '+base;
+        }
+      }catch(e){}
+    }
+    if(unread===0){
+      try{document.title=document.title.replace(/^\(\d+\+?\)\s*/,'');}catch(e){}
+    }
+    _lastUnreadCount=unread;
   }catch(err){}
 }
 
@@ -7003,29 +7235,43 @@ function logout(){
 async function afterLogin(){
   document.getElementById('authPage').style.display='none';
   document.getElementById('mainApp').classList.remove('hidden');
+  showGlobalLoading('正在进入...');
   try{
-    const user=await apiRequest('/me');
-    currentUser=user;
-    currentUserRole=user.role;
-  }catch(err){}
-  renderBottomNav();
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-home').classList.add('active');
-  document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.target==='home'));
-  renderHomePage();
-  renderCategoryPage();
-  renderMyPage();
-  renderPosts();
-  loadContacts();
-  updateBadges();
-  setTimeout(()=>{loadAnnounceData().then(()=>showAnnounceModal());},500);
-  if(window._badgeTimer)clearInterval(window._badgeTimer);
-  window._badgeTimer=setInterval(updateBadges,30000);
-  // 在线心跳：每 60 秒上报一次，用于个人主页显示「在线」
-  if(window._heartbeatTimer)clearInterval(window._heartbeatTimer);
-  const doHeartbeat=()=>{if(token)apiRequest('/heartbeat',{method:'POST'}).catch(()=>{});};
-  doHeartbeat();
-  window._heartbeatTimer=setInterval(doHeartbeat,60000);
+    try{
+      const user=await apiRequest('/me');
+      currentUser=user;
+      currentUserRole=user.role;
+    }catch(err){}
+    renderBottomNav();
+    hydrateIcons(document.getElementById('bottomNav'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-home').classList.add('active');
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.target==='home'));
+    // 分批渲染，避免登录后一次性卡死
+    await renderHomePage();
+    hideGlobalLoading(true);
+    setTimeout(function(){try{renderCategoryPage();}catch(e){}},30);
+    setTimeout(function(){try{renderMyPage();}catch(e){}},60);
+    setTimeout(function(){try{renderPosts();}catch(e){}},100);
+    setTimeout(function(){try{loadContacts();}catch(e){}},140);
+    setTimeout(function(){try{updateBadges();requestMsgNotificationPermission();}catch(e){}},180);
+    setTimeout(()=>{loadAnnounceData().then(()=>showAnnounceModal());},500);
+    if(window._badgeTimer)clearInterval(window._badgeTimer);
+    // 未读轮询更勤一点，便于通知
+    window._badgeTimer=setInterval(updateBadges,15000);
+    if(window._heartbeatTimer)clearInterval(window._heartbeatTimer);
+    const doHeartbeat=()=>{if(token)apiRequest('/heartbeat',{method:'POST'}).catch(()=>{});};
+    doHeartbeat();
+    window._heartbeatTimer=setInterval(doHeartbeat,60000);
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible'){
+        try{document.title=document.title.replace(/^\(\d+\+?\)\s*/,'');}catch(e){}
+        updateBadges();
+      }
+    });
+  }catch(e){
+    hideGlobalLoading(true);
+  }
 }
 async function doAuthLogin(){
   const username=document.getElementById('authUsername').value.trim();
@@ -7550,13 +7796,27 @@ async function init(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   init();
+  startIconObserver();
+  setTimeout(function(){hydrateIcons(document);},0);
+  // 检测 FontAwesome 是否加载失败（WebView 常见）
+  setTimeout(function(){
+    try{
+      const t=document.createElement('i');
+      t.className='fas fa-store';
+      t.style.cssText='position:absolute;left:-9999px;font-size:16px;';
+      document.body.appendChild(t);
+      const w=t.offsetWidth;
+      document.body.removeChild(t);
+      if(!w||w<4)document.documentElement.classList.add('no-fa');
+      hydrateIcons(document);
+    }catch(e){document.documentElement.classList.add('no-fa');hydrateIcons(document);}
+  },800);
   const chatInput=document.getElementById('fullscreenChatInput');
   if(chatInput){
     chatInput.addEventListener('keydown',function(e){
       if(e.key==='Enter'){e.preventDefault();sendFullscreenMessage();}
     });
     chatInput.addEventListener('input',updateWxSendBtn);
-    // 只在真正获得焦点时收起面板，不要在 touchstart 里干预，否则键盘会弹起又收起
     chatInput.addEventListener('focus',function(){
       focusChatTextInput();
     });
@@ -7569,6 +7829,12 @@ document.addEventListener('DOMContentLoaded',function(){
 window.navigateTo=navigateTo;
 window.switchMsgTab=switchMsgTab;
 window.renderHallPage=renderHallPage;
+window.svgIcon=svgIcon;
+window.hydrateIcons=hydrateIcons;
+window.showGlobalLoading=showGlobalLoading;
+window.hideGlobalLoading=hideGlobalLoading;
+window.withLoading=withLoading;
+window.requestMsgNotificationPermission=requestMsgNotificationPermission;
 window.filterHallByCategory=filterHallByCategory;
 window.showPublishDemand=showPublishDemand;
 window.submitPublishDemand=submitPublishDemand;
