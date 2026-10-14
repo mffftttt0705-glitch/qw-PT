@@ -626,12 +626,12 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 </div>
 
 <div style="display:flex;gap:10px;margin-bottom:10px;">
-<div class="admin-card" onclick="openRecharge()" style="flex:1;padding:14px 12px;border-left:4px solid #f4212e;margin-bottom:0;cursor:pointer;height:76px;display:flex;flex-direction:column;justify-content:center;">
+<div class="admin-card" onclick="openWalletPanel()" style="flex:1;padding:14px 12px;border-left:4px solid #f4212e;margin-bottom:0;cursor:pointer;height:76px;display:flex;flex-direction:column;justify-content:center;">
 <div style="display:flex;justify-content:space-between;align-items:center;">
 <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-gem" style="color:#f4212e;"></i> 我的余额</span>
 <span style="font-size:16px;font-weight:700;color:#f4212e;" id="myBalance">0</span>
 </div>
-<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">点击充值 →</div>
+<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">红钻/金币/优惠券 →</div>
 </div>
 <div class="admin-card" onclick="openWithdraw()" style="flex:1;padding:14px 12px;border-left:4px solid #0f1419;margin-bottom:0;cursor:pointer;height:76px;display:flex;flex-direction:column;justify-content:center;">
 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2418,6 +2418,8 @@ function renderMoreFunctions(){
       {icon:'fa-smile',label:'表情包管理',action:"openSubPage('stickers')"},
       {icon:'fa-paper-plane',label:'发布订单',action:"openSubPage('dispatcher')"},
       {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
+      {icon:'fa-calendar-check',label:'签到奖励配置',action:"openCheckinAdmin()"},
+      {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='service'){
@@ -2426,6 +2428,7 @@ function renderMoreFunctions(){
       {icon:'fa-headset',label:'客服系统',action:"openSubPage('service')"},
       {icon:'fa-coins',label:'充值审核',action:"openSubPage('recharges')"},
       {icon:'fa-users',label:'用户管理',action:"openSubPage('users')"},
+      {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='dispatcher'){
@@ -2434,6 +2437,7 @@ function renderMoreFunctions(){
       {icon:'fa-clipboard-list',label:'派单系统',action:"openSubPage('dispatcher')"},
       {icon:'fa-box',label:'商品管理',action:"openSubPage('products')"},
       {icon:'fa-chart-bar',label:'数据统计',action:"openSubPage('orders')"},
+      {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else if(role==='handler'){
@@ -2441,11 +2445,13 @@ function renderMoreFunctions(){
       {icon:'fa-gamepad',label:'打手工作台',action:"openSubPage('orders')"},
       {icon:'fa-store',label:'我的店铺',action:"openSubPage('myshop')"},
       {icon:'fa-coins',label:'提现',action:"openWithdraw()"},
+      {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }else{
     items=[
       {icon:'fa-clipboard-list',label:'我的订单',action:"openSubPage('orders')"},
+      {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
       {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
     ];
   }
@@ -3074,14 +3080,237 @@ async function submitRechargeWithImages(){
     updateBadges();
   }catch(err){toast(err.message,'error');}
 }
+/** 代码绘制图标：红钻/金币/优惠券/绑定红钻/签到 */
+function iconSvgDiamond(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 9l9 13 9-13-9-7z" fill="#f4212e"/><path d="M12 2L7 9h10L12 2z" fill="#ff6b6b"/><path d="M3 9h18L12 22 3 9z" fill="#c9184a" opacity=".85"/></svg>`;}
+function iconSvgCoin(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#F5A623"/><circle cx="12" cy="12" r="7.5" fill="#FFD666"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#8B5A00">币</text></svg>`;}
+function iconSvgCoupon(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="20" height="12" rx="2" fill="#7C4DFF"/><circle cx="2" cy="12" r="2" fill="#fff"/><circle cx="22" cy="12" r="2" fill="#fff"/><path d="M14 8v8M10 8v8" stroke="#E8DEFF" stroke-width="1.5" stroke-dasharray="2 2"/><text x="12" y="15" text-anchor="middle" font-size="7" font-weight="700" fill="#fff">券</text></svg>`;}
+function iconSvgBoundDiamond(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 9l9 13 9-13-9-7z" fill="#5B8DEF"/><path d="M12 2L7 9h10L12 2z" fill="#8BB4FF"/><path d="M8 11h8v2H8z" fill="#fff" opacity=".9"/><path d="M10 9.5h4v5h-4z" fill="none" stroke="#fff" stroke-width="1.2"/></svg>`;}
+function iconSvgCheckin(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="3" fill="#00BA7C"/><rect x="3" y="4" width="18" height="5" rx="2" fill="#008F5D"/><circle cx="8" cy="7" r="1.2" fill="#fff"/><circle cx="16" cy="7" r="1.2" fill="#fff"/><path d="M7 14l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+
+async function openWalletPanel(){
+  if(!currentUser){toast('请先登录','warning');return;}
+  let coin=Number(currentUser.coin)||0;
+  let diamond=Number(currentUser.diamond)||0;
+  let bound=Number(currentUser.bound_diamond)||0;
+  let coupons=[];
+  try{
+    const st=await apiRequest('/checkin');
+    coin=Number(st.coin)||coin;
+    diamond=Number(st.diamond)||diamond;
+    bound=Number(st.bound_diamond)||bound;
+    coupons=st.coupons||[];
+    currentUser.coin=coin;
+    currentUser.diamond=diamond;
+    currentUser.bound_diamond=bound;
+  }catch(e){}
+  const unusedCoupons=coupons.filter(c=>(c.status||'unused')==='unused');
+  const usedCoupons=coupons.filter(c=>c.status==='used');
+  let couponHtml='';
+  if(!coupons.length){
+    couponHtml='<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">暂无优惠券，可通过每日签到获得</div>';
+  }else{
+    couponHtml='<div style="display:flex;flex-direction:column;gap:8px;max-height:180px;overflow-y:auto;">'+
+      coupons.map(c=>{
+        const used=(c.status==='used');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid ${used?'#eff3f4':'#d8b4fe'};background:${used?'#f7f9f9':'#faf5ff'};opacity:${used?'.7':'1'};">
+          ${iconSvgCoupon(28)}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;">${String(c.name||'优惠券').replace(/</g,'&lt;')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${String(c.description||c.source||'').replace(/</g,'&lt;')||'签到获得'}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:${used?'#536471':'#7C4DFF'};">${used?'已使用':'未使用'}</span>
+        </div>`;
+      }).join('')+'</div>';
+  }
+  showCustomModal(`
+    <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgDiamond(24)} 我的钱包</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">
+      <div style="border:1px solid #ffe0e0;background:#fff5f5;border-radius:14px;padding:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgDiamond(18)} 红钻余额</div>
+          <button class="btn btn-success btn-xs" onclick="openRecharge()" style="padding:4px 10px;">充值</button>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:#f4212e;margin-top:6px;">${diamond}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">可用于购买商品</div>
+      </div>
+      <div style="border:1px solid #dbeafe;background:#f0f7ff;border-radius:14px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgBoundDiamond(18)} 绑定红钻</div>
+        <div style="font-size:22px;font-weight:800;color:#3b82f6;margin-top:6px;">${bound}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">仅可提现，不可购买</div>
+      </div>
+      <div style="border:1px solid #ffe8b3;background:#fffbeb;border-radius:14px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgCoin(18)} 金币余额</div>
+        <div style="font-size:22px;font-weight:800;color:#F5A623;margin-top:6px;">${coin}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">签到等活动获得</div>
+      </div>
+      <div style="border:1px solid #e9d5ff;background:#faf5ff;border-radius:14px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgCoupon(18)} 优惠券</div>
+        <div style="font-size:22px;font-weight:800;color:#7C4DFF;margin-top:6px;">${unusedCoupons.length}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">未使用 ${unusedCoupons.length} · 共 ${coupons.length}</div>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:700;margin:4px 0 8px;display:flex;align-items:center;gap:6px;">${iconSvgCoupon(18)} 我的优惠券</div>
+    ${couponHtml}
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeCustomModal()">关闭</button>
+      <button class="btn btn-primary" onclick="closeCustomModal();openCheckinPanel()">${iconSvgCheckin(16)} 去签到</button>
+    </div>`);
+  try{document.getElementById('myBalance').textContent=String(diamond);}catch(e){}
+}
+
+async function openCheckinPanel(){
+  if(!currentUser){toast('请先登录','warning');return;}
+  let st={checked_today:false,rewards:[],coin:0,diamond:0,bound_diamond:0};
+  try{st=await apiRequest('/checkin');}catch(e){toast(e.message||'加载失败','error');return;}
+  const rewards=st.rewards||[];
+  const rewardList=rewards.length?rewards.map(r=>{
+    const t=r.reward_type||'coin';
+    const icon=t==='diamond'?iconSvgDiamond(20):(t==='bound_diamond'?iconSvgBoundDiamond(20):(t==='coupon'?iconSvgCoupon(20):iconSvgCoin(20)));
+    const label=r.reward_name||(t==='coupon'?'优惠券':(t==='diamond'?'红钻':(t==='bound_diamond'?'绑定红钻':'金币')));
+    const val=t==='coupon'?'x1':('+'+(Number(r.reward_value)||0));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#f7f9f9;border:1px solid #eff3f4;">
+      ${icon}<div style="flex:1;font-size:13px;font-weight:600;">${String(label).replace(/</g,'&lt;')}</div>
+      <span style="font-size:13px;color:#00ba7c;font-weight:700;">${val}</span>
+    </div>`;
+  }).join(''):'<div style="font-size:12px;color:var(--text-muted);">默认奖励：金币 +10</div>';
+  const checked=!!st.checked_today;
+  showCustomModal(`
+    <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgCheckin(24)} 每日签到</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin:8px 0 12px;">${checked?'今日已签到，明天再来吧':'签到可获得以下奖励（每天一次）'}</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">${rewardList}</div>
+    <div style="display:flex;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:12px;flex-wrap:wrap;">
+      <span style="display:inline-flex;align-items:center;gap:4px;">${iconSvgCoin(14)} 金币 ${st.coin||0}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;">${iconSvgDiamond(14)} 红钻 ${st.diamond||0}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;">${iconSvgBoundDiamond(14)} 绑定 ${st.bound_diamond||0}</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeCustomModal()">关闭</button>
+      ${checked
+        ?'<button class="btn btn-outline" disabled style="opacity:.6;">已签到</button>'
+        :'<button class="btn btn-success" onclick="doCheckinNow()">立即签到</button>'}
+    </div>`);
+}
+
+async function doCheckinNow(){
+  try{
+    const r=await apiRequest('/checkin',{method:'POST',body:JSON.stringify({})});
+    const parts=(r.rewards||[]).map(x=>{
+      if(x.type==='coupon')return (x.name||'优惠券')+' x1';
+      return (x.name||x.type)+' +'+(x.value||0);
+    });
+    toast((r.message||'签到成功')+(parts.length?'：'+parts.join('、'):''),'success');
+    try{
+      const me=await apiRequest('/me');
+      currentUser={...currentUser,...me};
+      if(document.getElementById('myBalance'))document.getElementById('myBalance').textContent=String(me.diamond||0);
+    }catch(e){}
+    openCheckinPanel();
+  }catch(err){toast(err.message||'签到失败','error');}
+}
+
+async function openCheckinAdmin(){
+  if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可配置','error');return;}
+  let list=[];
+  try{list=await apiRequest('/admin/checkin-rewards')||[];}catch(e){toast(e.message||'加载失败','error');return;}
+  const rows=list.length?list.map(r=>{
+    const t=r.reward_type||'coin';
+    const typeName={coin:'金币',diamond:'红钻',bound_diamond:'绑定红钻',coupon:'优惠券'}[t]||t;
+    const icon=t==='diamond'?iconSvgDiamond(18):(t==='bound_diamond'?iconSvgBoundDiamond(18):(t==='coupon'?iconSvgCoupon(18):iconSvgCoin(18)));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #eff3f4;border-radius:12px;margin-bottom:8px;">
+      ${icon}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;">${String(r.reward_name||typeName).replace(/</g,'&lt;')} · ${typeName}${t==='coupon'?'':(' +'+(r.reward_value||0))}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${r.enabled==0?'已停用':'启用中'} · 排序 ${r.sort_order||0}</div>
+      </div>
+      <button class="btn btn-outline btn-xs" onclick="editCheckinReward('${r.id}')">编辑</button>
+      <button class="btn btn-outline btn-xs" style="color:#f4212e;border-color:#f4212e;" onclick="deleteCheckinReward('${r.id}')">删</button>
+    </div>`;
+  }).join(''):'<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">暂无配置，用户签到将默认获得金币+10</div>';
+  showCustomModal(`
+    <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgCheckin(24)} 签到奖励配置</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin:6px 0 10px;">可配置金币、优惠券、红钻、绑定红钻等，用户每日签到按启用项发放</p>
+    <div style="max-height:220px;overflow-y:auto;margin-bottom:10px;">${rows}</div>
+    <div style="border-top:1px solid #eff3f4;padding-top:10px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;">新增 / 编辑</div>
+      <input type="hidden" id="ckRewardId" value="" />
+      <div class="admin-form-group"><label>奖励名称</label><input class="admin-form-control" id="ckRewardName" placeholder="如：签到金币" /></div>
+      <div class="admin-form-group"><label>类型</label>
+        <select class="admin-form-control" id="ckRewardType" onchange="toggleCkCouponDesc()">
+          <option value="coin">金币</option>
+          <option value="coupon">优惠券</option>
+          <option value="diamond">红钻</option>
+          <option value="bound_diamond">绑定红钻</option>
+        </select>
+      </div>
+      <div class="admin-form-group" id="ckValueWrap"><label>数量</label><input class="admin-form-control" id="ckRewardValue" type="number" min="0" value="10" /></div>
+      <div class="admin-form-group" id="ckCouponDescWrap" style="display:none;"><label>优惠券说明</label><input class="admin-form-control" id="ckCouponDesc" placeholder="如：满10减1" /></div>
+      <div class="admin-form-group"><label>排序</label><input class="admin-form-control" id="ckSortOrder" type="number" value="0" /></div>
+      <div class="admin-form-group"><label>启用</label>
+        <select class="admin-form-control" id="ckEnabled"><option value="1">启用</option><option value="0">停用</option></select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="saveCheckinReward()">保存</button>
+        <button class="btn btn-outline" onclick="resetCheckinRewardForm()">清空</button>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:12px;"><button class="btn btn-outline" onclick="closeCustomModal()">关闭</button></div>`);
+}
+
+function toggleCkCouponDesc(){
+  const t=document.getElementById('ckRewardType')?.value;
+  const v=document.getElementById('ckValueWrap');
+  const c=document.getElementById('ckCouponDescWrap');
+  if(v)v.style.display=t==='coupon'?'none':'block';
+  if(c)c.style.display=t==='coupon'?'block':'none';
+}
+function resetCheckinRewardForm(){
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val;};
+  set('ckRewardId','');set('ckRewardName','');set('ckRewardType','coin');set('ckRewardValue','10');set('ckCouponDesc','');set('ckSortOrder','0');set('ckEnabled','1');
+  toggleCkCouponDesc();
+}
+async function editCheckinReward(id){
+  try{
+    const list=await apiRequest('/admin/checkin-rewards')||[];
+    const r=list.find(x=>x.id===id);if(!r)return toast('不存在','error');
+    const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v==null?'':v;};
+    set('ckRewardId',r.id);set('ckRewardName',r.reward_name||'');set('ckRewardType',r.reward_type||'coin');
+    set('ckRewardValue',r.reward_value||0);set('ckCouponDesc',r.coupon_desc||'');set('ckSortOrder',r.sort_order||0);
+    set('ckEnabled',r.enabled==0?'0':'1');toggleCkCouponDesc();
+  }catch(e){toast(e.message,'error');}
+}
+async function saveCheckinReward(){
+  const id=(document.getElementById('ckRewardId')?.value||'').trim();
+  const body={
+    reward_name:(document.getElementById('ckRewardName')?.value||'').trim(),
+    reward_type:document.getElementById('ckRewardType')?.value||'coin',
+    reward_value:parseFloat(document.getElementById('ckRewardValue')?.value)||0,
+    coupon_desc:(document.getElementById('ckCouponDesc')?.value||'').trim(),
+    sort_order:parseInt(document.getElementById('ckSortOrder')?.value,10)||0,
+    enabled:document.getElementById('ckEnabled')?.value==='0'?0:1
+  };
+  try{
+    if(id)await apiRequest('/admin/checkin-rewards/'+id,{method:'PUT',body:JSON.stringify(body)});
+    else await apiRequest('/admin/checkin-rewards',{method:'POST',body:JSON.stringify(body)});
+    toast('已保存','success');
+    openCheckinAdmin();
+  }catch(e){toast(e.message||'保存失败','error');}
+}
+async function deleteCheckinReward(id){
+  if(!confirm('确定删除该签到奖励？'))return;
+  try{await apiRequest('/admin/checkin-rewards/'+id,{method:'DELETE'});toast('已删除','success');openCheckinAdmin();}
+  catch(e){toast(e.message,'error');}
+}
+
 function openWithdraw(){
   if(!currentUser){toast('请先登录','warning');return;}
-  const bal=Number(currentUser.diamond)||0;
+  const isHandler=(currentUser.role==='handler');
+  const bal=isHandler?(Number(currentUser.bound_diamond)||0):(Number(currentUser.diamond)||0);
+  const label=isHandler?'绑定红钻':'红钻';
   showCustomModal(`
-    <h3><i class="fas fa-coins"></i> 提现</h3>
-    <p style="color:var(--text-muted);font-size:13px;">当前红钻：<span style="color:#f4212e;font-weight:700;">${bal}</span></p>
-    <div class="form-group"><label>提现红钻数量</label><input class="admin-form-control" id="withdrawAmountInput" type="number" placeholder="请输入数量" min="1" max="${bal}" /></div>
-    <p style="font-size:12px;color:var(--text-muted);text-align:center;">可提现全部红钻，无需冻结</p>
+    <h3 style="display:flex;align-items:center;gap:8px;">${isHandler?iconSvgBoundDiamond(22):iconSvgDiamond(22)} 提现</h3>
+    <p style="color:var(--text-muted);font-size:13px;">当前可提现${label}：<span style="color:#3b82f6;font-weight:700;">${bal}</span></p>
+    ${isHandler?'<p style="font-size:12px;color:var(--text-muted);">打手订单/礼物收益进入绑定红钻，仅可提现，不可购买商品</p>':''}
+    <div class="form-group"><label>提现数量（${label}）</label><input class="admin-form-control" id="withdrawAmountInput" type="number" placeholder="请输入数量" min="1" max="${bal}" /></div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
       <button class="btn btn-success" onclick="doWithdrawSubmit()">提交提现</button>
@@ -3090,12 +3319,14 @@ function openWithdraw(){
 async function doWithdrawSubmit(){
   const amount=parseInt(document.getElementById('withdrawAmountInput').value);
   if(!amount||amount<1)return toast('请输入有效数量','warning');
-  const available=Math.max(0,Number(currentUser.diamond)||0);
-  if(amount>available)return toast(`可提现红钻不足，可用：${available} 红钻`,'error');
+  const isHandler=(currentUser&&currentUser.role==='handler');
+  const available=isHandler?Math.max(0,Number(currentUser.bound_diamond)||0):Math.max(0,Number(currentUser.diamond)||0);
+  if(amount>available)return toast(`可提现不足，可用：${available}`,'error');
   try{
     const result=await apiRequest('/withdraw/request',{method:'POST',body:JSON.stringify({amount})});
     closeCustomModal();
     toast(result.message||'提现申请已提交','success');
+    try{const me=await apiRequest('/me');currentUser={...currentUser,...me};}catch(e){}
   }catch(err){toast(err.message,'error');}
 }
 /* ============================================================
@@ -7375,6 +7606,15 @@ window.filterMyOrders=filterMyOrders;
 window.uploadAvatar=uploadAvatar;
 window.openRecharge=openRecharge;
 window.openWithdraw=openWithdraw;
+window.openWalletPanel=openWalletPanel;
+window.openCheckinPanel=openCheckinPanel;
+window.openCheckinAdmin=openCheckinAdmin;
+window.doCheckinNow=doCheckinNow;
+window.saveCheckinReward=saveCheckinReward;
+window.editCheckinReward=editCheckinReward;
+window.deleteCheckinReward=deleteCheckinReward;
+window.resetCheckinRewardForm=resetCheckinRewardForm;
+window.toggleCkCouponDesc=toggleCkCouponDesc;
 window.showLoginModal=showLoginModal;
 window.logout=logout;
 window.renderPosts=renderPosts;
