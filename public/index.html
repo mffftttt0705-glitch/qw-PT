@@ -32,6 +32,25 @@ html.no-fa i.fas:before,html.no-fa i.far:before,html.no-fa i.fa:before{content:'
 #globalLoading.show{display:flex;}
 #globalLoading .gl-box{background:#fff;border-radius:16px;padding:18px 22px;box-shadow:0 8px 28px rgba(15,20,25,0.12);display:flex;align-items:center;gap:12px;font-size:14px;color:#0f1419;font-weight:600;}
 #globalLoading .gl-spinner{width:22px;height:22px;border:3px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad 0.7s linear infinite;}
+/* 启动白屏：首页数据就绪前遮罩 */
+#bootSplash{position:fixed;inset:0;z-index:100000;background:#ffffff;display:flex;align-items:center;justify-content:center;transition:opacity .25s ease;}
+#bootSplash.hide{opacity:0;pointer-events:none;}
+#bootSplash .boot-inner{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px;}
+#bootSplash .boot-logo{font-size:28px;font-weight:800;color:#0f1419;letter-spacing:1px;}
+#bootSplash .boot-spinner{width:36px;height:36px;border:3px solid #eff3f4;border-top-color:#0f1419;border-radius:50%;animation:spinLoad .75s linear infinite;}
+#bootSplash .boot-text{font-size:13px;color:#536471;}
+.home-checkin-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px;padding:12px 14px;border-radius:14px;border:1px solid #e8f5e9;background:linear-gradient(135deg,#f1faf4,#ffffff);cursor:pointer;}
+.home-checkin-bar .hci-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.home-checkin-bar .hci-title{font-size:14px;font-weight:700;color:#0f1419;}
+.home-checkin-bar .hci-sub{font-size:11px;color:#536471;margin-top:2px;}
+.home-checkin-bar .hci-btn{flex-shrink:0;padding:8px 14px;border-radius:20px;border:none;background:#00ba7c;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+.ck-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0 12px;}
+.ck-cal .ck-hd{text-align:center;font-size:11px;color:#536471;padding:4px 0;}
+.ck-cal .ck-day{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#0f1419;background:#f7f9f9;border:1px solid transparent;}
+.ck-cal .ck-day.muted{color:#cfd9de;background:transparent;}
+.ck-cal .ck-day.checked{background:#e8f8ef;border-color:#00ba7c;color:#00ba7c;font-weight:700;}
+.ck-cal .ck-day.today{border-color:#0f1419;font-weight:700;}
+.ck-cal .ck-day.today.checked{border-color:#00ba7c;}
 img[loading="lazy"]{content-visibility:auto;}
 :root {
     --bg-primary: #ffffff;
@@ -494,6 +513,16 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <button class="banner-arrow left" onclick="prevBanner()">‹</button>
 <button class="banner-arrow right" onclick="nextBanner()">›</button>
 </div>
+<div class="home-checkin-bar" id="homeCheckinBar" onclick="openCheckinPanel()">
+  <div class="hci-left">
+    <span id="homeCheckinIcon"></span>
+    <div>
+      <div class="hci-title">每日签到</div>
+      <div class="hci-sub" id="homeCheckinSub">点击查看签到日历与奖励</div>
+    </div>
+  </div>
+  <button type="button" class="hci-btn" id="homeCheckinBtn" onclick="event.stopPropagation();openCheckinPanel()">签到</button>
+</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px;">
 <span style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-store"></i> 店铺</span>
 <span style="font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="navigateTo('category')">查看全部 →</span>
@@ -880,6 +909,13 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="modal-overlay" id="customModal"><div class="modal-box" id="customModalContent"></div></div>
 <div id="toast" class="toast"></div>
 <div id="globalLoading" aria-hidden="true"><div class="gl-box"><div class="gl-spinner"></div><span id="globalLoadingText">加载中...</span></div></div>
+<div id="bootSplash" aria-hidden="false">
+  <div class="boot-inner">
+    <div class="boot-logo">QW电竞</div>
+    <div class="boot-spinner"></div>
+    <div class="boot-text" id="bootSplashText">正在加载，请稍候...</div>
+  </div>
+</div>
 <script>
 /* ============================================================
    全局状态
@@ -948,15 +984,15 @@ let allPostsCache=[];
 const FA_SVG_PATHS={
   'fa-arrow-left':'<path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-chevron-right':'<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
-  'fa-store':'<path d="M4 10h16v10H4zM3 6l1.5 4h15L21 6M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 6h16l-1 3H5z" fill="currentColor" opacity=".25"/>',
-  'fa-th-large':'<rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"/>',
+  'fa-store':'<path d="M4 10h16v11H4V10z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M4 10l2-5h12l2 5M9 21v-6h6v6M8 5V3.5h8V5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+  'fa-th-large':'<rect x="3.5" y="3.5" width="7" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M14 14h6v2.5l-2 3.5h-4v-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
   'fa-bullseye':'<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>',
   'fa-comment-dots':'<path d="M5 6h14a2 2 0 012 2v7a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="11" r="1.1" fill="currentColor"/><circle cx="12" cy="11" r="1.1" fill="currentColor"/><circle cx="15" cy="11" r="1.1" fill="currentColor"/>',
   'fa-comment':'<path d="M5 6h14a2 2 0 012 2v7a2 2 0 01-2 2H9l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.8"/>',
-  'fa-user':'<circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-user':'<circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c1.2-3.6 3.8-5.2 7-5.2s5.8 1.6 7 5.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
   'fa-users':'<circle cx="9" cy="8" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18c1-3 2.8-4.5 5.5-4.5S13 15 14 18M14 18c.6-2 1.8-3 3.8-3 1.5 0 2.7.7 3.7 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   'fa-gem':'<path d="M3.5 9.2L7.2 4.5h9.6l3.7 4.7-8.5 11.3L3.5 9.2z" fill="currentColor"/><path d="M3.5 9.2h17M7.2 4.5l4.8 4.7 4.8-4.7M12 9.2v11.3" fill="none" stroke="#fff" stroke-width="1.1" opacity=".55"/>',
-  'fa-coins':'<ellipse cx="9.5" cy="14.5" rx="5.5" ry="2.8" fill="currentColor" opacity=".35"/><ellipse cx="9.5" cy="12.2" rx="5.5" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 12.2v4.5c0 1.5 2.5 2.8 5.5 2.8s5.5-1.3 5.5-2.8v-4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="14.5" cy="9.5" rx="5.5" ry="2.8" fill="currentColor" opacity=".4"/><ellipse cx="14.5" cy="7.2" rx="5.5" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 7.2v4.2c0 1.5 2.5 2.8 5.5 2.8s5.5-1.3 5.5-2.8V7.2" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  'fa-coins':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><text x="12" y="15.5" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor" font-family="sans-serif">¥</text>',
   'fa-plus':'<path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   'fa-plus-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   'fa-minus-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
@@ -965,23 +1001,25 @@ const FA_SVG_PATHS={
   'fa-edit':'<path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   'fa-trash':'<path d="M5 8h14M9 8V6h6v2M7 8l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   'fa-search':'<circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
-  'fa-image':'<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="11" r="1.8" fill="currentColor"/><path d="M3 16l5-4 4 3 3-2 6 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-image':'<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 16.5l5-4.2 3.5 2.8 3-2.5 6 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+  'fa-ad':'<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><text x="12" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="currentColor" font-family="sans-serif">AD</text>',
   'fa-video':'<rect x="3" y="7" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15 10l6-3v10l-6-3V10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   'fa-camera':'<path d="M4 8h3l2-2h6l2 2h3v11H4V8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   'fa-microphone':'<rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  'fa-paper-plane':'<path d="M4 12l16-8-6 16-2-6-8-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
-  'fa-smile':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="15" cy="10" r="1.1" fill="currentColor"/><path d="M8 14c1.2 2 2.8 3 4 3s2.8-1 4-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-  'fa-gift':'<rect x="4" y="10" width="16" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10v10M4 14h16M8 10c0-2 1.2-3.5 3-3.5S12 9 12 10c0-1 .8-3.5 3-3.5S16 8 16 10" fill="none" stroke="currentColor" stroke-width="1.6"/>',
-  'fa-robot':'<rect x="6" y="8" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 4v4M9 13h.01M15 13h.01M9 17h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="13" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/>',
-  'fa-cog':'<circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2.5M12 18.5V21M4.9 6.5l1.8 1.8M17.3 15.7l1.8 1.8M3 12h2.5M18.5 12H21M4.9 17.5l1.8-1.8M17.3 8.3l1.8-1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  'fa-paper-plane':'<path d="M6 4h10l2 2v12l-2 2H6l-2-2V6l2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h6M8 12h5M14 15l3-3 1.5 4.5L14 15z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+  'fa-smile':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.2" fill="currentColor"/><circle cx="15" cy="10" r="1.2" fill="currentColor"/><path d="M8 14.2c1.3 2.2 2.9 3.2 4 3.2s2.7-1 4-3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-gift':'<rect x="4" y="10" width="16" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 10v10M4 14h16M8.5 10c0-2 1.3-3.5 2.8-3.5 1.2 0 1.7 1.2 1.7 2.5 0-1.3.6-2.5 1.8-2.5 1.5 0 2.7 1.5 2.7 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-robot':'<path d="M8 9c0-2.5 1.8-4.5 4-4.5S16 6.5 16 9c2.2.3 3.5 2 3.5 4.2 0 2.8-2.2 5.3-7.5 5.3S4.5 16 4.5 13.2C4.5 11 5.8 9.3 8 9z" fill="none" stroke="currentColor" stroke-width="1.6"/><text x="12" y="14.2" text-anchor="middle" font-size="6.5" font-weight="700" fill="currentColor" font-family="sans-serif">AI</text>',
+  'fa-cog':'<circle cx="10" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3.5v2M10 14.5v2M4.5 6l1.4 1.4M14.1 12.9l1.4 1.4M3.5 10h2M14.5 10h2M4.5 14l1.4-1.4M14.1 7.1l1.4-1.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16.5" cy="16.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 14.2v4.6M14.2 16.5h4.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
   'fa-star':'<path d="M12 3l2.4 6.2H21l-5 4.2 1.8 6.6L12 16.5 6.2 20l1.8-6.6-5-4.2h6.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
   'fa-heart':'<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   'fa-fire':'<path d="M12 21c4 0 6-3 6-6 0-3-2-5-3-7-1 2-1.5 3-3 3s-2-1-3-3c-1 2-3 4-3 7 0 3 2 6 6 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   'fa-tags':'<path d="M3 12V5h7l9 9-7 7-9-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.2" fill="currentColor"/>',
   'fa-tag':'<path d="M3 12V5h7l9 9-7 7-9-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.2" fill="currentColor"/>',
-  'fa-box':'<path d="M4 8l8-3 8 3v10l-8 3-8-3V8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 3 8-3M12 11v10" fill="none" stroke="currentColor" stroke-width="1.6"/>',
-  'fa-shopping-cart':'<circle cx="9" cy="20" r="1.3" fill="currentColor"/><circle cx="17" cy="20" r="1.3" fill="currentColor"/><path d="M3 4h2l2.5 11h10l2-7H7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
-  'fa-clipboard-list':'<rect x="6" y="4" width="12" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 2h6v3H9zM9 11h6M9 15h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  'fa-box':'<path d="M6 8.5h12l-1.2 11.5H7.2L6 8.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8.5V6.5a3 3 0 016 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+  'fa-shopping-cart':'<path d="M6 8.5h12l-1.2 11.5H7.2L6 8.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8.5V6.5a3 3 0 016 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+  'fa-clipboard-list':'<rect x="6" y="4" width="12" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9 2.5h6v3.2H9zM9 11h6M9 15h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-shopping-bag':'<path d="M6 9h12l-1 11H7L6 9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 9V7a3 3 0 016 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/>',
   'fa-inbox':'<path d="M3 12l2-7h14l2 7v6H3v-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3 12h5l2 3h4l2-3h5" fill="none" stroke="currentColor" stroke-width="1.6"/>',
   'fa-headset':'<path d="M4 13v-1a8 8 0 0116 0v1M4 13h3v5H5a1 1 0 01-1-1v-4zm16 0h-3v5h2a1 1 0 001-1v-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   'fa-trophy':'<path d="M8 4h8v4a4 4 0 01-8 0V4zM8 4H5v2a3 3 0 003 3M16 4h3v2a3 3 0 01-3 3M10 16h4v3H10zM8 21h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
@@ -989,14 +1027,14 @@ const FA_SVG_PATHS={
   'fa-calendar-check':'<rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4M9 16l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-download':'<path d="M12 4v10M8 10l4 4 4-4M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-upload':'<path d="M12 14V4M8 8l4-4 4 4M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  'fa-sync':'<path d="M20 12a8 8 0 11-2.3-5.6M20 5v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  'fa-sync':'<path d="M19.5 12a7.5 7.5 0 11-2.2-5.3M19.5 4.5v5h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 12a7.5 7.5 0 012.2 5.3M4.5 19.5v-5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-spinner':'<path d="M12 3a9 9 0 019 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   'fa-spin':'<path d="M12 3a9 9 0 019 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   'fa-lock':'<rect x="6" y="11" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   'fa-sign-in-alt':'<path d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5M15 8l4 4-4 4M9 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-sign-out-alt':'<path d="M13 4h5a2 2 0 012 2v12a2 2 0 01-2 2h-5M9 8l-4 4 4 4M5 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-user-plus':'<circle cx="10" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 19c1.2-3 3.2-4.5 7-4.5S15.8 16 17 19M17 8h4M19 6v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-  'fa-credit-card':'<rect x="3" y="6" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 11h18" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  'fa-credit-card':'<rect x="3" y="7" width="14" height="10" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6 12h4M17 10l4 2-4 2v-4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><text x="8" y="16.2" text-anchor="middle" font-size="6" fill="currentColor" font-family="sans-serif">¥</text>',
   'fa-save':'<path d="M5 4h11l3 3v13H5V4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 18v-5h8v5" fill="none" stroke="currentColor" stroke-width="1.6"/>',
   'fa-exclamation-circle':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   'fa-exclamation-triangle':'<path d="M12 4l9 16H3L12 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
@@ -1015,9 +1053,10 @@ const FA_SVG_PATHS={
   'fa-user-slash':'<circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 19c1.5-3.2 4-5 7-5s5.5 1.8 7 5M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   'fa-folder':'<path d="M3 7h6l2 2h10v10H3V7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   'fa-globe':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18" fill="none" stroke="currentColor" stroke-width="1.4"/>',
-  'fa-palette':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="10" r="1.3" fill="currentColor"/><circle cx="14" cy="9" r="1.3" fill="currentColor"/><circle cx="15" cy="14" r="1.3" fill="currentColor"/><circle cx="10" cy="15" r="1.3" fill="currentColor"/>',
-  'fa-magic':'<path d="M5 19L15 9M13 7l2 2M8 20l-3-3M16 4l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  'fa-bullhorn':'<path d="M4 10v4h3l7 4V6L7 10H4zM18 9a3 3 0 010 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-palette':'<rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="11" r="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 16l4.5-4 3 2.5 3-2.5 4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+  'fa-magic':'<path d="M8 6.5h8c.8 0 1.5.7 1.5 1.5v11c0 .8-.7 1.5-1.5 1.5H8c-.8 0-1.5-.7-1.5-1.5V8c0-.8.7-1.5 1.5-1.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5V5a2 2 0 014 0v1.5M9 12h6M9 15h4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  'fa-tshirt':'<path d="M8 5l-4 3 2 2 2-1v10h8V9l2 1 2-2-4-3c-1 .8-2 1.2-4 1.2S9 5.8 8 5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  'fa-bullhorn':'<path d="M4 11v3h3l8 3.5V7.5L7 11H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M18 9.2c1.2.8 1.8 2 1.8 2.8s-.6 2-1.8 2.8M7 14l1 4h2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
   'fa-id-card':'<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M13 10h5M13 14h4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
   'fa-chart-bar':'<path d="M4 20h16M7 16V9M12 16V5M17 16v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   'fa-thumbs-up':'<path d="M8 11v9H5v-9h3zm0 0l3-6a2 2 0 012-1h1v5h5l-1 8H8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
@@ -1748,7 +1787,46 @@ async function renderHomePage(){
     renderHomeProducts(products);
     await loadBannersFromAPI();
     initBanner();
+    refreshHomeCheckinBar();
   }catch(err){console.error(err);}
+}
+
+function refreshHomeCheckinBar(){
+  const iconEl=document.getElementById('homeCheckinIcon');
+  if(iconEl&&typeof svgIcon==='function')iconEl.innerHTML=svgIcon('fa-calendar-day',26);
+  const sub=document.getElementById('homeCheckinSub');
+  const btn=document.getElementById('homeCheckinBtn');
+  if(!currentUser){
+    if(sub)sub.textContent='登录后可每日签到领奖励';
+    if(btn)btn.textContent='去登录';
+    return;
+  }
+  apiRequest('/checkin').then(st=>{
+    if(sub)sub.textContent=st.checked_today?'今日已签到，点此查看日历':'每日签到领金币/优惠券等奖励';
+    if(btn)btn.textContent=st.checked_today?'已签到':'签到';
+    if(btn)btn.style.background=st.checked_today?'#8b98a5':'#00ba7c';
+  }).catch(()=>{
+    if(sub)sub.textContent='点击查看签到日历与奖励';
+  });
+}
+
+function buildCheckinCalendar(history, todayStr){
+  const today=todayStr||new Date().toISOString().slice(0,10);
+  const [y,m]=today.split('-').map(Number);
+  const first=new Date(y,m-1,1);
+  const startWeek=(first.getDay()+6)%7; // 周一=0
+  const daysInMonth=new Date(y,m,0).getDate();
+  const checked=new Set((history||[]).map(h=>h.date));
+  const heads=['一','二','三','四','五','六','日'].map(d=>`<div class="ck-hd">${d}</div>`).join('');
+  let cells='';
+  for(let i=0;i<startWeek;i++)cells+=`<div class="ck-day muted"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=ds===today;
+    const isChecked=checked.has(ds);
+    cells+=`<div class="ck-day${isToday?' today':''}${isChecked?' checked':''}" title="${ds}">${d}</div>`;
+  }
+  return `<div style="font-size:13px;font-weight:700;margin:4px 0 6px;">${y}年${m}月签到日历</div><div class="ck-cal">${heads}${cells}</div>`;
 }
 function renderShopEntrance(shops){
   const container=document.getElementById('shopEntrance');
@@ -2619,23 +2697,23 @@ function renderMoreFunctions(){
   if(role==='admin'){
     items=[
       {icon:'fa-clipboard-list',label:'订单管理',action:"openSubPage('orders')"},
-      {icon:'fa-box',label:'商品管理',action:"openSubPage('products')"},
-      {icon:'fa-users',label:'用户管理',action:"openSubPage('users')"},
+      {icon:'fa-shopping-bag',label:'商品管理',action:"openSubPage('products')"},
+      {icon:'fa-user',label:'用户管理',action:"openSubPage('users')"},
       {icon:'fa-coins',label:'充值管理',action:"openSubPage('recharges')"},
       {icon:'fa-store',label:'店铺管理',action:"openSubPage('shops')"},
       {icon:'fa-bullhorn',label:'公告管理',action:"openSubPage('announce')"},
       {icon:'fa-credit-card',label:'提现管理',action:"openSubPage('withdrawals')"},
-      {icon:'fa-tags',label:'分类管理',action:"openSubPage('categories')"},
-      {icon:'fa-image',label:'广告管理',action:"openSubPage('banners')"},
-      {icon:'fa-palette',label:'图标管理',action:"openSubPage('icons')"},
+      {icon:'fa-th-large',label:'分类管理',action:"openSubPage('categories')"},
+      {icon:'fa-ad',label:'广告管理',action:"openSubPage('banners')"},
+      {icon:'fa-image',label:'图标管理',action:"openSubPage('icons')"},
       {icon:'fa-gift',label:'礼物管理',action:"openSubPage('gifts')"},
-      {icon:'fa-robot',label:'AI智能体小Q',action:"openSubPage('ai')"},
-      {icon:'fa-smile',label:'表情包管理',action:"openSubPage('stickers')"},
+      {icon:'fa-robot',label:'AI智能',action:"openSubPage('ai')"},
+      {icon:'fa-smile',label:'表情',action:"openSubPage('stickers')"},
       {icon:'fa-paper-plane',label:'发布订单',action:"openSubPage('dispatcher')"},
-      {icon:'fa-magic',label:'皮肤主题',action:"openSubPage('skin')"},
+      {icon:'fa-tshirt',label:'皮肤',action:"openSubPage('skin')"},
       {icon:'fa-calendar-check',label:'签到奖励配置',action:"openCheckinAdmin()"},
       {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
-      {icon:'fa-cog',label:'账户设置',action:"openSubPage('account')"}
+      {icon:'fa-cog',label:'账户',action:"openSubPage('account')"}
     ];
   }else if(role==='service'){
     items=[
@@ -2679,7 +2757,7 @@ function renderMoreFunctions(){
 }
 
 /** 前端版本号：每次你部署重要更新可改这一串，用于提示刷新 */
-const APP_VERSION='20261014b';
+const APP_VERSION='20261015a';
 function forceRefreshApp(){
   confirmAction('刷新新版本','将清除本地缓存并重新加载页面，以获取 Cloudflare 最新代码。是否继续？','立即刷新','doForceRefreshApp()');
 }
@@ -3404,7 +3482,7 @@ async function openWalletPanel(){
 
 async function openCheckinPanel(){
   if(!currentUser){toast('请先登录','warning');return;}
-  let st={checked_today:false,rewards:[],coin:0,diamond:0,bound_diamond:0};
+  let st={checked_today:false,rewards:[],coin:0,diamond:0,bound_diamond:0,history:[],today:new Date().toISOString().slice(0,10)};
   try{st=await apiRequest('/checkin');}catch(e){toast(e.message||'加载失败','error');return;}
   const rewards=st.rewards||[];
   const rewardList=rewards.length?rewards.map(r=>{
@@ -3416,11 +3494,14 @@ async function openCheckinPanel(){
       ${icon}<div style="flex:1;font-size:13px;font-weight:600;">${String(label).replace(/</g,'&lt;')}</div>
       <span style="font-size:13px;color:#00ba7c;font-weight:700;">${val}</span>
     </div>`;
-  }).join(''):'<div style="font-size:12px;color:var(--text-muted);">默认奖励：金币 +10</div>';
+  }).join(''):'<div style="font-size:12px;color:var(--text-muted);">默认奖励：金币 +10（管理员可在签到奖励配置中修改）</div>';
   const checked=!!st.checked_today;
+  const calHtml=buildCheckinCalendar(st.history||[], st.today||new Date().toISOString().slice(0,10));
   showCustomModal(`
     <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgCheckin(24)} 每日签到</h3>
-    <p style="font-size:13px;color:var(--text-muted);margin:8px 0 12px;">${checked?'今日已签到，明天再来吧':'签到可获得以下奖励（每天一次）'}</p>
+    <p style="font-size:13px;color:var(--text-muted);margin:8px 0 4px;">${checked?'今日已签到，明天再来吧':'每天签到一次，奖励由管理员配置'}</p>
+    ${calHtml}
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px;">今日可获得</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">${rewardList}</div>
     <div style="display:flex;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:12px;flex-wrap:wrap;">
       <span style="display:inline-flex;align-items:center;gap:4px;">${iconSvgCoin(14)} 金币 ${st.coin||0}</span>
@@ -3433,6 +3514,7 @@ async function openCheckinPanel(){
         ?'<button class="btn btn-outline" disabled style="opacity:.6;">已签到</button>'
         :'<button class="btn btn-success" onclick="doCheckinNow()">立即签到</button>'}
     </div>`);
+  refreshHomeCheckinBar();
 }
 
 async function doCheckinNow(){
@@ -3449,6 +3531,7 @@ async function doCheckinNow(){
       if(document.getElementById('myBalance'))document.getElementById('myBalance').textContent=String(me.diamond||0);
     }catch(e){}
     openCheckinPanel();
+    refreshHomeCheckinBar();
   }catch(err){toast(err.message||'签到失败','error');}
 }
 
@@ -7266,6 +7349,8 @@ async function afterLogin(){
   document.getElementById('authPage').style.display='none';
   document.getElementById('mainApp').classList.remove('hidden');
   hideGlobalLoading(true);
+  const bootVisible=document.getElementById('bootSplash')&&!document.getElementById('bootSplash').classList.contains('hide')&&document.getElementById('bootSplash').style.display!=='none';
+  if(bootVisible)showBootSplash('正在进入...');
   try{
     const user=await apiRequest('/me');
     currentUser=user;
@@ -7276,8 +7361,8 @@ async function afterLogin(){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-home').classList.add('active');
   document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.target==='home'));
-  // 先展示首页，其它后台慢慢补，不挡整页
-  try{renderHomePage();}catch(e){}
+  try{await renderHomePage();}catch(e){}
+  hideBootSplash();
   setTimeout(function(){try{renderCategoryPage();}catch(e){}},40);
   setTimeout(function(){try{renderMyPage();}catch(e){}},80);
   setTimeout(function(){try{renderPosts();}catch(e){}},120);
@@ -7785,20 +7870,27 @@ async function onSkinBgFile(e){
 /* ============================================================
    初始化
 ============================================================ */
+function showBootSplash(text){
+  const el=document.getElementById('bootSplash');
+  const t=document.getElementById('bootSplashText');
+  if(t&&text)t.textContent=text;
+  if(el){el.classList.remove('hide');el.setAttribute('aria-hidden','false');}
+}
+function hideBootSplash(){
+  const el=document.getElementById('bootSplash');
+  if(!el)return;
+  el.classList.add('hide');
+  el.setAttribute('aria-hidden','true');
+  setTimeout(function(){try{el.style.display='none';}catch(e){}},280);
+}
 async function init(){
-  // 尽早应用缓存/默认，随后拉取全站皮肤
+  showBootSplash('正在加载，请稍候...');
   try{applySkin(getCurrentSkin());}catch(e){}
   document.getElementById('authPage').style.display='none';
   document.getElementById('mainApp').classList.remove('hidden');
   try{await loadGlobalSkin();}catch(e){}
-  // 先加载全局图标，再渲染页面，保证所有人都能看到自定义图标
   await loadAppIcons();
   renderBottomNav();
-  renderHomePage();
-  renderCategoryPage();
-  renderMyPage();
-  renderPosts();
-  loadContacts();
   const savedToken=localStorage.getItem('token');
   if(savedToken){
     token=savedToken;
@@ -7806,16 +7898,23 @@ async function init(){
       const user=await apiRequest('/me');
       currentUser=user;
       currentUserRole=user.role;
+      await renderHomePage();
+      hideBootSplash();
       afterLogin();
     }catch(err){
       localStorage.removeItem('token');
       token=null;
       renderBottomNav();
-      renderHomePage();
+      await renderHomePage();
       renderMyPage();
+      hideBootSplash();
     }
   }else{
+    try{await renderHomePage();}catch(e){}
+    hideBootSplash();
     setTimeout(()=>{loadAnnounceData().then(()=>showAnnounceModal());},500);
+    setTimeout(function(){try{renderCategoryPage();}catch(e){}},50);
+    setTimeout(function(){try{renderMyPage();}catch(e){}},100);
   }
 }
 document.addEventListener('DOMContentLoaded',function(){
