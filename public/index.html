@@ -1481,11 +1481,15 @@ function openSubPage(page){
   };
   const containerId=pageMap[page];
   if(!containerId)return;
+  // 必须先关掉其它子页（尤其是控制终端），否则会盖住点进去的页面
+  document.querySelectorAll('.sub-page').forEach(el=>{
+    if(el.id!==containerId)el.classList.remove('active');
+  });
   document.getElementById(containerId).classList.add('active');
   document.body.style.overflow='hidden';
   // 立即显示加载，避免空白等待
   const contentEl=document.getElementById(contentMap[page]);
-  if(contentEl){
+  if(contentEl && page!=='console'){
     contentEl.innerHTML='<div class="inline-load"><div class="gl-spinner"></div><div>加载中...</div></div>';
   }
   switch(page){
@@ -2788,7 +2792,7 @@ function renderMoreFunctions(){
 }
 
 /** 前端版本号：每次你部署重要更新可改这一串，用于提示刷新 */
-const APP_VERSION='20261015c';
+const APP_VERSION='20261015d';
 function forceRefreshApp(){
   confirmAction('刷新新版本','将清除本地缓存并重新加载页面，以获取 Cloudflare 最新代码。是否继续？','立即刷新','doForceRefreshApp()');
 }
@@ -8135,6 +8139,8 @@ window.openCoinExchange=openCoinExchange;
 window.doCoinExchange=doCoinExchange;
 window.renderControlConsole=renderControlConsole;
 window.ctGo=ctGo;
+window.ctOpenPage=ctOpenPage;
+window.ctIcon=ctIcon;
 window.ctLoadD1=ctLoadD1;
 window.ctLoadDbTable=ctLoadDbTable;
 window.ctRunSql=ctRunSql;
@@ -8146,65 +8152,86 @@ window.openExchangeAdmin=openExchangeAdmin;
 window.saveExchangeRule=saveExchangeRule;
 window.deleteExchangeRule=deleteExchangeRule;
 
-let _ctTab='home';
+let _ctTab='manage';
 let _b2Token=null;
+/** 控制终端黑白简约线图标 */
+function ctIcon(name,size){
+  size=size||24;
+  const s=`width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#0f1419" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const map={
+    manage:`<svg ${s}><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>`,
+    d1:`<svg ${s}><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>`,
+    b2:`<svg ${s}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="1.8"/><path d="M3 16l5-4 4 3 3-2 6 4"/></svg>`,
+    exchange:`<svg ${s}><circle cx="9" cy="12" r="5"/><path d="M15 8.5A5 5 0 1111 17"/><path d="M14 6v4h4"/></svg>`,
+    checkin:`<svg ${s}><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg>`,
+    skin:`<svg ${s}><path d="M8 6l-3 2.5 2 2 1.5-1v9.5h7V9.5l1.5 1 2-2L16 6c-1 .7-2 1.2-4 1.2S9 6.7 8 6z"/></svg>`,
+    orders:`<svg ${s}><path d="M8 4h8v2H8zM7 6h10v14H7z"/><path d="M10 11h4M10 15h4"/></svg>`,
+    product:`<svg ${s}><path d="M6 9h12l-1 11H7L6 9z"/><path d="M9 9V7a3 3 0 016 0v2"/></svg>`,
+    user:`<svg ${s}><circle cx="12" cy="8" r="3.2"/><path d="M5 19c1.2-3.2 3.5-5 7-5s5.8 1.8 7 5"/></svg>`,
+    shop:`<svg ${s}><path d="M4 10h16v10H4zM4 10l1.5-5h13L20 10M9 20v-5h6v5"/></svg>`,
+    announce:`<svg ${s}><path d="M4 10v4h3l8 3.5V6.5L7 10H4zM18 9.5a2.5 2.5 0 010 5"/></svg>`,
+    withdraw:`<svg ${s}><rect x="3" y="7" width="13" height="10" rx="1.5"/><path d="M17 10l4 2-4 2v-4z"/></svg>`,
+    category:`<svg ${s}><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><path d="M14 14h5v2l-1.5 3.5H14z"/></svg>`,
+    ad:`<svg ${s}><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 15V9l5 6V9"/></svg>`,
+    icon:`<svg ${s}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="1.5"/><path d="M3 16l5-4 3 2.5 3-2 7 4"/></svg>`,
+    gift:`<svg ${s}><rect x="4" y="10" width="16" height="10" rx="1"/><path d="M12 10v10M4 14h16M8.5 10c0-2 1.2-3.5 2.8-3.5 1 0 1.5 1 1.7 2.5.2-1.5.8-2.5 1.8-2.5 1.5 0 2.7 1.5 2.7 3.5"/></svg>`,
+    ai:`<svg ${s}><circle cx="12" cy="12" r="8"/><path d="M9 14c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M10 10h.01M14 10h.01"/></svg>`,
+    smile:`<svg ${s}><circle cx="12" cy="12" r="8"/><path d="M9 10h.01M15 10h.01M9 14c1 1.5 2.2 2.2 3 2.2s2-.7 3-2.2"/></svg>`,
+    dispatch:`<svg ${s}><path d="M4 12l16-7-6 16-2-7-8-2z"/></svg>`,
+    recharge:`<svg ${s}><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9 11h6"/></svg>`
+  };
+  return map[name]||map.manage;
+}
 function renderControlConsole(){
   const box=document.getElementById('subConsoleContent');
   if(!box)return;
   if(!currentUser||currentUser.role!=='admin'){box.innerHTML='<div class="empty-state"><p>仅管理员</p></div>';return;}
+  // 类目仅保留：管理功能 / D1 / B2（总览用同一套三个入口）
+  if(_ctTab==='exchange'||_ctTab==='home')_ctTab='manage';
   const tabs=[
-    {id:'home',lab:'总览'},
     {id:'manage',lab:'管理功能'},
     {id:'d1',lab:'D1数据库'},
-    {id:'b2',lab:'B2图库'},
-    {id:'exchange',lab:'兑换配置'}
+    {id:'b2',lab:'B2图库'}
   ];
   box.innerHTML=`<div class="ct-wrap">
     <div class="ct-tabs">${tabs.map(t=>`<button type="button" class="${_ctTab===t.id?'active':''}" onclick="ctGo('${t.id}')">${t.lab}</button>`).join('')}</div>
     <div class="ct-body" id="ctBody"><div class="inline-load"><div class="gl-spinner"></div><div>加载中...</div></div></div>
   </div>`;
-  ctGo(_ctTab||'home');
+  ctGo(_ctTab||'manage');
 }
 function ctGo(tab){
+  if(tab==='home'||tab==='exchange')tab='manage';
   _ctTab=tab;
+  const ids=['manage','d1','b2'];
   document.querySelectorAll('.ct-tabs button').forEach((b,i)=>{
-    const ids=['home','manage','d1','b2','exchange'];
     b.classList.toggle('active',ids[i]===tab);
   });
   const body=document.getElementById('ctBody');
   if(!body)return;
-  if(tab==='home'){
-    body.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:10px;">控制终端</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">管理员专属：业务管理、D1 全表、B2 图库（可复制图片地址用于任意上传位）。</p>
-      <div class="ct-grid">
-        <div class="ct-card" onclick="ctGo('manage')"><div class="ico">${typeof svgIcon==='function'?svgIcon('fa-cog',24):'⚙️'}</div><div class="lab">管理功能</div></div>
-        <div class="ct-card" onclick="ctGo('d1')"><div class="ico">🗄️</div><div class="lab">D1 数据库</div></div>
-        <div class="ct-card" onclick="ctGo('b2')"><div class="ico">🖼️</div><div class="lab">B2 图库</div></div>
-        <div class="ct-card" onclick="ctGo('exchange')"><div class="ico">${iconSvgCoin(24)}</div><div class="lab">兑换配置</div></div>
-        <div class="ct-card" onclick="openCheckinAdmin()"><div class="ico">${iconSvgCheckin(24)}</div><div class="lab">签到配置</div></div>
-        <div class="ct-card" onclick="openSubPage('skin')"><div class="ico">${typeof svgIcon==='function'?svgIcon('fa-tshirt',24):'👕'}</div><div class="lab">皮肤主题</div></div>
-      </div>`;
-  }else if(tab==='manage'){
+  if(tab==='manage'){
+    // 管理功能：业务入口 + 兑换/签到/皮肤（黑白简约图标，不在总览单独类目）
     const items=[
-      {lab:'订单管理',act:"openSubPage('orders')",ico:'fa-clipboard-list'},
-      {lab:'商品管理',act:"openSubPage('products')",ico:'fa-shopping-bag'},
-      {lab:'用户管理',act:"openSubPage('users')",ico:'fa-user'},
-      {lab:'充值管理',act:"openSubPage('recharges')",ico:'fa-coins'},
-      {lab:'店铺管理',act:"openSubPage('shops')",ico:'fa-store'},
-      {lab:'公告管理',act:"openSubPage('announce')",ico:'fa-bullhorn'},
-      {lab:'提现管理',act:"openSubPage('withdrawals')",ico:'fa-credit-card'},
-      {lab:'分类管理',act:"openSubPage('categories')",ico:'fa-th-large'},
-      {lab:'广告管理',act:"openSubPage('banners')",ico:'fa-ad'},
-      {lab:'图标管理',act:"openSubPage('icons')",ico:'fa-image'},
-      {lab:'礼物管理',act:"openSubPage('gifts')",ico:'fa-gift'},
-      {lab:'AI智能',act:"openSubPage('ai')",ico:'fa-robot'},
-      {lab:'表情包',act:"openSubPage('stickers')",ico:'fa-smile'},
-      {lab:'派单系统',act:"openSubPage('dispatcher')",ico:'fa-paper-plane'},
-      {lab:'皮肤主题',act:"openSubPage('skin')",ico:'fa-tshirt'},
-      {lab:'签到奖励',act:"openCheckinAdmin()",ico:'fa-calendar-check'}
+      {lab:'订单管理',act:"ctOpenPage('orders')",icon:'orders'},
+      {lab:'商品管理',act:"ctOpenPage('products')",icon:'product'},
+      {lab:'用户管理',act:"ctOpenPage('users')",icon:'user'},
+      {lab:'充值管理',act:"ctOpenPage('recharges')",icon:'recharge'},
+      {lab:'店铺管理',act:"ctOpenPage('shops')",icon:'shop'},
+      {lab:'公告管理',act:"ctOpenPage('announce')",icon:'announce'},
+      {lab:'提现管理',act:"ctOpenPage('withdrawals')",icon:'withdraw'},
+      {lab:'分类管理',act:"ctOpenPage('categories')",icon:'category'},
+      {lab:'广告管理',act:"ctOpenPage('banners')",icon:'ad'},
+      {lab:'图标管理',act:"ctOpenPage('icons')",icon:'icon'},
+      {lab:'礼物管理',act:"ctOpenPage('gifts')",icon:'gift'},
+      {lab:'AI智能',act:"ctOpenPage('ai')",icon:'ai'},
+      {lab:'表情包',act:"ctOpenPage('stickers')",icon:'smile'},
+      {lab:'派单系统',act:"ctOpenPage('dispatcher')",icon:'dispatch'},
+      {lab:'皮肤主题',act:"ctOpenPage('skin')",icon:'skin'},
+      {lab:'签到配置',act:"openCheckinAdmin()",icon:'checkin'},
+      {lab:'兑换配置',act:"openExchangeAdmin()",icon:'exchange'}
     ];
-    body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:10px;">管理功能入口</div>
-      <div class="ct-grid">${items.map(it=>`<div class="ct-card" onclick="${it.act}"><div class="ico">${typeof svgIcon==='function'?svgIcon(it.icon||it.ico,22):''}</div><div class="lab">${it.lab}</div></div>`).join('')}</div>`;
+    body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:10px;">管理功能</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">点击进入对应管理页；皮肤/签到/兑换使用弹窗或子页。</p>
+      <div class="ct-grid">${items.map(it=>`<div class="ct-card" onclick="${it.act}"><div class="ico">${ctIcon(it.icon,26)}</div><div class="lab">${it.lab}</div></div>`).join('')}</div>`;
   }else if(tab==='d1'){
     body.innerHTML='<div class="inline-load"><div class="gl-spinner"></div><div>加载 D1 表...</div></div>';
     ctLoadD1();
@@ -8216,12 +8243,14 @@ function ctGo(tab){
     </div>
     <div id="ctB2Grid" class="ct-b2-grid"><div class="inline-load"><div class="gl-spinner"></div></div></div>
     <div style="text-align:center;margin-top:10px;"><button class="btn btn-outline btn-sm" id="ctB2More" style="display:none;" onclick="ctLoadB2(false)">加载更多</button></div>
-    <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">点击「复制链接」后，可在商品/店铺/图标等任意图片输入框粘贴使用。</p>`;
+    <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">点「复制/选用」后，可粘贴到任意图片地址框。</p>`;
     _b2Token=null;
     ctLoadB2(true);
-  }else if(tab==='exchange'){
-    openExchangeAdmin(true);
   }
+}
+/** 从控制终端打开业务子页（先关终端再打开，避免被盖住） */
+function ctOpenPage(page){
+  openSubPage(page);
 }
 async function ctLoadD1(){
   const body=document.getElementById('ctBody');
