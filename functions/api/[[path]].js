@@ -165,13 +165,28 @@ async function handleGetCheckinStatus(env, authHeader) {
   const rewards = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 ORDER BY sort_order ASC, created_at ASC');
   const coupons = await queryDB(env, `SELECT * FROM user_coupons WHERE user_id = ? ORDER BY obtained_at DESC LIMIT 50`, [userId]);
   const user = await getUserById(env, userId);
+  // 本月已签到日期（用于日历展示）
+  const monthPrefix = today.slice(0, 7);
+  let history = [];
+  try {
+    const hist = await queryDB(env,
+      `SELECT checkin_date, rewards_json FROM checkin_records WHERE user_id = ? AND checkin_date LIKE ? ORDER BY checkin_date ASC`,
+      [userId, monthPrefix + '%']);
+    history = (hist.results || []).map(r => {
+      let rewards = [];
+      try { rewards = JSON.parse(r.rewards_json || '[]'); } catch (e) {}
+      return { date: r.checkin_date, rewards };
+    });
+  } catch (e) {}
   return jsonResponse({
     checked_today: !!(done.results && done.results[0]),
     rewards: rewards.results || [],
     coupons: coupons.results || [],
     coin: Number(user && user.coin) || 0,
     diamond: Number(user && user.diamond) || 0,
-    bound_diamond: Number(user && user.bound_diamond) || 0
+    bound_diamond: Number(user && user.bound_diamond) || 0,
+    history,
+    today
   });
 }
 
