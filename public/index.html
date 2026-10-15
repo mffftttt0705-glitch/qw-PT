@@ -1453,10 +1453,24 @@ function openSubPage(page){
     'dispatcher':'subPageDispatcher','categories':'subPageCategories',
     'banners':'subPageBanners','icons':'subPageIcons','myshop':'subPageMyShop','hall':'subPageHall','gifts':'subPageGifts'
   };
+  const contentMap={
+    'orders':'subOrdersContent','products':'subProductsContent','users':'subUsersContent',
+    'recharges':'subRechargesContent','shops':'subShopsContent','announce':'subAnnounceContent',
+    'withdrawals':'subWithdrawalsContent','account':'subAccountContent','service':'subServiceContent',
+    'ai':'subAiContent','stickers':'subStickersContent','skin':'subSkinContent',
+    'dispatcher':'subDispatcherContent','categories':'subCategoriesContent',
+    'banners':'subBannersContent','icons':'subIconsContent','myshop':'subMyShopContent',
+    'hall':'subHallContent','gifts':'subGiftsContent'
+  };
   const containerId=pageMap[page];
   if(!containerId)return;
   document.getElementById(containerId).classList.add('active');
   document.body.style.overflow='hidden';
+  // 立即显示加载，避免空白等待
+  const contentEl=document.getElementById(contentMap[page]);
+  if(contentEl){
+    contentEl.innerHTML='<div class="inline-load"><div class="gl-spinner"></div><div>加载中...</div></div>';
+  }
   switch(page){
     case 'orders':renderSubOrders();break;
     case 'products':renderSubProducts();break;
@@ -1492,6 +1506,16 @@ function closeSubPage(){
 function openShopDetail(shopId){
   currentShopId=shopId;
   currentShopTab='products';
+  // 先打开弹层并显示加载，避免点击后空白等待
+  document.getElementById('sdTitle').innerHTML='加载中...';
+  document.getElementById('sdName').textContent='加载中...';
+  document.getElementById('sdDesc').textContent='';
+  const bannerEl0=document.getElementById('sdBanner');
+  if(bannerEl0)bannerEl0.innerHTML='<div class="inline-load" style="padding:20px;"><div class="gl-spinner"></div></div>';
+  const content0=document.getElementById('sdProductList');
+  if(content0)content0.innerHTML='<div class="inline-load"><div class="gl-spinner"></div><div>店铺加载中...</div></div>';
+  document.getElementById('shopDetailModal').classList.add('active');
+  document.body.style.overflow='hidden';
   apiRequest('/shops/'+shopId).then(shop=>{
     document.getElementById('sdTitle').innerHTML='<i class="fas fa-store"></i> '+(shop.name||'店铺详情');
     document.getElementById('sdDesc').textContent=shop.description||'暂无简介';
@@ -1506,10 +1530,11 @@ function openShopDetail(shopId){
     if(Number(shop.is_self)===1)sdBadges+='<span class="shop-badge self" style="font-size:11px;padding:2px 10px;"><i class="fas fa-trophy"></i> 自营</span> ';
     if(Number(shop.is_recommend)===1)sdBadges+='<span class="shop-badge rec" style="font-size:11px;padding:2px 10px;"><i class="fas fa-fire"></i> 推荐</span>';
     document.getElementById('sdName').innerHTML=(shop.name||'未知店铺')+(sdBadges?' '+sdBadges:'');
-    document.getElementById('shopDetailModal').classList.add('active');
-    document.body.style.overflow='hidden';
     loadShopDetailContent(shopId);
-  }).catch(err=>toast('加载店铺失败: '+err.message,'error'));
+  }).catch(err=>{
+    toast('加载店铺失败: '+err.message,'error');
+    closeShopDetail();
+  });
 }
 
 async function loadShopDetailContent(shopId,selectedCatId){
@@ -2757,7 +2782,7 @@ function renderMoreFunctions(){
 }
 
 /** 前端版本号：每次你部署重要更新可改这一串，用于提示刷新 */
-const APP_VERSION='20261015a';
+const APP_VERSION='20261015b';
 function forceRefreshApp(){
   confirmAction('刷新新版本','将清除本地缓存并重新加载页面，以获取 Cloudflare 最新代码。是否继续？','立即刷新','doForceRefreshApp()');
 }
@@ -3482,8 +3507,10 @@ async function openWalletPanel(){
 
 async function openCheckinPanel(){
   if(!currentUser){toast('请先登录','warning');return;}
+  showGlobalLoading('加载签到...');
   let st={checked_today:false,rewards:[],coin:0,diamond:0,bound_diamond:0,history:[],today:new Date().toISOString().slice(0,10)};
-  try{st=await apiRequest('/checkin');}catch(e){toast(e.message||'加载失败','error');return;}
+  try{st=await apiRequest('/checkin');}catch(e){hideGlobalLoading(true);toast(e.message||'加载失败','error');return;}
+  hideGlobalLoading(true);
   const rewards=st.rewards||[];
   const rewardList=rewards.length?rewards.map(r=>{
     const t=r.reward_type||'coin';
@@ -3535,11 +3562,31 @@ async function doCheckinNow(){
   }catch(err){toast(err.message||'签到失败','error');}
 }
 
+let _ckAdminDay=1;
+let _ckAdminAllList=[];
 async function openCheckinAdmin(){
   if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可配置','error');return;}
-  let list=[];
-  try{list=await apiRequest('/admin/checkin-rewards')||[];}catch(e){toast(e.message||'加载失败','error');return;}
-  const rows=list.length?list.map(r=>{
+  showGlobalLoading('加载配置...');
+  try{_ckAdminAllList=await apiRequest('/admin/checkin-rewards')||[];}catch(e){hideGlobalLoading(true);toast(e.message||'加载失败','error');return;}
+  hideGlobalLoading(true);
+  if(!_ckAdminDay||_ckAdminDay<1)_ckAdminDay=1;
+  renderCheckinAdminModal();
+}
+function renderCheckinAdminModal(){
+  const list=_ckAdminAllList||[];
+  const dayCounts={};
+  list.forEach(r=>{
+    const d=Number(r.day_of_month)||0;
+    dayCounts[d]=(dayCounts[d]||0)+1;
+  });
+  let dayBtns='';
+  for(let d=1;d<=31;d++){
+    const has=dayCounts[d]>0;
+    const active=d===_ckAdminDay;
+    dayBtns+=`<button type="button" onclick="_ckAdminDay=${d};renderCheckinAdminModal()" style="width:36px;height:36px;border-radius:10px;border:1px solid ${active?'#0f1419':'#eff3f4'};background:${active?'#0f1419':(has?'#e8f8ef':'#fff')};color:${active?'#fff':(has?'#00ba7c':'#536471')};font-size:12px;font-weight:600;cursor:pointer;">${d}</button>`;
+  }
+  const dayList=list.filter(r=>(Number(r.day_of_month)||0)===_ckAdminDay);
+  const rows=dayList.length?dayList.map(r=>{
     const t=r.reward_type||'coin';
     const typeName={coin:'金币',diamond:'红钻',bound_diamond:'绑定红钻',coupon:'优惠券'}[t]||t;
     const icon=t==='diamond'?iconSvgDiamond(18):(t==='bound_diamond'?iconSvgBoundDiamond(18):(t==='coupon'?iconSvgCoupon(18):iconSvgCoin(18)));
@@ -3547,19 +3594,23 @@ async function openCheckinAdmin(){
       ${icon}
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:700;">${String(r.reward_name||typeName).replace(/</g,'&lt;')} · ${typeName}${t==='coupon'?'':(' +'+(r.reward_value||0))}</div>
-        <div style="font-size:11px;color:var(--text-muted);">${r.enabled==0?'已停用':'启用中'} · 排序 ${r.sort_order||0}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${r.enabled==0?'已停用':'启用中'} · 每月${_ckAdminDay}号</div>
       </div>
       <button class="btn btn-outline btn-xs" onclick="editCheckinReward('${r.id}')">编辑</button>
       <button class="btn btn-outline btn-xs" style="color:#f4212e;border-color:#f4212e;" onclick="deleteCheckinReward('${r.id}')">删</button>
     </div>`;
-  }).join(''):'<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">暂无配置，用户签到将默认获得金币+10</div>';
+  }).join(''):'<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">该日暂无奖励，用户签到将使用默认金币+10（若无通用配置）</div>';
   showCustomModal(`
     <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgCheckin(24)} 签到奖励配置</h3>
-    <p style="font-size:12px;color:var(--text-muted);margin:6px 0 10px;">可配置金币、优惠券、红钻、绑定红钻等，用户每日签到按启用项发放</p>
-    <div style="max-height:220px;overflow-y:auto;margin-bottom:10px;">${rows}</div>
+    <p style="font-size:12px;color:var(--text-muted);margin:6px 0 8px;">按「每月几号」配置奖励，之后每个月同一天都按此发放。绿色数字表示该日已有配置。</p>
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px;">选择日期（1-31号）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;max-height:120px;overflow-y:auto;">${dayBtns}</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px;">每月 ${_ckAdminDay} 号的奖励</div>
+    <div style="max-height:160px;overflow-y:auto;margin-bottom:10px;">${rows}</div>
     <div style="border-top:1px solid #eff3f4;padding-top:10px;">
-      <div style="font-size:13px;font-weight:700;margin-bottom:8px;">新增 / 编辑</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;">新增 / 编辑（当前：每月${_ckAdminDay}号）</div>
       <input type="hidden" id="ckRewardId" value="" />
+      <input type="hidden" id="ckDayOfMonth" value="${_ckAdminDay}" />
       <div class="admin-form-group"><label>奖励名称</label><input class="admin-form-control" id="ckRewardName" placeholder="如：签到金币" /></div>
       <div class="admin-form-group"><label>类型</label>
         <select class="admin-form-control" id="ckRewardType" onchange="toggleCkCouponDesc()">
@@ -3576,7 +3627,7 @@ async function openCheckinAdmin(){
         <select class="admin-form-control" id="ckEnabled"><option value="1">启用</option><option value="0">停用</option></select>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="saveCheckinReward()">保存</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="saveCheckinReward()">保存到 ${_ckAdminDay} 号</button>
         <button class="btn btn-outline" onclick="resetCheckinRewardForm()">清空</button>
       </div>
     </div>
@@ -3593,21 +3644,25 @@ function toggleCkCouponDesc(){
 function resetCheckinRewardForm(){
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val;};
   set('ckRewardId','');set('ckRewardName','');set('ckRewardType','coin');set('ckRewardValue','10');set('ckCouponDesc','');set('ckSortOrder','0');set('ckEnabled','1');
+  set('ckDayOfMonth',String(_ckAdminDay||1));
   toggleCkCouponDesc();
 }
 async function editCheckinReward(id){
   try{
-    const list=await apiRequest('/admin/checkin-rewards')||[];
+    const list=_ckAdminAllList.length?_ckAdminAllList:(await apiRequest('/admin/checkin-rewards')||[]);
     const r=list.find(x=>x.id===id);if(!r)return toast('不存在','error');
     const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v==null?'':v;};
     set('ckRewardId',r.id);set('ckRewardName',r.reward_name||'');set('ckRewardType',r.reward_type||'coin');
     set('ckRewardValue',r.reward_value||0);set('ckCouponDesc',r.coupon_desc||'');set('ckSortOrder',r.sort_order||0);
-    set('ckEnabled',r.enabled==0?'0':'1');toggleCkCouponDesc();
+    set('ckEnabled',r.enabled==0?'0':'1');
+    set('ckDayOfMonth',r.day_of_month||_ckAdminDay||1);
+    toggleCkCouponDesc();
   }catch(e){toast(e.message,'error');}
 }
 async function saveCheckinReward(){
   const id=(document.getElementById('ckRewardId')?.value||'').trim();
   const body={
+    day_of_month:parseInt(document.getElementById('ckDayOfMonth')?.value||_ckAdminDay||1,10)||1,
     reward_name:(document.getElementById('ckRewardName')?.value||'').trim(),
     reward_type:document.getElementById('ckRewardType')?.value||'coin',
     reward_value:parseFloat(document.getElementById('ckRewardValue')?.value)||0,
@@ -6744,9 +6799,18 @@ function formatMsgContent(content){
   }
   return String(content).replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+let _chatLoadToken=0;
 async function openChat(id,username,type='contact'){
   if(!currentUser){toast('请先登录','warning');return;}
   if(!id){toast('联系人ID无效','error');return;}
+  // 切换联系人时立刻清空旧消息，防止串到另一个人聊天里
+  const body=document.getElementById('fullscreenChatBody');
+  if(body){
+    delete body.dataset.hasMsg;
+    body.innerHTML='<div class="loading-box"><div class="loading-spinner"></div><div>消息加载中...</div></div>';
+  }
+  const input=document.getElementById('fullscreenChatInput');
+  if(input)input.value='';
   fullscreenContactId=id;
   fullscreenChatType=type;
   fullscreenOrderId=type==='order'?id:null;
@@ -6761,25 +6825,31 @@ async function openChat(id,username,type='contact'){
   }
   const transferBtn=document.getElementById('csTransferBtn');
   if(transferBtn)transferBtn.style.display=isCs?'inline-block':'none';
-  await loadFullscreenMessages();
+  const token=++_chatLoadToken;
+  await loadFullscreenMessages(token);
 }
-async function loadFullscreenMessages() {
+async function loadFullscreenMessages(token) {
   const body = document.getElementById('fullscreenChatBody');
   if(!body)return;
-  // 仅在空内容时显示加载，避免刷新时整页闪烁
+  const reqContactId=fullscreenContactId;
+  const reqType=fullscreenChatType;
+  const reqOrderId=fullscreenOrderId;
+  const myToken=(token!=null)?token:++_chatLoadToken;
   if(!body.dataset.hasMsg){
     body.innerHTML = '<div class="loading-box"><div class="loading-spinner"></div><div>消息加载中...</div></div>';
   }
   try {
-    const payload = { contactId: fullscreenContactId };
-    if (fullscreenChatType === 'order' && fullscreenOrderId) {
+    const payload = { contactId: reqContactId };
+    if (reqType === 'order' && reqOrderId) {
       payload.type = 'order';
-      payload.orderId = fullscreenOrderId;
+      payload.orderId = reqOrderId;
     }
     const messages = await apiRequest('/messages/history', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+    // 已切换到其他联系人，丢弃本次结果
+    if(myToken!==_chatLoadToken||fullscreenContactId!==reqContactId)return;
     if (!messages || messages.length === 0) {
       body.dataset.hasMsg='';
       body.innerHTML = '<div class="empty-state"><i class="fas fa-comment-dots"></i><p>暂无消息，打个招呼吧</p></div>';
@@ -6798,11 +6868,13 @@ async function loadFullscreenMessages() {
         ${isMe ? `<div class="chat-avatar">${avatarHtml}</div>` : ''}
       </div>`;
     });
+    if(myToken!==_chatLoadToken||fullscreenContactId!==reqContactId)return;
     body.dataset.hasMsg='1';
     body.innerHTML = html;
     body.scrollTop = body.scrollHeight;
     updateBadges();
   } catch (err) {
+    if(myToken!==_chatLoadToken||fullscreenContactId!==reqContactId)return;
     body.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>加载失败: ${err.message}</p></div>`;
   }
 }
@@ -7170,9 +7242,14 @@ function cancelVoiceHold(e){
 function closeChatFullscreen(){
   document.getElementById('chatFullscreen').classList.remove('active');
   document.body.style.overflow='';
+  _chatLoadToken++; // 作废进行中的消息请求
   fullscreenContactId=null;
   fullscreenOrderId=null;
   fullscreenChatType='contact';
+  const body=document.getElementById('fullscreenChatBody');
+  if(body){delete body.dataset.hasMsg;body.innerHTML='';}
+  const input=document.getElementById('fullscreenChatInput');
+  if(input)input.value='';
   loadContacts();
 }
 
@@ -8000,6 +8077,7 @@ window.openWithdraw=openWithdraw;
 window.openWalletPanel=openWalletPanel;
 window.openCheckinPanel=openCheckinPanel;
 window.openCheckinAdmin=openCheckinAdmin;
+window.renderCheckinAdminModal=renderCheckinAdminModal;
 window.doCheckinNow=doCheckinNow;
 window.saveCheckinReward=saveCheckinReward;
 window.editCheckinReward=editCheckinReward;
