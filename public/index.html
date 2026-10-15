@@ -51,6 +51,21 @@ html.no-fa i.fas:before,html.no-fa i.far:before,html.no-fa i.fa:before{content:'
 .ck-cal .ck-day.checked{background:#e8f8ef;border-color:#00ba7c;color:#00ba7c;font-weight:700;}
 .ck-cal .ck-day.today{border-color:#0f1419;font-weight:700;}
 .ck-cal .ck-day.today.checked{border-color:#00ba7c;}
+/* 控制终端 */
+.ct-wrap{display:flex;flex-direction:column;min-height:calc(100vh - 56px);}
+.ct-tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--border-color);background:#fafbfc;-webkit-overflow-scrolling:touch;}
+.ct-tabs button{flex-shrink:0;padding:8px 12px;border-radius:20px;border:1px solid #eff3f4;background:#fff;font-size:12px;font-weight:600;color:#536471;cursor:pointer;}
+.ct-tabs button.active{background:#0f1419;color:#fff;border-color:#0f1419;}
+.ct-body{padding:12px;flex:1;}
+.ct-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.ct-card{border:1px solid #eff3f4;border-radius:14px;padding:14px 10px;text-align:center;background:#fff;cursor:pointer;}
+.ct-card .ico{font-size:22px;margin-bottom:6px;color:#0f1419;}
+.ct-card .lab{font-size:12px;font-weight:600;color:#0f1419;}
+.ct-b2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.ct-b2-item{border:1px solid #eff3f4;border-radius:10px;overflow:hidden;background:#f7f9f9;}
+.ct-b2-item img{width:100%;height:90px;object-fit:cover;display:block;cursor:pointer;}
+.ct-b2-item .ops{display:flex;gap:4px;padding:6px;flex-wrap:wrap;}
+.ct-b2-item .ops button{flex:1;font-size:11px;padding:4px 0;}
 img[loading="lazy"]{content-visibility:auto;}
 :root {
     --bg-primary: #ffffff;
@@ -814,6 +829,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="sub-page" id="subPageMyShop"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-store"></i> 我的店铺</span></div><div id="subMyShopContent"></div></div>
 <div class="sub-page" id="subPageHall"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-bullseye"></i> 接单大厅</span></div><div id="subHallContent"></div></div>
 <div class="sub-page" id="subPageGifts"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title">🎁 礼物管理</span></div><div id="subGiftsContent"></div></div>
+<div class="sub-page" id="subPageConsole"><div class="sub-header"><button class="back-btn" onclick="closeSubPage()"><i class="fas fa-arrow-left"></i></button><span class="title"><i class="fas fa-layer-group"></i> 控制终端</span></div><div id="subConsoleContent" style="padding:0;"></div></div>
 
 <div class="chat-fullscreen" id="chatFullscreen">
 <div class="chat-header">
@@ -1451,7 +1467,8 @@ function openSubPage(page){
     'recharges':'subPageRecharges','shops':'subPageShops','announce':'subPageAnnounce',
     'withdrawals':'subPageWithdrawals','account':'subPageAccount','service':'subPageService','ai':'subPageAi','stickers':'subPageStickers','skin':'subPageSkin',
     'dispatcher':'subPageDispatcher','categories':'subPageCategories',
-    'banners':'subPageBanners','icons':'subPageIcons','myshop':'subPageMyShop','hall':'subPageHall','gifts':'subPageGifts'
+    'banners':'subPageBanners','icons':'subPageIcons','myshop':'subPageMyShop','hall':'subPageHall','gifts':'subPageGifts',
+    'console':'subPageConsole'
   };
   const contentMap={
     'orders':'subOrdersContent','products':'subProductsContent','users':'subUsersContent',
@@ -1460,7 +1477,7 @@ function openSubPage(page){
     'ai':'subAiContent','stickers':'subStickersContent','skin':'subSkinContent',
     'dispatcher':'subDispatcherContent','categories':'subCategoriesContent',
     'banners':'subBannersContent','icons':'subIconsContent','myshop':'subMyShopContent',
-    'hall':'subHallContent','gifts':'subGiftsContent'
+    'hall':'subHallContent','gifts':'subGiftsContent','console':'subConsoleContent'
   };
   const containerId=pageMap[page];
   if(!containerId)return;
@@ -1493,6 +1510,9 @@ function openSubPage(page){
     case 'myshop':renderSubMyShop();break;
     case 'hall':renderSubHall();break;
     case 'gifts':renderSubGifts();break;
+    case 'console':
+      if(!currentUser||currentUser.role!=='admin'){toast('仅管理员可进入控制终端','error');closeSubPage();return;}
+      renderControlConsole();break;
   }
 }
 function closeSubPage(){
@@ -2720,23 +2740,9 @@ function renderMoreFunctions(){
   const role=currentUserRole||currentUser?.role;
   let items=[];
   if(role==='admin'){
+    // 管理员专属管理能力统一进「控制终端」，更多功能只保留日常入口
     items=[
-      {icon:'fa-clipboard-list',label:'订单管理',action:"openSubPage('orders')"},
-      {icon:'fa-shopping-bag',label:'商品管理',action:"openSubPage('products')"},
-      {icon:'fa-user',label:'用户管理',action:"openSubPage('users')"},
-      {icon:'fa-coins',label:'充值管理',action:"openSubPage('recharges')"},
-      {icon:'fa-store',label:'店铺管理',action:"openSubPage('shops')"},
-      {icon:'fa-bullhorn',label:'公告管理',action:"openSubPage('announce')"},
-      {icon:'fa-credit-card',label:'提现管理',action:"openSubPage('withdrawals')"},
-      {icon:'fa-th-large',label:'分类管理',action:"openSubPage('categories')"},
-      {icon:'fa-ad',label:'广告管理',action:"openSubPage('banners')"},
-      {icon:'fa-image',label:'图标管理',action:"openSubPage('icons')"},
-      {icon:'fa-gift',label:'礼物管理',action:"openSubPage('gifts')"},
-      {icon:'fa-robot',label:'AI智能',action:"openSubPage('ai')"},
-      {icon:'fa-smile',label:'表情',action:"openSubPage('stickers')"},
-      {icon:'fa-paper-plane',label:'发布订单',action:"openSubPage('dispatcher')"},
-      {icon:'fa-tshirt',label:'皮肤',action:"openSubPage('skin')"},
-      {icon:'fa-calendar-check',label:'签到奖励配置',action:"openCheckinAdmin()"},
+      {icon:'fa-layer-group',label:'控制终端',action:"openSubPage('console')"},
       {icon:'fa-calendar-day',label:'每日签到',action:"openCheckinPanel()"},
       {icon:'fa-cog',label:'账户',action:"openSubPage('account')"}
     ];
@@ -2782,7 +2788,7 @@ function renderMoreFunctions(){
 }
 
 /** 前端版本号：每次你部署重要更新可改这一串，用于提示刷新 */
-const APP_VERSION='20261015b';
+const APP_VERSION='20261015c';
 function forceRefreshApp(){
   confirmAction('刷新新版本','将清除本地缓存并重新加载页面，以获取 Cloudflare 最新代码。是否继续？','立即刷新','doForceRefreshApp()');
 }
@@ -3428,10 +3434,12 @@ async function submitRechargeWithImages(){
   }catch(err){toast(err.message,'error');}
 }
 /** 代码绘制图标：红钻/金币/优惠券/绑定红钻/签到 */
-function iconSvgDiamond(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 9l9 13 9-13-9-7z" fill="#f4212e"/><path d="M12 2L7 9h10L12 2z" fill="#ff6b6b"/><path d="M3 9h18L12 22 3 9z" fill="#c9184a" opacity=".85"/></svg>`;}
+/** 红钻：与商城价格 fa-gem 同款实心红钻 */
+function iconSvgDiamond(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color:#f4212e;vertical-align:-0.2em"><path d="M3.5 9.2L7.2 4.5h9.6l3.7 4.7-8.5 11.3L3.5 9.2z" fill="#f4212e"/><path d="M3.5 9.2h17M7.2 4.5l4.8 4.7 4.8-4.7M12 9.2v11.3" fill="none" stroke="#fff" stroke-width="1.1" opacity=".55"/></svg>`;}
 function iconSvgCoin(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#F5A623"/><circle cx="12" cy="12" r="7.5" fill="#FFD666"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#8B5A00">币</text></svg>`;}
 function iconSvgCoupon(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="20" height="12" rx="2" fill="#7C4DFF"/><circle cx="2" cy="12" r="2" fill="#fff"/><circle cx="22" cy="12" r="2" fill="#fff"/><path d="M14 8v8M10 8v8" stroke="#E8DEFF" stroke-width="1.5" stroke-dasharray="2 2"/><text x="12" y="15" text-anchor="middle" font-size="7" font-weight="700" fill="#fff">券</text></svg>`;}
-function iconSvgBoundDiamond(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 9l9 13 9-13-9-7z" fill="#5B8DEF"/><path d="M12 2L7 9h10L12 2z" fill="#8BB4FF"/><path d="M8 11h8v2H8z" fill="#fff" opacity=".9"/><path d="M10 9.5h4v5h-4z" fill="none" stroke="#fff" stroke-width="1.2"/></svg>`;}
+/** 绑定红钻：同款红钻 + 中间锁 */
+function iconSvgBoundDiamond(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align:-0.2em"><path d="M3.5 9.2L7.2 4.5h9.6l3.7 4.7-8.5 11.3L3.5 9.2z" fill="#f4212e"/><path d="M3.5 9.2h17M7.2 4.5l4.8 4.7 4.8-4.7M12 9.2v11.3" fill="none" stroke="#fff" stroke-width="1.1" opacity=".45"/><rect x="9.2" y="12.2" width="5.6" height="4.2" rx="0.8" fill="#fff"/><path d="M10.2 12.2V10.8a1.8 1.8 0 013.6 0v1.4" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="14.3" r="0.7" fill="#f4212e"/></svg>`;}
 function iconSvgCheckin(size){size=size||22;return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="3" fill="#00BA7C"/><rect x="3" y="4" width="18" height="5" rx="2" fill="#008F5D"/><circle cx="8" cy="7" r="1.2" fill="#fff"/><circle cx="16" cy="7" r="1.2" fill="#fff"/><path d="M7 14l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
 
 async function openWalletPanel(){
@@ -3480,15 +3488,18 @@ async function openWalletPanel(){
         <div style="font-size:22px;font-weight:800;color:#f4212e;margin-top:6px;">${diamond}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">可用于购买商品</div>
       </div>
-      <div style="border:1px solid #dbeafe;background:#f0f7ff;border-radius:14px;padding:12px;">
+      <div style="border:1px solid #ffe0e0;background:#fff8f8;border-radius:14px;padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgBoundDiamond(18)} 绑定红钻</div>
-        <div style="font-size:22px;font-weight:800;color:#3b82f6;margin-top:6px;">${bound}</div>
+        <div style="font-size:22px;font-weight:800;color:#f4212e;margin-top:6px;">${bound}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">仅可提现，不可购买</div>
       </div>
       <div style="border:1px solid #ffe8b3;background:#fffbeb;border-radius:14px;padding:12px;">
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgCoin(18)} 金币余额</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgCoin(18)} 金币余额</div>
+          <button class="btn btn-outline btn-xs" onclick="openCoinExchange()" style="padding:4px 10px;border-color:#F5A623;color:#B8860B;">兑换</button>
+        </div>
         <div style="font-size:22px;font-weight:800;color:#F5A623;margin-top:6px;">${coin}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">签到等活动获得</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">可兑换优惠券</div>
       </div>
       <div style="border:1px solid #e9d5ff;background:#faf5ff;border-radius:14px;padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgCoupon(18)} 优惠券</div>
@@ -3500,9 +3511,54 @@ async function openWalletPanel(){
     ${couponHtml}
     <div class="btn-row" style="margin-top:14px;">
       <button class="btn btn-outline" onclick="closeCustomModal()">关闭</button>
+      <button class="btn btn-outline" onclick="openCoinExchange()">${iconSvgCoin(16)} 金币兑换</button>
       <button class="btn btn-primary" onclick="closeCustomModal();openCheckinPanel()">${iconSvgCheckin(16)} 去签到</button>
     </div>`);
   try{document.getElementById('myBalance').textContent=String(diamond);}catch(e){}
+}
+
+async function openCoinExchange(){
+  if(!currentUser){toast('请先登录','warning');return;}
+  showGlobalLoading('加载兑换...');
+  let rules=[];
+  let coin=Number(currentUser.coin)||0;
+  try{
+    const r=await apiRequest('/exchange/rules');
+    rules=r.rules||r||[];
+    if(r.coin!=null)coin=Number(r.coin)||coin;
+  }catch(e){hideGlobalLoading(true);toast(e.message||'加载失败','error');return;}
+  hideGlobalLoading(true);
+  const list=(Array.isArray(rules)?rules:[]).filter(x=>x.enabled!=0);
+  const rows=list.length?list.map(rule=>{
+    const cost=Number(rule.coin_cost)||0;
+    const name=String(rule.coupon_name||'优惠券').replace(/</g,'&lt;');
+    const desc=String(rule.coupon_desc||'').replace(/</g,'&lt;');
+    const can=coin>=cost;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #eff3f4;border-radius:12px;margin-bottom:8px;background:#fff;">
+      ${iconSvgCoupon(28)}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;">${name}</div>
+        <div style="font-size:12px;color:var(--text-muted);">${desc||'优惠券'}</div>
+        <div style="font-size:12px;margin-top:4px;color:#B8860B;font-weight:600;">需要 ${cost} 金币</div>
+      </div>
+      <button class="btn ${can?'btn-success':'btn-outline'} btn-sm" ${can?'':'disabled style="opacity:.5;"'} onclick="doCoinExchange('${rule.id}')">兑换</button>
+    </div>`;
+  }).join(''):'<div style="font-size:13px;color:var(--text-muted);padding:12px 0;text-align:center;">暂无可兑换优惠券，请联系管理员配置</div>';
+  showCustomModal(`
+    <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgCoin(22)} 金币兑换优惠券</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin:8px 0 12px;">当前金币：<b style="color:#F5A623;">${coin}</b></p>
+    <div style="max-height:280px;overflow-y:auto;">${rows}</div>
+    <div class="btn-row" style="margin-top:12px;"><button class="btn btn-outline" onclick="closeCustomModal();openWalletPanel()">返回钱包</button></div>`);
+}
+async function doCoinExchange(ruleId){
+  try{
+    showGlobalLoading('兑换中...');
+    const r=await apiRequest('/exchange',{method:'POST',body:JSON.stringify({rule_id:ruleId})});
+    hideGlobalLoading(true);
+    toast(r.message||'兑换成功','success');
+    try{const me=await apiRequest('/me');currentUser={...currentUser,...me};}catch(e){}
+    openCoinExchange();
+  }catch(e){hideGlobalLoading(true);toast(e.message||'兑换失败','error');}
 }
 
 async function openCheckinPanel(){
@@ -8075,6 +8131,246 @@ window.uploadAvatar=uploadAvatar;
 window.openRecharge=openRecharge;
 window.openWithdraw=openWithdraw;
 window.openWalletPanel=openWalletPanel;
+window.openCoinExchange=openCoinExchange;
+window.doCoinExchange=doCoinExchange;
+window.renderControlConsole=renderControlConsole;
+window.ctGo=ctGo;
+window.ctLoadD1=ctLoadD1;
+window.ctLoadDbTable=ctLoadDbTable;
+window.ctRunSql=ctRunSql;
+window.ctLoadB2=ctLoadB2;
+window.ctCopyB2Url=ctCopyB2Url;
+window.ctUseB2Url=ctUseB2Url;
+window.ctDelB2=ctDelB2;
+window.openExchangeAdmin=openExchangeAdmin;
+window.saveExchangeRule=saveExchangeRule;
+window.deleteExchangeRule=deleteExchangeRule;
+
+let _ctTab='home';
+let _b2Token=null;
+function renderControlConsole(){
+  const box=document.getElementById('subConsoleContent');
+  if(!box)return;
+  if(!currentUser||currentUser.role!=='admin'){box.innerHTML='<div class="empty-state"><p>仅管理员</p></div>';return;}
+  const tabs=[
+    {id:'home',lab:'总览'},
+    {id:'manage',lab:'管理功能'},
+    {id:'d1',lab:'D1数据库'},
+    {id:'b2',lab:'B2图库'},
+    {id:'exchange',lab:'兑换配置'}
+  ];
+  box.innerHTML=`<div class="ct-wrap">
+    <div class="ct-tabs">${tabs.map(t=>`<button type="button" class="${_ctTab===t.id?'active':''}" onclick="ctGo('${t.id}')">${t.lab}</button>`).join('')}</div>
+    <div class="ct-body" id="ctBody"><div class="inline-load"><div class="gl-spinner"></div><div>加载中...</div></div></div>
+  </div>`;
+  ctGo(_ctTab||'home');
+}
+function ctGo(tab){
+  _ctTab=tab;
+  document.querySelectorAll('.ct-tabs button').forEach((b,i)=>{
+    const ids=['home','manage','d1','b2','exchange'];
+    b.classList.toggle('active',ids[i]===tab);
+  });
+  const body=document.getElementById('ctBody');
+  if(!body)return;
+  if(tab==='home'){
+    body.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:10px;">控制终端</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">管理员专属：业务管理、D1 全表、B2 图库（可复制图片地址用于任意上传位）。</p>
+      <div class="ct-grid">
+        <div class="ct-card" onclick="ctGo('manage')"><div class="ico">${typeof svgIcon==='function'?svgIcon('fa-cog',24):'⚙️'}</div><div class="lab">管理功能</div></div>
+        <div class="ct-card" onclick="ctGo('d1')"><div class="ico">🗄️</div><div class="lab">D1 数据库</div></div>
+        <div class="ct-card" onclick="ctGo('b2')"><div class="ico">🖼️</div><div class="lab">B2 图库</div></div>
+        <div class="ct-card" onclick="ctGo('exchange')"><div class="ico">${iconSvgCoin(24)}</div><div class="lab">兑换配置</div></div>
+        <div class="ct-card" onclick="openCheckinAdmin()"><div class="ico">${iconSvgCheckin(24)}</div><div class="lab">签到配置</div></div>
+        <div class="ct-card" onclick="openSubPage('skin')"><div class="ico">${typeof svgIcon==='function'?svgIcon('fa-tshirt',24):'👕'}</div><div class="lab">皮肤主题</div></div>
+      </div>`;
+  }else if(tab==='manage'){
+    const items=[
+      {lab:'订单管理',act:"openSubPage('orders')",ico:'fa-clipboard-list'},
+      {lab:'商品管理',act:"openSubPage('products')",ico:'fa-shopping-bag'},
+      {lab:'用户管理',act:"openSubPage('users')",ico:'fa-user'},
+      {lab:'充值管理',act:"openSubPage('recharges')",ico:'fa-coins'},
+      {lab:'店铺管理',act:"openSubPage('shops')",ico:'fa-store'},
+      {lab:'公告管理',act:"openSubPage('announce')",ico:'fa-bullhorn'},
+      {lab:'提现管理',act:"openSubPage('withdrawals')",ico:'fa-credit-card'},
+      {lab:'分类管理',act:"openSubPage('categories')",ico:'fa-th-large'},
+      {lab:'广告管理',act:"openSubPage('banners')",ico:'fa-ad'},
+      {lab:'图标管理',act:"openSubPage('icons')",ico:'fa-image'},
+      {lab:'礼物管理',act:"openSubPage('gifts')",ico:'fa-gift'},
+      {lab:'AI智能',act:"openSubPage('ai')",ico:'fa-robot'},
+      {lab:'表情包',act:"openSubPage('stickers')",ico:'fa-smile'},
+      {lab:'派单系统',act:"openSubPage('dispatcher')",ico:'fa-paper-plane'},
+      {lab:'皮肤主题',act:"openSubPage('skin')",ico:'fa-tshirt'},
+      {lab:'签到奖励',act:"openCheckinAdmin()",ico:'fa-calendar-check'}
+    ];
+    body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:10px;">管理功能入口</div>
+      <div class="ct-grid">${items.map(it=>`<div class="ct-card" onclick="${it.act}"><div class="ico">${typeof svgIcon==='function'?svgIcon(it.icon||it.ico,22):''}</div><div class="lab">${it.lab}</div></div>`).join('')}</div>`;
+  }else if(tab==='d1'){
+    body.innerHTML='<div class="inline-load"><div class="gl-spinner"></div><div>加载 D1 表...</div></div>';
+    ctLoadD1();
+  }else if(tab==='b2'){
+    body.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+      <input class="admin-form-control" id="ctB2Prefix" placeholder="前缀过滤" style="flex:1;" />
+      <button class="btn btn-outline btn-sm" onclick="ctLoadB2(true)">刷新</button>
+      <button class="btn btn-primary btn-sm" onclick="ctUploadB2()">上传</button>
+    </div>
+    <div id="ctB2Grid" class="ct-b2-grid"><div class="inline-load"><div class="gl-spinner"></div></div></div>
+    <div style="text-align:center;margin-top:10px;"><button class="btn btn-outline btn-sm" id="ctB2More" style="display:none;" onclick="ctLoadB2(false)">加载更多</button></div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">点击「复制链接」后，可在商品/店铺/图标等任意图片输入框粘贴使用。</p>`;
+    _b2Token=null;
+    ctLoadB2(true);
+  }else if(tab==='exchange'){
+    openExchangeAdmin(true);
+  }
+}
+async function ctLoadD1(){
+  const body=document.getElementById('ctBody');
+  if(!body)return;
+  try{
+    const tables=await apiRequest('/admin/db/tables')||[];
+    body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:8px;">D1 数据库</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <input class="admin-form-control" id="ctSqlInput" placeholder="SELECT * FROM users LIMIT 20" style="flex:1;min-width:160px;" />
+        <button class="btn btn-primary btn-sm" onclick="ctRunSql(false)">查询</button>
+        <button class="btn btn-outline btn-sm" style="color:#f4212e;border-color:#f4212e;" onclick="ctRunSql(true)">写操作</button>
+      </div>
+      <div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;">
+        ${(tables||[]).map(t=>`<button class="btn btn-outline btn-xs" onclick="ctLoadDbTable('${String(t.name).replace(/'/g,"\\'")}')">${t.name} <span style="color:#536471;">${t.count||0}</span></button>`).join('')||'<span style="color:#536471;font-size:12px;">无表</span>'}
+      </div>
+      <div id="ctDbRows" style="overflow:auto;max-height:50vh;font-size:12px;"><div style="color:#536471;">点击表名或输入 SQL</div></div>`;
+  }catch(e){body.innerHTML=`<div class="empty-state"><p>${e.message||'加载失败'}</p></div>`;}
+}
+async function ctLoadDbTable(name){
+  const box=document.getElementById('ctDbRows');
+  if(box)box.innerHTML='<div class="inline-load"><div class="gl-spinner"></div></div>';
+  try{
+    const data=await apiRequest('/admin/db/table/'+encodeURIComponent(name)+'?limit=100&offset=0');
+    if(document.getElementById('ctSqlInput'))document.getElementById('ctSqlInput').value='SELECT * FROM '+name+' LIMIT 100';
+    ctRenderDb(data.columns,data.rows,name,data.total);
+  }catch(e){if(box)box.innerHTML='<div style="color:#f4212e;">'+((e&&e.message)||'失败')+'</div>';}
+}
+function ctRenderDb(columns,rows,tableName,total){
+  const box=document.getElementById('ctDbRows');
+  if(!box)return;
+  if(!rows||!rows.length){box.innerHTML='<div style="color:#536471;">无数据</div>';return;}
+  const cols=columns&&columns.length?columns:Object.keys(rows[0]||{});
+  box.innerHTML=`<div style="color:#536471;margin-bottom:6px;">${tableName||''} · 共 ${total??rows.length} · 显示 ${rows.length}</div>
+    <table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c=>`<th style="text-align:left;padding:6px;border-bottom:1px solid #eff3f4;white-space:nowrap;">${c}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td style="padding:6px;border-bottom:1px solid #f7f9f9;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${String(r[c]??'').replace(/"/g,'&quot;')}">${String(r[c]??'').replace(/</g,'&lt;')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+async function ctRunSql(isWrite){
+  const sql=(document.getElementById('ctSqlInput')?.value||'').trim();
+  if(!sql)return toast('请输入 SQL','warning');
+  if(isWrite&&!confirm('确认执行写操作？\n'+sql))return;
+  const box=document.getElementById('ctDbRows');
+  if(box)box.innerHTML='<div class="inline-load"><div class="gl-spinner"></div></div>';
+  try{
+    const data=await apiRequest('/admin/db/query',{method:'POST',body:JSON.stringify({sql,allow_write:!!isWrite})});
+    if(data.rows)ctRenderDb(data.columns,data.rows,'查询结果',data.total||data.rows.length);
+    else {if(box)box.innerHTML=`<div style="color:#00ba7c;">执行成功 ${data.meta?JSON.stringify(data.meta):''}</div>`;toast('执行成功','success');}
+  }catch(e){if(box)box.innerHTML='<div style="color:#f4212e;">'+((e&&e.message)||'失败')+'</div>';}
+}
+async function ctLoadB2(reset){
+  const grid=document.getElementById('ctB2Grid');
+  if(!grid)return;
+  if(reset){_b2Token=null;grid.innerHTML='<div class="inline-load"><div class="gl-spinner"></div></div>';}
+  try{
+    const prefix=(document.getElementById('ctB2Prefix')?.value||'').trim();
+    let path='/admin/b2/list?limit=60';
+    if(prefix)path+='&prefix='+encodeURIComponent(prefix);
+    if(!reset&&_b2Token)path+='&token='+encodeURIComponent(_b2Token);
+    const data=await apiRequest(path);
+    const files=data.files||[];
+    _b2Token=data.next_token||null;
+    const more=document.getElementById('ctB2More');
+    if(more)more.style.display=(data.truncated&&_b2Token)?'inline-block':'none';
+    if(reset)grid.innerHTML='';
+    if(!files.length&&reset){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#536471;padding:20px;">暂无文件</div>';return;}
+    files.forEach(f=>{
+      const url=f.url||('/api/file/'+f.key);
+      const key=f.key||'';
+      const div=document.createElement('div');
+      div.className='ct-b2-item';
+      div.innerHTML=`${f.is_image!==false?`<img src="${url}" loading="lazy" onerror="this.style.opacity=.3" />`:'<div style="height:90px;display:flex;align-items:center;justify-content:center;">📄</div>'}
+        <div class="ops">
+          <button type="button" class="btn btn-outline" onclick="ctCopyB2Url('${String(url).replace(/'/g,"\\'")}')">复制</button>
+          <button type="button" class="btn btn-primary" onclick="ctUseB2Url('${String(url).replace(/'/g,"\\'")}')">选用</button>
+          <button type="button" class="btn btn-outline" style="color:#f4212e;border-color:#f4212e;" onclick="ctDelB2('${String(key).replace(/'/g,"\\'")}')">删</button>
+        </div>
+        <div style="font-size:10px;color:#536471;padding:0 6px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${key}</div>`;
+      grid.appendChild(div);
+    });
+  }catch(e){grid.innerHTML=`<div style="grid-column:1/-1;color:#f4212e;padding:12px;">${e.message||'加载失败'}</div>`;}
+}
+function ctCopyB2Url(url){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>toast('已复制图片链接','success')).catch(()=>{prompt('复制链接',url);});
+  }else prompt('复制链接',url);
+}
+function ctUseB2Url(url){
+  window._lastB2PickUrl=url;
+  try{localStorage.setItem('qw_last_b2_url',url);}catch(e){}
+  ctCopyB2Url(url);
+  toast('已选用并复制，可粘贴到任意图片地址框','success');
+}
+async function ctDelB2(key){
+  if(!confirm('删除该文件？\n'+key))return;
+  try{await apiRequest('/admin/b2/delete',{method:'POST',body:JSON.stringify({key})});toast('已删除','success');ctLoadB2(true);}
+  catch(e){toast(e.message||'删除失败','error');}
+}
+async function ctUploadB2(){
+  const url=await pickAndUpload('image/*');
+  if(url){toast('上传成功','success');ctLoadB2(true);}
+}
+window.ctUploadB2=ctUploadB2;
+
+async function openExchangeAdmin(embed){
+  let list=[];
+  try{list=await apiRequest('/admin/exchange-rules')||[];}catch(e){toast(e.message||'加载失败','error');return;}
+  const rows=list.length?list.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #eff3f4;border-radius:12px;margin-bottom:8px;">
+    ${iconSvgCoupon(22)}
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:700;">${String(r.coupon_name||'券').replace(/</g,'&lt;')}</div>
+      <div style="font-size:11px;color:#536471;">${Number(r.coin_cost)||0} 金币 · ${String(r.coupon_desc||'').replace(/</g,'&lt;')} · ${r.enabled==0?'停用':'启用'}</div>
+    </div>
+    <button class="btn btn-outline btn-xs" onclick="deleteExchangeRule('${r.id}')">删</button>
+  </div>`).join(''):'<div style="font-size:12px;color:#536471;">暂无规则，下方添加</div>';
+  const formHtml=`<div style="border-top:1px solid #eff3f4;padding-top:10px;margin-top:8px;">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;">新增兑换规则</div>
+    <div class="admin-form-group"><label>优惠券名称</label><input class="admin-form-control" id="exCouponName" placeholder="如：9折优惠券" /></div>
+    <div class="admin-form-group"><label>说明（如几折）</label><input class="admin-form-control" id="exCouponDesc" placeholder="如：全场9折" /></div>
+    <div class="admin-form-group"><label>所需金币</label><input class="admin-form-control" id="exCoinCost" type="number" min="1" value="100" /></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="saveExchangeRule()">保存规则</button>
+  </div>`;
+  if(embed){
+    const body=document.getElementById('ctBody');
+    if(body)body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:8px;">金币兑换优惠券配置</div>
+      <p style="font-size:12px;color:#536471;margin-bottom:10px;">设置多少金币可兑换什么优惠券，用户在钱包中兑换。</p>
+      <div style="max-height:40vh;overflow-y:auto;">${rows}</div>${formHtml}`;
+  }else{
+    showCustomModal(`<h3>兑换配置</h3><div style="max-height:200px;overflow-y:auto;">${rows}</div>${formHtml}
+      <div class="btn-row" style="margin-top:12px;"><button class="btn btn-outline" onclick="closeCustomModal()">关闭</button></div>`);
+  }
+}
+async function saveExchangeRule(){
+  const body={
+    coupon_name:(document.getElementById('exCouponName')?.value||'').trim(),
+    coupon_desc:(document.getElementById('exCouponDesc')?.value||'').trim(),
+    coin_cost:parseInt(document.getElementById('exCoinCost')?.value,10)||0,
+    enabled:1
+  };
+  if(!body.coupon_name||body.coin_cost<1)return toast('请填写名称和金币数','warning');
+  try{
+    await apiRequest('/admin/exchange-rules',{method:'POST',body:JSON.stringify(body)});
+    toast('已保存','success');
+    openExchangeAdmin(!!document.getElementById('ctBody'));
+  }catch(e){toast(e.message||'保存失败','error');}
+}
+async function deleteExchangeRule(id){
+  if(!confirm('删除该兑换规则？'))return;
+  try{await apiRequest('/admin/exchange-rules/'+id,{method:'DELETE'});toast('已删除','success');openExchangeAdmin(!!document.getElementById('ctBody'));}
+  catch(e){toast(e.message||'失败','error');}
+}
 window.openCheckinPanel=openCheckinPanel;
 window.openCheckinAdmin=openCheckinAdmin;
 window.renderCheckinAdminModal=renderCheckinAdminModal;
