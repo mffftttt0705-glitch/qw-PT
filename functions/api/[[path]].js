@@ -162,7 +162,12 @@ async function handleGetCheckinStatus(env, authHeader) {
   await ensureExtraTables(env);
   const today = new Date().toISOString().slice(0, 10);
   const done = await queryDB(env, 'SELECT id FROM checkin_records WHERE user_id = ? AND checkin_date = ?', [userId, today]);
-  const rewards = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 ORDER BY sort_order ASC, created_at ASC');
+  const dayOfMonth = parseInt(today.slice(8, 10), 10) || 1;
+  // 优先取「当天」配置；若无则用 day_of_month=0 的通用配置
+  let rewards = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 AND day_of_month = ? ORDER BY sort_order ASC, created_at ASC', [dayOfMonth]);
+  if (!(rewards.results && rewards.results.length)) {
+    rewards = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 AND (day_of_month IS NULL OR day_of_month = 0) ORDER BY sort_order ASC, created_at ASC');
+  }
   const coupons = await queryDB(env, `SELECT * FROM user_coupons WHERE user_id = ? ORDER BY obtained_at DESC LIMIT 50`, [userId]);
   const user = await getUserById(env, userId);
   // 本月已签到日期（用于日历展示）
@@ -173,10 +178,16 @@ async function handleGetCheckinStatus(env, authHeader) {
       `SELECT checkin_date, rewards_json FROM checkin_records WHERE user_id = ? AND checkin_date LIKE ? ORDER BY checkin_date ASC`,
       [userId, monthPrefix + '%']);
     history = (hist.results || []).map(r => {
-      let rewards = [];
-      try { rewards = JSON.parse(r.rewards_json || '[]'); } catch (e) {}
-      return { date: r.checkin_date, rewards };
+      let rw = [];
+      try { rw = JSON.parse(r.rewards_json || '[]'); } catch (e) {}
+      return { date: r.checkin_date, rewards: rw };
     });
+  } catch (e) {}
+  // 管理员用：整月模板（1-31 各有哪些奖励）
+  let monthTemplate = [];
+  try {
+    const allR = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 ORDER BY day_of_month ASC, sort_order ASC');
+    monthTemplate = allR.results || [];
   } catch (e) {}
   return jsonResponse({
     checked_today: !!(done.results && done.results[0]),
@@ -186,7 +197,9 @@ async function handleGetCheckinStatus(env, authHeader) {
     diamond: Number(user && user.diamond) || 0,
     bound_diamond: Number(user && user.bound_diamond) || 0,
     history,
-    today
+    today,
+    day_of_month: dayOfMonth,
+    month_template: monthTemplate
   });
 }
 
@@ -197,8 +210,13 @@ async function handleDoCheckin(env, authHeader) {
   const today = new Date().toISOString().slice(0, 10);
   const done = await queryDB(env, 'SELECT id FROM checkin_records WHERE user_id = ? AND checkin_date = ?', [userId, today]);
   if (done.results && done.results[0]) return errorResponse('今日已签到');
-  const rewardsRes = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 ORDER BY sort_order ASC');
-  const rewards = rewardsRes.results || [];
+  const dayOfMonth = parseInt(today.slice(8, 10), 10) || 1;
+  let rewardsRes = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 AND day_of_month = ? ORDER BY sort_order ASC', [dayOfMonth]);
+  let rewards = rewardsRes.results || [];
+  if (!rewards.length) {
+    rewardsRes = await queryDB(env, 'SELECT * FROM checkin_rewards WHERE enabled = 1 AND (day_of_month IS NULL OR day_of_month = 0) ORDER BY sort_order ASC');
+    rewards = rewardsRes.results || [];
+  }
   if (!rewards.length) {
     // 默认奖励：金币+10
     rewards.push({ reward_type: 'coin', reward_value: 10, reward_name: '金币' });
@@ -237,7 +255,7 @@ async function handleListCheckinRewards(env, authHeader) {
   const user = await getUserById(env, userId);
   if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
   await ensureExtraTables(env);
-  const r = await queryDB(env, 'SELECT * FROM checkin_rewards ORDER BY sort_order ASC, created_at ASC');
+  const r = await queryDB(env, 'SELECT * FROM checkin_rewards ORDER BY day_of_month ASC, sort_order ASC, created_at ASC');
   return jsonResponse(r.results || []);
 }
 
@@ -253,17 +271,20 @@ async function handleSaveCheckinReward(env, authHeader, body) {
   const coupon_desc = String(body.coupon_desc || '').trim();
   const sort_order = parseInt(body.sort_order, 10) || 0;
   const enabled = body.enabled === 0 || body.enabled === false ? 0 : 1;
+  let day_of_month = parseInt(body.day_of_month, 10);
+  if (isNaN(day_of_month) || day_of_month < 0) day_of_month = 0;
+  if (day_of_month > 31) day_of_month = 31;
   if (body.id) {
     await runDB(env,
-      `UPDATE checkin_rewards SET reward_type=?, reward_value=?, reward_name=?, coupon_desc=?, sort_order=?, enabled=? WHERE id=?`,
-      [reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, body.id]);
+      `UPDATE checkin_rewards SET reward_type=?, reward_value=?, reward_name=?, coupon_desc=?, sort_order=?, enabled=?, day_of_month=? WHERE id=?`,
+      [reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, day_of_month, body.id]);
     return jsonResponse({ success: true, message: '已更新' });
   }
   const id = generateId();
   await runDB(env,
-    `INSERT INTO checkin_rewards (id, reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, new Date().toISOString()]);
+    `INSERT INTO checkin_rewards (id, reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, day_of_month, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, reward_type, reward_value, reward_name, coupon_desc, sort_order, enabled, day_of_month, new Date().toISOString()]);
   return jsonResponse({ success: true, id, message: '已添加' });
 }
 
@@ -2254,9 +2275,11 @@ async function ensureExtraTables(env) {
       coupon_desc TEXT,
       sort_order INTEGER DEFAULT 0,
       enabled INTEGER DEFAULT 1,
+      day_of_month INTEGER DEFAULT 0,
       created_at TEXT
     )`);
   } catch (e) {}
+  try { await runDB(env, `ALTER TABLE checkin_rewards ADD COLUMN day_of_month INTEGER DEFAULT 0`); } catch (e) {}
   try {
     await runDB(env, `CREATE TABLE IF NOT EXISTS checkin_records (
       id TEXT PRIMARY KEY,
