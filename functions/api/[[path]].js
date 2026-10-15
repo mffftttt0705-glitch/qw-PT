@@ -297,6 +297,83 @@ async function handleDeleteCheckinReward(env, authHeader, rid) {
   return jsonResponse({ success: true, message: '已删除' });
 }
 
+async function handleListExchangeRules(env, authHeader) {
+  await ensureExtraTables(env);
+  const userId = verifyAndGetUserId(authHeader);
+  let coin = 0;
+  if (userId) {
+    const u = await getUserById(env, userId);
+    coin = Number(u && u.coin) || 0;
+  }
+  const r = await queryDB(env, 'SELECT * FROM coin_exchange_rules WHERE enabled = 1 ORDER BY sort_order ASC, created_at ASC');
+  return jsonResponse({ rules: r.results || [], coin });
+}
+
+async function handleDoExchange(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  await ensureExtraTables(env);
+  const ruleId = body && body.rule_id;
+  if (!ruleId) return errorResponse('请选择兑换规则');
+  const ruleRes = await queryDB(env, 'SELECT * FROM coin_exchange_rules WHERE id = ? AND enabled = 1', [ruleId]);
+  const rule = ruleRes.results && ruleRes.results[0];
+  if (!rule) return errorResponse('兑换规则不存在或已停用');
+  const cost = Number(rule.coin_cost) || 0;
+  if (cost < 1) return errorResponse('规则无效');
+  const user = await getUserById(env, userId);
+  const coin = Number(user && user.coin) || 0;
+  if (coin < cost) return errorResponse('金币不足，需要 ' + cost + '，当前 ' + coin);
+  await runDB(env, 'UPDATE users SET coin = COALESCE(coin,0) - ? WHERE id = ? AND COALESCE(coin,0) >= ?', [cost, userId, cost]);
+  const cname = rule.coupon_name || '优惠券';
+  await runDB(env,
+    `INSERT INTO user_coupons (id, user_id, name, description, status, source, obtained_at) VALUES (?, ?, ?, ?, 'unused', 'exchange', ?)`,
+    [generateId(), userId, cname, rule.coupon_desc || '', new Date().toISOString()]);
+  return jsonResponse({ success: true, message: '兑换成功：' + cname, coin_left: coin - cost });
+}
+
+async function handleAdminListExchangeRules(env, authHeader) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const r = await queryDB(env, 'SELECT * FROM coin_exchange_rules ORDER BY sort_order ASC, created_at ASC');
+  return jsonResponse(r.results || []);
+}
+
+async function handleAdminSaveExchangeRule(env, authHeader, body) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await ensureExtraTables(env);
+  const coin_cost = parseInt(body.coin_cost, 10) || 0;
+  const coupon_name = String(body.coupon_name || '').trim();
+  const coupon_desc = String(body.coupon_desc || '').trim();
+  const enabled = body.enabled === 0 || body.enabled === false ? 0 : 1;
+  if (!coupon_name || coin_cost < 1) return errorResponse('请填写优惠券名称和金币数量');
+  if (body.id) {
+    await runDB(env,
+      `UPDATE coin_exchange_rules SET coin_cost=?, coupon_name=?, coupon_desc=?, enabled=? WHERE id=?`,
+      [coin_cost, coupon_name, coupon_desc, enabled, body.id]);
+    return jsonResponse({ success: true, message: '已更新' });
+  }
+  const id = generateId();
+  await runDB(env,
+    `INSERT INTO coin_exchange_rules (id, coin_cost, coupon_name, coupon_desc, enabled, sort_order, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)`,
+    [id, coin_cost, coupon_name, coupon_desc, enabled, new Date().toISOString()]);
+  return jsonResponse({ success: true, id, message: '已添加' });
+}
+
+async function handleAdminDeleteExchangeRule(env, authHeader, rid) {
+  const userId = verifyAndGetUserId(authHeader);
+  if (!userId) return errorResponse('请先登录', 401);
+  const user = await getUserById(env, userId);
+  if (!user || user.role !== 'admin') return errorResponse('权限不足', 403);
+  await runDB(env, 'DELETE FROM coin_exchange_rules WHERE id = ?', [rid]);
+  return jsonResponse({ success: true, message: '已删除' });
+}
+
 async function handleGetMyWallet(env, authHeader) {
   const userId = verifyAndGetUserId(authHeader);
   if (!userId) return errorResponse('请先登录', 401);
@@ -2281,6 +2358,18 @@ async function ensureExtraTables(env) {
   } catch (e) {}
   try { await runDB(env, `ALTER TABLE checkin_rewards ADD COLUMN day_of_month INTEGER DEFAULT 0`); } catch (e) {}
   try {
+    await runDB(env, `CREATE TABLE IF NOT EXISTS coin_exchange_rules (
+      id TEXT PRIMARY KEY,
+      coin_cost INTEGER DEFAULT 0,
+      coupon_name TEXT,
+      coupon_desc TEXT,
+      discount_rate REAL DEFAULT 0,
+      enabled INTEGER DEFAULT 1,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT
+    )`);
+  } catch (e) {}
+  try {
     await runDB(env, `CREATE TABLE IF NOT EXISTS checkin_records (
       id TEXT PRIMARY KEY,
       user_id TEXT,
@@ -3933,6 +4022,13 @@ export async function onRequest(context) {
     if (path === '/api/wallet' && method === 'GET') return await handleGetMyWallet(env, authHeader);
     if (path === '/api/checkin' && method === 'GET') return await handleGetCheckinStatus(env, authHeader);
     if (path === '/api/checkin' && method === 'POST') return await handleDoCheckin(env, authHeader);
+    if (path === '/api/exchange/rules' && method === 'GET') return await handleListExchangeRules(env, authHeader);
+    if (path === '/api/exchange' && method === 'POST') return await handleDoExchange(env, authHeader, body);
+    if (path === '/api/admin/exchange-rules' && method === 'GET') return await handleAdminListExchangeRules(env, authHeader);
+    if (path === '/api/admin/exchange-rules' && method === 'POST') return await handleAdminSaveExchangeRule(env, authHeader, body);
+    if (path.startsWith('/api/admin/exchange-rules/') && method === 'DELETE') {
+      return await handleAdminDeleteExchangeRule(env, authHeader, path.replace('/api/admin/exchange-rules/', ''));
+    }
     if (path === '/api/admin/checkin-rewards' && method === 'GET') return await handleListCheckinRewards(env, authHeader);
     if (path === '/api/admin/checkin-rewards' && method === 'POST') return await handleSaveCheckinReward(env, authHeader, body);
     if (path.startsWith('/api/admin/checkin-rewards/') && method === 'PUT') {
