@@ -142,17 +142,42 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .loading-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 12px;color:#536471;font-size:13px;}
 .chat-send-pending{opacity:0.55;}
 .app-wrapper{max-width:480px;width:100%;height:100vh;height:100dvh;background:var(--bg-secondary);box-shadow:var(--shadow);overflow:hidden;position:relative;display:flex;flex-direction:column;}
-.app-wrapper .bottom-nav{position:sticky;bottom:0;z-index:1000;background:var(--bottom-nav-bg);backdrop-filter:blur(16px);border-top:1px solid var(--border-light);box-shadow:0 -4px 20px rgba(0,0,0,0.08);display:flex;justify-content:space-around;align-items:center;padding:6px 0 max(10px,env(safe-area-inset-bottom));width:100%;flex-shrink:0;min-height:56px;}
-.view-container{padding:12px 16px 8px;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:4px;position:relative;}
+/* 悬浮胶囊底栏：固定底部、适配安全区与各机型 */
+.app-wrapper .bottom-nav{
+  position:absolute;
+  left:max(12px, env(safe-area-inset-left));
+  right:max(12px, env(safe-area-inset-right));
+  bottom:max(10px, env(safe-area-inset-bottom));
+  z-index:1000;
+  width:auto;
+  max-width:calc(100% - 24px);
+  margin:0 auto;
+  box-sizing:border-box;
+  background:rgba(255,255,255,0.96);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:999px;
+  box-shadow:0 8px 28px rgba(15,20,25,0.10), 0 2px 8px rgba(15,20,25,0.04);
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  padding:8px 10px;
+  flex-shrink:0;
+  min-height:58px;
+  gap:0;
+}
+.view-container{padding:12px 16px 8px;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:88px;position:relative;}
 .view{display:none;animation:fadeUp 0.3s ease;height:100%;}
 .view.active{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 @keyframes slideIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text-nav);font-size:10px;cursor:pointer;padding:4px 8px;border-radius:30px;background:transparent;border:none;font-family:inherit;position:relative;min-width:44px;-webkit-tap-highlight-color:transparent;}
-.nav-item i{font-size:20px;color:var(--icon-color);}
-.nav-item.active{color:var(--nav-active-color);}
-.nav-item.active i{color:var(--icon-active-color);}
-.nav-item .badge{position:absolute;top:-2px;right:-2px;background:#f4212e;color:#fff;border-radius:50%;font-size:9px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#8b95a1;font-size:10px;cursor:pointer;padding:4px 6px;border-radius:16px;background:transparent;border:none;font-family:inherit;position:relative;min-width:0;flex:1;max-width:72px;-webkit-tap-highlight-color:transparent;transition:color .15s ease;}
+.nav-item i,.nav-item .svg-ico{font-size:22px;width:24px;height:24px;color:#8b95a1;}
+.nav-item span{line-height:1.1;white-space:nowrap;}
+.nav-item.active{color:#f5a623;}
+.nav-item.active i,.nav-item.active .svg-ico{color:#f5a623;}
+.nav-item .badge{position:absolute;top:0;right:calc(50% - 18px);background:#f4212e;color:#fff;border-radius:50%;font-size:9px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;}
 .banner-carousel{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:12px;background:var(--product-img-bg);aspect-ratio:16 / 6;}
 .banner-carousel .banner-track{display:flex;transition:transform 0.5s ease;height:100%;}
 .banner-carousel .banner-slide{min-width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-muted);background:var(--product-img-bg);}
@@ -462,10 +487,10 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 #headerDiamond{color:#f4212e !important;}
 #profileBalance{color:#f4212e !important;font-weight:700;}
 @media(max-width:420px){
-.view-container{padding:10px 12px 4px;}
-.bottom-nav{padding:4px 0 max(8px,env(safe-area-inset-bottom));min-height:48px;}
-.nav-item{padding:2px 4px;min-width:36px;font-size:9px;}
-.nav-item i{font-size:18px;}
+.view-container{padding:10px 12px 84px;}
+.app-wrapper .bottom-nav{left:10px;right:10px;bottom:max(8px,env(safe-area-inset-bottom));padding:6px 6px;min-height:54px;max-width:calc(100% - 20px);}
+.nav-item{padding:2px 2px;font-size:9px;max-width:64px;}
+.nav-item i,.nav-item .svg-ico{font-size:20px;width:22px;height:22px;}
 .product-grid{gap:8px;}
 .shop-entrance .shop-entry{flex:0 0 68px;}
 .shop-entrance .shop-entry .entry-icon{width:48px;height:48px;font-size:20px;}
@@ -1062,6 +1087,7 @@ const FA_SVG_PATHS={
   'fa-gamepad':'<rect x="3" y="8" width="18" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 13h.01M11 13h.01M9.5 11v4M15 12h.01M17 14h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   'fa-crosshairs':'<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   'fa-home':'<path d="M4 11l8-7 8 7v9H4v-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-bell':'<path d="M12 3a5 5 0 00-5 5v2.5c0 .8-.3 1.5-.8 2.1L5 14.5h14l-1.2-1.9c-.5-.6-.8-1.3-.8-2.1V8a5 5 0 00-5-5zM10 18a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
   'fa-ellipsis-h':'<circle cx="6" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18" cy="12" r="1.5" fill="currentColor"/>',
   'fa-ban':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 6.5l11 11" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   'fa-undo':'<path d="M5 10h8a5 5 0 110 10H9M5 10l3-3M5 10l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -1358,16 +1384,17 @@ function closeAnnounceModal(){
 function renderBottomNav(){
   const nav=document.getElementById('bottomNav');
   if(!nav)return;
+  // 名称不变；图标贴近悬浮胶囊风格（首页屋/四格/准星/铃铛/我的）
   const items=[
-    {id:'home',icon:'fa-store',label:'商城'},
+    {id:'home',icon:'fa-home',label:'商城'},
     {id:'category',icon:'fa-th-large',label:'分类'},
-    {id:'hall',icon:'fa-bullseye',label:'接单大厅'},
-    {id:'messages',icon:'fa-comment-dots',label:'消息',badge:'msgBadge'},
+    {id:'hall',icon:'fa-crosshairs',label:'接单大厅'},
+    {id:'messages',icon:'fa-bell',label:'消息',badge:'msgBadge'},
     {id:'account',icon:'fa-user',label:'我的'}
   ];
   nav.innerHTML=items.map(item=>`
-    <button class="nav-item" data-target="${item.id}">
-      ${typeof svgIcon==='function'?svgIcon(item.icon,26):`<i class="fas ${item.icon}"></i>`}
+    <button class="nav-item" data-target="${item.id}" type="button">
+      ${typeof svgIcon==='function'?svgIcon(item.icon,24):`<i class="fas ${item.icon}"></i>`}
       <span>${item.label}</span>
       ${item.badge?`<span class="badge" id="${item.badge}" style="display:none;">0</span>`:''}
     </button>`).join('');
@@ -1481,6 +1508,8 @@ function openSubPage(page){
   };
   const containerId=pageMap[page];
   if(!containerId)return;
+  // 直接打开控制终端时，返回应退出终端而不是再回终端
+  if(page==='console')_returnToConsole=false;
   // 必须先关掉其它子页（尤其是控制终端），否则会盖住点进去的页面
   document.querySelectorAll('.sub-page').forEach(el=>{
     if(el.id!==containerId)el.classList.remove('active');
@@ -1519,8 +1548,20 @@ function openSubPage(page){
       renderControlConsole();break;
   }
 }
+/** 从控制终端点进子页时为 true，返回时回到控制终端而不是整页退出 */
+let _returnToConsole=false;
 function closeSubPage(){
+  const backToConsole=!!_returnToConsole;
+  _returnToConsole=false;
   document.querySelectorAll('.sub-page').forEach(el=>el.classList.remove('active'));
+  if(backToConsole && currentUser && currentUser.role==='admin'){
+    // 回到控制终端（保持当前标签，如管理功能）
+    document.body.style.overflow='hidden';
+    const consoleEl=document.getElementById('subPageConsole');
+    if(consoleEl)consoleEl.classList.add('active');
+    try{renderControlConsole();}catch(e){}
+    return;
+  }
   document.body.style.overflow='';
 }
 
@@ -2792,7 +2833,7 @@ function renderMoreFunctions(){
 }
 
 /** 前端版本号：每次你部署重要更新可改这一串，用于提示刷新 */
-const APP_VERSION='20261015d';
+const APP_VERSION='20261015e';
 function forceRefreshApp(){
   confirmAction('刷新新版本','将清除本地缓存并重新加载页面，以获取 Cloudflare 最新代码。是否继续？','立即刷新','doForceRefreshApp()');
 }
@@ -8250,6 +8291,8 @@ function ctGo(tab){
 }
 /** 从控制终端打开业务子页（先关终端再打开，避免被盖住） */
 function ctOpenPage(page){
+  // 标记：从控制终端进入，关闭子页时回到控制终端
+  _returnToConsole=true;
   openSubPage(page);
 }
 async function ctLoadD1(){
