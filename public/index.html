@@ -520,6 +520,48 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .chat-fullscreen{padding-top:env(safe-area-inset-top);}
 .user-profile-page{padding-top:env(safe-area-inset-top);}
 }
+
+/* ===== 首页/分类新模板 ===== */
+.home-main-tabs{display:flex;align-items:flex-end;gap:22px;padding:4px 2px 10px;margin-bottom:4px;}
+.home-main-tab{border:none;background:none;padding:4px 2px 8px;font-size:20px;font-weight:500;color:#c4c4c4;cursor:pointer;position:relative;font-family:inherit;}
+.home-main-tab.active{color:#0f1419;font-weight:800;}
+.home-main-tab.active::after{content:'';position:absolute;left:10%;right:10%;bottom:0;height:3px;border-radius:2px;background:#f5a623;}
+.home-announce{display:flex;align-items:center;gap:8px;padding:10px 4px 12px;cursor:pointer;}
+.home-announce .ha-label{flex-shrink:0;color:#f5a623;font-size:13px;font-weight:700;}
+.home-announce .ha-text{flex:1;min-width:0;font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-announce .ha-arrow{color:#ccc;font-size:14px;flex-shrink:0;}
+.home-banner.banner-carousel{aspect-ratio:2.35 / 1;border-radius:14px;margin-bottom:14px;}
+.home-quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 16px;padding:0 2px;}
+.home-quick-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:none;background:none;padding:0;font-family:inherit;}
+.home-quick-item .hq-icon{width:52px;height:52px;border-radius:14px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:26px;line-height:1;}
+.home-quick-item .hq-icon img{width:100%;height:100%;object-fit:cover;}
+.home-quick-item .hq-label{font-size:12px;color:#1a1a1a;font-weight:500;}
+.home-section-head{display:flex;align-items:center;justify-content:space-between;margin:8px 0 10px;padding:0 2px;}
+.home-section-head .hs-title{font-size:16px;font-weight:800;color:#0f1419;}
+.home-section-head .hs-more{font-size:12px;color:#999;cursor:pointer;}
+.home-cat-tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid #f0f0f0;margin-bottom:8px;padding:0 2px;}
+.home-cat-tab{flex-shrink:0;border:none;background:none;padding:10px 14px;font-size:14px;color:#999;font-weight:500;cursor:pointer;position:relative;font-family:inherit;}
+.home-cat-tab.active{color:#0f1419;font-weight:800;}
+.home-cat-tab.active::after{content:'';position:absolute;left:20%;right:20%;bottom:0;height:2.5px;border-radius:2px;background:#f5a623;}
+.home-sub-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch;}
+.home-sub-tab{flex-shrink:0;padding:6px 12px;border-radius:16px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#666;cursor:pointer;}
+.home-sub-tab.active{background:#fff8e8;border-color:#f5d78a;color:#b8860b;font-weight:600;}
+/* 分类页：左侧分类 + 右侧子分类网格 */
+.cat-layout{display:flex;min-height:calc(100vh - 140px);margin:-4px -4px 0;background:#f5f6f7;}
+.cat-side{width:92px;flex-shrink:0;background:#f0f1f3;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.cat-side-item{padding:16px 8px;text-align:center;font-size:13px;color:#666;cursor:pointer;border:none;background:none;width:100%;font-family:inherit;line-height:1.3;}
+.cat-side-item.active{background:#fff;color:#f5a623;font-weight:700;position:relative;}
+.cat-side-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 2px 2px 0;background:#f5a623;}
+.cat-main{flex:1;background:#fff;padding:12px 12px 24px;overflow-y:auto;min-width:0;}
+.cat-main-title{font-size:15px;font-weight:700;color:#0f1419;margin-bottom:12px;display:flex;align-items:center;gap:4px;}
+.cat-sub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;}
+.cat-sub-card{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:none;background:none;padding:0;font-family:inherit;}
+.cat-sub-card .cs-icon{width:56px;height:56px;border-radius:14px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:24px;}
+.cat-sub-card .cs-icon img{width:100%;height:100%;object-fit:cover;}
+.cat-sub-card .cs-name{font-size:12px;color:#333;text-align:center;line-height:1.2;}
+.cat-search-bar{margin-bottom:10px;}
+.cat-search-bar input{width:100%;box-sizing:border-box;border-radius:20px;border:none;background:#f0f1f3;padding:10px 14px;font-size:13px;}
+
 </style>
 </head>
 <body>
@@ -547,89 +589,54 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div id="mainApp" class="app-wrapper">
 <div class="view-container">
 <div class="view active" id="view-home">
-<div class="banner-carousel" id="bannerCarousel">
+<div class="home-main-tabs">
+<button type="button" class="home-main-tab active" id="homeMainTabHome" onclick="switchHomeMainTab('home')">首页</button>
+<button type="button" class="home-main-tab" id="homeMainTabRank" onclick="switchHomeMainTab('rank')">排行榜</button>
+</div>
+<div id="homeMainPanelHome">
+<div class="home-announce" id="homeAnnounceBar" onclick="showHomeAnnounceDetail()">
+<span class="ha-label">公告</span>
+<span class="ha-text" id="homeAnnounceText">加载中...</span>
+<span class="ha-arrow">›</span>
+</div>
+<div class="banner-carousel home-banner" id="bannerCarousel">
 <div class="banner-track" id="bannerTrack"></div>
 <div class="banner-dots" id="bannerDots"></div>
 <button class="banner-arrow left" onclick="prevBanner()">‹</button>
 <button class="banner-arrow right" onclick="nextBanner()">›</button>
 </div>
-<div class="home-checkin-bar" id="homeCheckinBar" onclick="openCheckinPanel()">
-  <div class="hci-left">
-    <span id="homeCheckinIcon"></span>
-    <div>
-      <div class="hci-title">每日签到</div>
-      <div class="hci-sub" id="homeCheckinSub">点击查看签到日历与奖励</div>
-    </div>
-  </div>
-  <button type="button" class="hci-btn" id="homeCheckinBtn" onclick="event.stopPropagation();openCheckinPanel()">签到</button>
+<div class="home-quick-grid" id="homeQuickGrid"></div>
+<div class="home-section-head">
+<span class="hs-title">精选商品</span>
+<span class="hs-more" onclick="navigateTo('category')">更多 ›</span>
 </div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px;">
-<span style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-store"></i> 店铺</span>
-<span style="font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="navigateTo('category')">查看全部 →</span>
-</div>
-<div class="shop-entrance" id="shopEntrance"></div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;">
-<span style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-shopping-cart"></i> 商品</span>
-</div>
+<div class="home-cat-tabs" id="homeCatTabs"></div>
+<div class="home-sub-tabs" id="homeSubTabs" style="display:none;"></div>
 <div id="homeProductList"></div>
+</div>
+<div id="homeMainPanelRank" style="display:none;">
+<div style="display:flex;gap:8px;margin-bottom:12px;">
+<button type="button" class="rank-sub-btn active" data-rank="reviews" onclick="switchRankTab('reviews')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #0f1419;background:#0f1419;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">👍 好评榜</button>
+<button type="button" class="rank-sub-btn" data-rank="orders" onclick="switchRankTab('orders')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;">📦 完成榜</button>
+<button type="button" class="rank-sub-btn" data-rank="diamonds" onclick="switchRankTab('diamonds')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;">💎 红钻榜</button>
+</div>
+<div id="handlerRankList"></div>
+</div>
 </div>
 
 <div class="view" id="view-category">
-<!-- 最上方：分类 / 排名 切换 -->
-<div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid #eff3f4;">
-<button type="button" id="catMainTabCategory" onclick="switchCatMainTab('category')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:700;color:var(--nav-active-color,#0f1419);cursor:pointer;position:relative;">
-分类
-<span style="display:block;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:var(--accent-color,#0f1419);border-radius:2px;" id="catMainUnderlineCategory"></span>
-</button>
-<button type="button" id="catMainTabRank" onclick="switchCatMainTab('rank')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:500;color:#536471;cursor:pointer;position:relative;">
-排名
-<span style="display:none;position:absolute;left:28%;right:28%;bottom:0;height:2.5px;background:var(--accent-color,#0f1419);border-radius:2px;" id="catMainUnderlineRank"></span>
-</button>
+<div class="cat-search-bar">
+<input type="search" id="catSearchInput" placeholder="搜索商品名称/店铺名称..." oninput="handleCatSearch(this.value)" />
 </div>
-
-<div id="catMainPanelCategory">
-<div style="margin-bottom:10px;">
-<input class="admin-form-control" id="catSearchInput" placeholder="搜索商品名称/店铺名称..." oninput="handleCatSearch(this.value)" />
-</div>
-<div class="banner-carousel" id="categoryBannerCarousel">
-<div class="banner-track" id="categoryBannerTrack"></div>
-<div class="banner-dots" id="categoryBannerDots"></div>
-<button class="banner-arrow left" onclick="prevCategoryBanner()">‹</button>
-<button class="banner-arrow right" onclick="nextCategoryBanner()">›</button>
-</div>
-<div class="category-tabs" style="display:flex;gap:8px;margin:12px 0;">
-<button class="cat-tab-btn active" data-tab="product" onclick="switchCatTab('product')" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--border-color);background:#0f1419;color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><i class="fas fa-shopping-cart"></i> 商品分类</button>
-<button class="cat-tab-btn" data-tab="shop" onclick="switchCatTab('shop')" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><i class="fas fa-store"></i> 店铺分类</button>
-</div>
-<div id="catTabContent">
-<div id="catTabProduct">
-<div class="category-horizontal-scroll" id="categoryCardListH">
-<div class="category-card-h active" onclick="filterProductsByCategory('all');hideSubCategories()" data-cat="all">
-<div class="cat-icon-h"><i class="fas fa-box"></i></div>
-<div class="cat-name-h">全部</div>
+<div class="cat-layout">
+  <div class="cat-side" id="catSideList"></div>
+  <div class="cat-main">
+    <div class="cat-main-title" id="catMainTitle">全部分类 ›</div>
+    <div class="cat-sub-grid" id="catSubGrid"></div>
+    <div id="categoryProductList" style="margin-top:16px;"></div>
+  </div>
 </div>
 </div>
-<!-- 子分类 Tab 条（点主分类后显示，文字+下划线） -->
-<div id="categorySubListH" style="display:none;gap:0;overflow-x:auto;padding:0;border-bottom:1px solid #eff3f4;margin:4px 0 8px;-webkit-overflow-scrolling:touch;"></div>
-<div id="categoryProductList" style="margin-top:12px;"></div>
-</div>
-<div id="catTabShop" style="display:none;">
-<div id="categoryShopList"></div>
-</div>
-</div>
-</div>
-
-<!-- 排名面板 -->
-<div id="catMainPanelRank" style="display:none;">
-<div style="display:flex;gap:8px;margin-bottom:12px;">
-<button type="button" class="rank-sub-btn active" data-rank="reviews" onclick="switchRankTab('reviews')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #0f1419;background:#0f1419;color:#fff;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-thumbs-up"></i> 好评榜</button>
-<button type="button" class="rank-sub-btn" data-rank="orders" onclick="switchRankTab('orders')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-clipboard-check"></i> 完成订单</button>
-<button type="button" class="rank-sub-btn" data-rank="diamonds" onclick="switchRankTab('diamonds')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-gem"></i> 赚取红钻</button>
-</div>
-<div id="handlerRankList"><div class="empty-state"><p>加载中...</p></div></div>
-</div>
-</div>
-
 <div class="view" id="view-hall">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
 <span style="font-size:18px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-bullseye"></i> 接单大厅</span>
@@ -1086,7 +1093,7 @@ const FA_SVG_PATHS={
   'fa-phone':'<path d="M7 3h3l1 4-2 1a11 11 0 005 5l1-2 4 1v3a2 2 0 01-2 2A14 14 0 015 5a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
   'fa-gamepad':'<rect x="3" y="8" width="18" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 13h.01M11 13h.01M9.5 11v4M15 12h.01M17 14h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   'fa-crosshairs':'<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  'fa-home':'<path d="M4 11l8-7 8 7v9H4v-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  'fa-home':'<path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
   'fa-bell':'<path d="M12 3a5 5 0 00-5 5v2.5c0 .8-.3 1.5-.8 2.1L5 14.5h14l-1.2-1.9c-.5-.6-.8-1.3-.8-2.1V8a5 5 0 00-5-5zM10 18a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
   'fa-ellipsis-h':'<circle cx="6" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18" cy="12" r="1.5" fill="currentColor"/>',
   'fa-ban':'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 6.5l11 11" fill="none" stroke="currentColor" stroke-width="1.8"/>',
@@ -1386,7 +1393,7 @@ function renderBottomNav(){
   if(!nav)return;
   // 名称不变；图标贴近悬浮胶囊风格（首页屋/四格/准星/铃铛/我的）
   const items=[
-    {id:'home',icon:'fa-home',label:'商城'},
+    {id:'home',icon:'fa-home',label:'首页'},
     {id:'category',icon:'fa-th-large',label:'分类'},
     {id:'hall',icon:'fa-crosshairs',label:'接单大厅'},
     {id:'messages',icon:'fa-bell',label:'消息',badge:'msgBadge'},
@@ -1869,36 +1876,162 @@ function nextCategoryBanner(){categoryBannerIndex++;renderCategoryBanner();}
 /* ============================================================
    首页
 ============================================================ */
+let homeAllProducts=[];
+let homeCatFilter='all';
+let homeSubFilter='all';
+let homeAnnounceCache=null;
+
 async function renderHomePage(){
   try{
-    const shops=await apiRequest('/shops')||[];
-    renderShopEntrance(shops);
-    const products=await apiRequest('/products')||[];
-    renderHomeProducts(products);
+    switchHomeMainTab('home');
+    await loadHomeAnnounce();
     await loadBannersFromAPI();
     initBanner();
-    refreshHomeCheckinBar();
+    renderHomeQuickGrid();
+    const products=await apiRequest('/products')||[];
+    homeAllProducts=products;
+    await renderHomeCategoryTabs();
+    renderHomeProducts(filterHomeProducts());
   }catch(err){console.error(err);}
 }
 
-function refreshHomeCheckinBar(){
-  const iconEl=document.getElementById('homeCheckinIcon');
-  if(iconEl&&typeof svgIcon==='function')iconEl.innerHTML=svgIcon('fa-calendar-day',26);
-  const sub=document.getElementById('homeCheckinSub');
-  const btn=document.getElementById('homeCheckinBtn');
-  if(!currentUser){
-    if(sub)sub.textContent='登录后可每日签到领奖励';
-    if(btn)btn.textContent='去登录';
-    return;
-  }
-  apiRequest('/checkin').then(st=>{
-    if(sub)sub.textContent=st.checked_today?'今日已签到，点此查看日历':'每日签到领金币/优惠券等奖励';
-    if(btn)btn.textContent=st.checked_today?'已签到':'签到';
-    if(btn)btn.style.background=st.checked_today?'#8b98a5':'#00ba7c';
-  }).catch(()=>{
-    if(sub)sub.textContent='点击查看签到日历与奖励';
-  });
+function switchHomeMainTab(tab){
+  const isHome=tab!=='rank';
+  const homeBtn=document.getElementById('homeMainTabHome');
+  const rankBtn=document.getElementById('homeMainTabRank');
+  const homePanel=document.getElementById('homeMainPanelHome');
+  const rankPanel=document.getElementById('homeMainPanelRank');
+  if(homeBtn)homeBtn.classList.toggle('active',isHome);
+  if(rankBtn)rankBtn.classList.toggle('active',!isHome);
+  if(homePanel)homePanel.style.display=isHome?'block':'none';
+  if(rankPanel)rankPanel.style.display=isHome?'none':'block';
+  if(!isHome)renderHandlerRank(currentRankBy||'reviews');
 }
+
+async function loadHomeAnnounce(){
+  const el=document.getElementById('homeAnnounceText');
+  try{
+    const a=await apiRequest('/announce');
+    homeAnnounceCache=a||null;
+    const text=(a&&(a.content||a.text))||'暂无公告';
+    if(el)el.textContent=String(text).replace(/\s+/g,' ').trim();
+  }catch(e){
+    if(el)el.textContent='暂无公告';
+  }
+}
+function showHomeAnnounceDetail(){
+  const text=(homeAnnounceCache&&(homeAnnounceCache.content||homeAnnounceCache.text))||'暂无公告';
+  if(typeof showCustomModal==='function'){
+    showCustomModal(`<h3>公告</h3><div style="font-size:14px;line-height:1.6;color:#333;white-space:pre-wrap;">${text}</div><div class="btn-row" style="margin-top:14px;"><button class="btn btn-primary" onclick="closeCustomModal()">知道了</button></div>`);
+  }else{
+    toast(text,'info');
+  }
+}
+
+function getHomeQuickIcons(){
+  try{return JSON.parse(localStorage.getItem('home_quick_icons')||'{}')||{};}catch(e){return {};}
+}
+function saveHomeQuickIcons(obj){
+  try{localStorage.setItem('home_quick_icons',JSON.stringify(obj||{}));}catch(e){}
+}
+function renderHomeQuickGrid(){
+  const grid=document.getElementById('homeQuickGrid');
+  if(!grid)return;
+  const imgs=getHomeQuickIcons();
+  const items=[
+    {key:'cs',label:'人工客服',emoji:'💬',act:"openHomeCustomerService()"},
+    {key:'checkin',label:'积分签到',emoji:'📅',act:"openCheckinPanel()"},
+    {key:'lottery',label:'积分抽奖',emoji:'🎁',act:"openHomeLottery()"},
+    {key:'exchange',label:'积分兑换',emoji:'🎫',act:"openCoinExchange()"}
+  ];
+  grid.innerHTML=items.map(it=>{
+    const img=imgs[it.key];
+    const icon=img?`<img src="${img}" alt=""/>`:`<span>${it.emoji}</span>`;
+    return `<button type="button" class="home-quick-item" onclick="${it.act}"><div class="hq-icon">${icon}</div><span class="hq-label">${it.label}</span></button>`;
+  }).join('');
+}
+function openHomeCustomerService(){
+  if(!currentUser){toast('请先登录','warning');return;}
+  openChat('cs_bot','AI智能体小Q','contact');
+}
+function openHomeLottery(){
+  if(!currentUser){toast('请先登录','warning');return;}
+  showCustomModal(`<h3>🎁 积分抽奖</h3><p style="font-size:13px;color:#536471;line-height:1.5;">消耗金币参与抽奖，奖品由平台配置。当前为体验入口，后续可对接抽奖规则。</p><div class="btn-row" style="margin-top:12px;"><button class="btn btn-outline" onclick="closeCustomModal()">关闭</button><button class="btn btn-primary" onclick="toast('抽奖功能即将开放','info');closeCustomModal()">立即抽奖</button></div>`);
+}
+function openHomeQuickIconAdmin(){
+  const imgs=getHomeQuickIcons();
+  const keys=[{k:'cs',n:'人工客服'},{k:'checkin',n:'积分签到'},{k:'lottery',n:'积分抽奖'},{k:'exchange',n:'积分兑换'}];
+  const fields=keys.map(x=>`<div style="margin-bottom:8px;"><div style="font-size:12px;color:#536471;margin-bottom:4px;">${x.n} 图片URL</div><input class="admin-form-control" id="hqIcon_${x.k}" value="${imgs[x.k]||''}" placeholder="留空则用默认图标"/></div>`).join('');
+  showCustomModal(`<h3>首页四宫格图标</h3><p style="font-size:12px;color:#536471;margin-bottom:8px;">可填 B2 图库地址，保存后首页立即生效。</p>${fields}<div class="btn-row" style="margin-top:12px;"><button class="btn btn-outline" onclick="closeCustomModal()">取消</button><button class="btn btn-primary" onclick="saveHomeQuickIconAdmin()">保存</button></div>`);
+}
+function saveHomeQuickIconAdmin(){
+  const o={};
+  ['cs','checkin','lottery','exchange'].forEach(k=>{
+    const el=document.getElementById('hqIcon_'+k);
+    const v=(el&&el.value||'').trim();
+    if(v)o[k]=v;
+  });
+  saveHomeQuickIcons(o);
+  renderHomeQuickGrid();
+  closeCustomModal();
+  toast('已保存','success');
+}
+
+async function renderHomeCategoryTabs(){
+  const tabs=document.getElementById('homeCatTabs');
+  if(!tabs)return;
+  try{
+    const categories=await apiRequest('/categories')||[];
+    allCategoriesCache=categories;
+    const mainCats=categories.filter(c=>!c.parent_id);
+    let html=`<button type="button" class="home-cat-tab active" data-cat="all" onclick="selectHomeCat('all',this)">全部</button>`;
+    mainCats.forEach(c=>{
+      html+=`<button type="button" class="home-cat-tab" data-cat="${c.id}" onclick="selectHomeCat('${c.id}',this)">${c.name}</button>`;
+    });
+    tabs.innerHTML=html;
+    homeCatFilter='all';
+    homeSubFilter='all';
+    const sub=document.getElementById('homeSubTabs');
+    if(sub){sub.style.display='none';sub.innerHTML='';}
+  }catch(e){}
+}
+function selectHomeCat(catId, el){
+  homeCatFilter=catId;
+  homeSubFilter='all';
+  document.querySelectorAll('#homeCatTabs .home-cat-tab').forEach(t=>t.classList.toggle('active',t===el));
+  const subWrap=document.getElementById('homeSubTabs');
+  const subs=(allCategoriesCache||[]).filter(c=>String(c.parent_id)===String(catId));
+  if(subWrap){
+    if(catId==='all'||!subs.length){
+      subWrap.style.display='none';subWrap.innerHTML='';
+    }else{
+      subWrap.style.display='flex';
+      subWrap.innerHTML=subs.map((s,i)=>`<button type="button" class="home-sub-tab${i===0?' active':''}" onclick="selectHomeSub('${s.id}',this)">${s.name}</button>`).join('');
+      if(subs[0])homeSubFilter=subs[0].id;
+    }
+  }
+  renderHomeProducts(filterHomeProducts());
+}
+function selectHomeSub(subId, el){
+  homeSubFilter=subId;
+  document.querySelectorAll('#homeSubTabs .home-sub-tab').forEach(t=>t.classList.toggle('active',t===el));
+  renderHomeProducts(filterHomeProducts());
+}
+function filterHomeProducts(){
+  let list=homeAllProducts||[];
+  if(homeSubFilter&&homeSubFilter!=='all'){
+    list=list.filter(p=>String(p.category_id)===String(homeSubFilter));
+  }else if(homeCatFilter&&homeCatFilter!=='all'){
+    const subIds=(allCategoriesCache||[]).filter(c=>String(c.parent_id)===String(homeCatFilter)).map(c=>String(c.id));
+    list=list.filter(p=>{
+      const cid=String(p.category_id||'');
+      return cid===String(homeCatFilter)||subIds.includes(cid);
+    });
+  }
+  return list;
+}
+
+function refreshHomeCheckinBar(){ /* 首页已改为四宫格签到入口 */ }
 
 function buildCheckinCalendar(history, todayStr){
   const today=todayStr||new Date().toISOString().slice(0,10);
@@ -1970,29 +2103,80 @@ function renderHomeProducts(products){
    分类页
 ============================================================ */
 let allCategoriesCache=[];
+let currentCatSideId='all';
 async function renderCategoryPage(){
   try{
     const categories=await apiRequest('/categories')||[];
     allCategoriesCache=categories;
     const mainCats=categories.filter(c=>!c.parent_id);
-    const container=document.getElementById('categoryCardListH');
-    if(container){
-      let html=`<div class="category-card-h active" onclick="filterProductsByCategory('all');hideSubCategories()" data-cat="all"><div class="cat-icon-h"><i class="fas fa-box"></i></div><div class="cat-name-h">全部</div></div>`;
+    const side=document.getElementById('catSideList');
+    if(side){
+      let html=`<button type="button" class="cat-side-item active" data-cat="all" onclick="selectCatSide('all',this)">全部</button>`;
       mainCats.forEach(c=>{
-        const iconHtml=c.image?`<img src="${c.image}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-folder\\'></i>'" />`:'<i class="fas fa-folder"></i>';
-        const hasSub=categories.some(sc=>String(sc.parent_id)===String(c.id));
-        html+=`<div class="category-card-h" onclick="onMainCategoryClick('${c.id}')" data-cat="${c.id}"><div class="cat-icon-h">${iconHtml}</div><div class="cat-name-h">${c.name}${hasSub?' ▾':''}</div></div>`;
+        html+=`<button type="button" class="cat-side-item" data-cat="${c.id}" onclick="selectCatSide('${c.id}',this)">${c.name}</button>`;
       });
-      container.innerHTML=html;
+      side.innerHTML=html;
     }
-    hideSubCategories();
     const products=await apiRequest('/products')||[];
     categoryProducts=products;
+    currentCatSideId='all';
     currentSubCategoryFilter='all';
+    renderCatSubGrid('all');
     renderCategoryProducts('all');
-    renderCategoryBanner();
-    renderCategoryShops();
   }catch(err){console.error(err);}
+}
+function selectCatSide(catId, el){
+  currentCatSideId=catId;
+  currentSubCategoryFilter='all';
+  document.querySelectorAll('#catSideList .cat-side-item').forEach(t=>t.classList.toggle('active',t===el||String(t.getAttribute('data-cat'))===String(catId)));
+  renderCatSubGrid(catId);
+  if(catId==='all')renderCategoryProducts('all');
+  else {
+    const subs=(allCategoriesCache||[]).filter(c=>String(c.parent_id)===String(catId));
+    if(subs.length){
+      // 仅展示子分类网格，商品可点子分类后再筛
+      const list=document.getElementById('categoryProductList');
+      if(list)list.innerHTML='';
+    } else {
+      filterProductsByCategory(catId);
+    }
+  }
+}
+function renderCatSubGrid(catId){
+  const grid=document.getElementById('catSubGrid');
+  const title=document.getElementById('catMainTitle');
+  if(!grid)return;
+  const cats=allCategoriesCache||[];
+  let items=[];
+  let name='全部';
+  if(catId==='all'){
+    items=cats.filter(c=>!c.parent_id);
+    name='全部';
+  }else{
+    const main=cats.find(c=>String(c.id)===String(catId));
+    name=(main&&main.name)||'分类';
+    items=cats.filter(c=>String(c.parent_id)===String(catId));
+    if(!items.length&&main)items=[main];
+  }
+  if(title)title.textContent=name+' ›';
+  if(!items.length){
+    grid.innerHTML='<div style="grid-column:1/-1;font-size:13px;color:#999;padding:20px 0;text-align:center;">暂无子分类</div>';
+    return;
+  }
+  grid.innerHTML=items.map(c=>{
+    const icon=c.image?`<img src="${c.image}" alt="" onerror="this.parentElement.innerHTML='📂'"/>`:'<span>📂</span>';
+    const click=c.parent_id
+      ? `selectCatSubProduct('${c.id}')`
+      : `selectCatSide('${c.id}',document.querySelector('#catSideList [data-cat=\\'${c.id}\\']'))`;
+    return `<button type="button" class="cat-sub-card" onclick="${click}"><div class="cs-icon">${icon}</div><span class="cs-name">${c.name}</span></button>`;
+  }).join('');
+}
+function selectCatSubProduct(subId){
+  currentSubCategoryFilter=subId;
+  const parent=(allCategoriesCache||[]).find(c=>String(c.id)===String(subId));
+  const mainId=parent?parent.parent_id:currentCatSideId;
+  currentCategoryFilter=mainId||'all';
+  renderCategoryProducts(mainId||'all');
 }
 function hideSubCategories(){
   const subWrap=document.getElementById('categorySubListH');
@@ -8177,6 +8361,19 @@ window.openRecharge=openRecharge;
 window.openWithdraw=openWithdraw;
 window.openWalletPanel=openWalletPanel;
 window.openCoinExchange=openCoinExchange;
+window.switchHomeMainTab=switchHomeMainTab;
+window.loadHomeAnnounce=loadHomeAnnounce;
+window.showHomeAnnounceDetail=showHomeAnnounceDetail;
+window.renderHomeQuickGrid=renderHomeQuickGrid;
+window.openHomeCustomerService=openHomeCustomerService;
+window.openHomeLottery=openHomeLottery;
+window.openHomeQuickIconAdmin=openHomeQuickIconAdmin;
+window.saveHomeQuickIconAdmin=saveHomeQuickIconAdmin;
+window.selectHomeCat=selectHomeCat;
+window.selectHomeSub=selectHomeSub;
+window.selectCatSide=selectCatSide;
+window.selectCatSubProduct=selectCatSubProduct;
+
 window.doCoinExchange=doCoinExchange;
 window.renderControlConsole=renderControlConsole;
 window.ctGo=ctGo;
@@ -8268,7 +8465,8 @@ function ctGo(tab){
       {lab:'派单系统',act:"ctOpenPage('dispatcher')",icon:'dispatch'},
       {lab:'皮肤主题',act:"ctOpenPage('skin')",icon:'skin'},
       {lab:'签到配置',act:"openCheckinAdmin()",icon:'checkin'},
-      {lab:'兑换配置',act:"openExchangeAdmin()",icon:'exchange'}
+      {lab:'兑换配置',act:"openExchangeAdmin()",icon:'exchange'},
+      {lab:'首页四宫格',act:"openHomeQuickIconAdmin()",icon:'home'}
     ];
     body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:10px;">管理功能</div>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">点击进入对应管理页；皮肤/签到/兑换使用弹窗或子页。</p>
