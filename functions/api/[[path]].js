@@ -3536,18 +3536,44 @@ async function handleGetHandlers(env) {
   let result;
   try {
     result = await queryDB(env,
-      'SELECT id, username, avatar, is_accepting, last_active FROM users WHERE role = "handler" AND status = "active"');
+      'SELECT id, username, avatar, level, is_accepting, last_active, bio FROM users WHERE role = "handler" AND status = "active"');
   } catch (e) {
-    result = await queryDB(env, 'SELECT id, username, avatar, is_accepting FROM users WHERE role = "handler" AND status = "active"');
+    try {
+      result = await queryDB(env,
+        'SELECT id, username, avatar, is_accepting, last_active FROM users WHERE role = "handler" AND status = "active"');
+    } catch (e2) {
+      result = await queryDB(env, 'SELECT id, username, avatar, is_accepting FROM users WHERE role = "handler" AND status = "active"');
+    }
   }
-  const list = (result.results || []).map(h => ({
-    id: h.id,
-    username: h.username || '未知',
-    avatar: h.avatar || '',
-    is_accepting: Number(h.is_accepting) || 0,
-    online: typeof isUserOnline === 'function' ? isUserOnline(h) : false,
-    last_active: h.last_active || ''
-  }));
+  const rows = result.results || [];
+  // 离线自动关闭「接单中」
+  for (const h of rows) {
+    const online = typeof isUserOnline === 'function' ? isUserOnline(h) : false;
+    if (!online && Number(h.is_accepting) === 1) {
+      try {
+        await runDB(env, 'UPDATE users SET is_accepting = 0 WHERE id = ?', [h.id]);
+        h.is_accepting = 0;
+      } catch (e) {}
+    }
+  }
+  const list = rows.map(h => {
+    const online = typeof isUserOnline === 'function' ? isUserOnline(h) : false;
+    const accepting = online && Number(h.is_accepting) === 1 ? 1 : 0;
+    // 排序：在线接单 > 在线 > 离线
+    const sortKey = accepting ? 0 : (online ? 1 : 2);
+    return {
+      id: h.id,
+      username: h.username || '未知',
+      avatar: h.avatar || '',
+      level: h.level || 1,
+      bio: h.bio || '',
+      is_accepting: accepting,
+      online: !!online,
+      last_active: h.last_active || '',
+      sortKey
+    };
+  });
+  list.sort((a, b) => a.sortKey - b.sortKey || String(a.username).localeCompare(String(b.username), 'zh'));
   return jsonResponse(list);
 }
 
