@@ -153,9 +153,9 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
   max-width:calc(100% - 24px);
   margin:0 auto;
   box-sizing:border-box;
-  background:rgba(255,255,255,0.72);
-  backdrop-filter:blur(22px) saturate(1.2);
-  -webkit-backdrop-filter:blur(22px) saturate(1.2);
+  background:rgba(255,255,255,0.45);
+  backdrop-filter:blur(24px) saturate(1.15);
+  -webkit-backdrop-filter:blur(24px) saturate(1.15);
   border:1px solid rgba(0,0,0,0.04);
   border-radius:999px;
   box-shadow:0 8px 28px rgba(15,20,25,0.10), 0 2px 8px rgba(15,20,25,0.04);
@@ -183,9 +183,9 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .nav-item i,.nav-item .svg-ico,.nav-item .gallery-ico{font-size:26px;width:30px;height:30px;color:#9aa3af;}
 .nav-item .svg-ico,.nav-item .gallery-ico{filter:grayscale(1) brightness(0.85);opacity:.9;}
 .nav-item span{line-height:1.1;white-space:nowrap;color:#9aa3af;}
-.nav-item.active{color:#f5a623;}
-.nav-item.active span{color:#f5a623;font-weight:700;}
-.nav-item.active i,.nav-item.active .svg-ico,.nav-item.active .gallery-ico{color:#f5a623;filter:grayscale(1) sepia(1) saturate(12) hue-rotate(2deg) brightness(1.05);opacity:1;}
+.nav-item.active{color:#c9a227;}
+.nav-item.active span{color:#c9a227;font-weight:700;}
+.nav-item.active i,.nav-item.active .svg-ico,.nav-item.active .gallery-ico{color:#c9a227;filter:grayscale(1) sepia(0.85) saturate(4) hue-rotate(2deg) brightness(0.95);opacity:1;}
 .nav-item .badge{position:absolute;top:0;right:calc(50% - 18px);background:#f4212e;color:#fff;border-radius:50%;font-size:9px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;}
 .banner-carousel{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:12px;background:var(--product-img-bg);aspect-ratio:16 / 6;}
 .banner-carousel .banner-track{display:flex;transition:transform 0.5s ease;height:100%;}
@@ -208,7 +208,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .shop-badge.self{background:linear-gradient(135deg,#0f1419 0%,#1a1a1a 40%,#d4af37 100%);color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,0.5);font-weight:700;}
 .shop-badge.rec{background:#f4212e;color:#ffffff;font-weight:700;}
 .product-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
-.product-card{display:flex;flex-direction:column;background:var(--product-card-bg);border-radius:10px;border:1px solid var(--product-card-border);overflow:hidden;position:relative;transition:all 0.2s;cursor:pointer;}
+.product-card{display:flex;flex-direction:column;background:var(--product-card-bg);border-radius:12px;border:1px solid rgba(0,0,0,0.04);overflow:hidden;position:relative;transition:all 0.2s;cursor:pointer;box-shadow:0 4px 14px rgba(15,20,25,0.08),0 1px 3px rgba(15,20,25,0.04);}
 .product-card:active{transform:scale(0.97);}
 .product-card .product-img{width:100%;aspect-ratio:1.15 / 1;background:var(--product-img-bg);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--product-img-icon);overflow:hidden;position:relative;}
 .product-card .product-img img{width:100%;height:100%;object-fit:cover;}
@@ -239,7 +239,7 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .product-detail-modal{position:fixed;top:0;left:0;width:100%;max-width:480px;height:100vh;height:100dvh;background:#f5f6f8;z-index:5000;display:none;flex-direction:column;left:50%;transform:translateX(-50%);padding:0;}
 .product-detail-modal.active{display:flex;}
 .product-detail-modal .pd-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0;z-index:2;}
-.product-detail-modal .pd-header .back-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#0f1419;padding:4px 8px;}
+.product-detail-modal .pd-header .back-btn{background:none;border:none;font-size:22px;cursor:pointer;color:#0f1419 !important;padding:6px 10px;min-width:40px;display:inline-flex;align-items:center;justify-content:center;}
 .product-detail-modal .pd-header .title{font-size:15px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .product-detail-modal .pd-body{flex:1;overflow-y:auto;padding:0 0 88px;-webkit-overflow-scrolling:touch;}
 .product-detail-modal .pd-hero{width:100%;background:#fff;padding:12px 12px 0;}
@@ -561,16 +561,17 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .home-banner.banner-carousel{aspect-ratio:2.35 / 1;border-radius:14px;margin-bottom:14px;}
 .home-quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 16px;padding:0 2px;}
 .home-quick-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:none;background:none;padding:0;font-family:inherit;}
-.home-quick-item .hq-icon{width:56px;height:56px;border-radius:16px;background:linear-gradient(180deg,#f7f8fa,#eef0f3);display:flex;align-items:center;justify-content:center;overflow:hidden;line-height:1;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04);}
+.home-quick-item .hq-icon{width:48px;height:48px;border-radius:12px;background:transparent;display:flex;align-items:center;justify-content:center;overflow:visible;line-height:1;box-shadow:none;}
 .home-quick-item .hq-icon img{width:100%;height:100%;object-fit:cover;}
 .home-quick-item .hq-icon svg{width:30px;height:30px;display:block;}
-.home-quick-item .hq-label{font-size:12px;color:#1a1a1a;font-weight:500;}
+.home-quick-item .hq-label{font-size:12px;color:#333;font-weight:500;margin-top:2px;}
 .ct-card .ico{font-size:28px;margin-bottom:8px;color:#0f1419;display:flex;align-items:center;justify-content:center;min-height:36px;}
 .ct-card .ico svg{width:32px;height:32px;}
 .bottom-nav .nav-item .svg-ico,.bottom-nav .nav-item .gallery-ico{width:30px;height:30px;}.gallery-ico{overflow:visible;flex-shrink:0;}
 .ct-card .ico .gallery-ico{width:36px;height:36px;}
-.home-quick-item .hq-icon .gallery-ico{width:34px;height:34px;}
-.back-btn .svg-ico,.up-back .svg-ico,.sub-header .back-btn .svg-ico{width:24px;height:24px;}
+.home-quick-item .hq-icon .gallery-ico{width:44px;height:44px;}
+.back-btn,.up-back{color:#0f1419 !important;display:inline-flex;align-items:center;justify-content:center;min-width:40px;}
+.back-btn .svg-ico,.up-back .svg-ico,.sub-header .back-btn .svg-ico{width:26px;height:26px;color:#0f1419 !important;}
 .home-section-head{display:flex;align-items:center;justify-content:space-between;margin:8px 0 10px;padding:0 2px;}
 .home-section-head .hs-title{font-size:16px;font-weight:800;color:#0f1419;}
 .home-section-head .hs-more{font-size:12px;color:#999;cursor:pointer;}
@@ -1114,7 +1115,7 @@ const GALLERY_ICONS={
   '礼物':`<rect x="19" y="39" width="62" height="46" rx="5" fill="#ff5368"/><rect x="14" y="32" width="72" height="14" rx="4" fill="#ff5368"/><rect x="45" y="32" width="10" height="53" fill="#ffd23f"/><path d="M50 32Q20 30 29 15Q40 7 50 27Q61 5 73 15Q81 30 50 32Z" fill="#ffd23f"/>`,
   '表情包':`<circle cx="50" cy="50" r="39" fill="#ffca28"/><path d="M31 39q5-7 10 0M59 39q5-7 10 0" fill="none" stroke="#29334a" stroke-width="5" stroke-linecap="round"/><path d="M29 55Q50 80 71 55" fill="none" stroke="#29334a" stroke-width="5" stroke-linecap="round"/>`,
   '派单系统':`<rect x="14" y="15" width="62" height="65" rx="8" fill="#2585f5"/><path d="M27 32h35M27 45h27M27 58h19" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M53 63L88 46L78 79L68 68L59 74Z" fill="#1769e8" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M68 68L88 46" stroke="#fff" stroke-width="2"/>`,
-  '皮肤主题':`<path d="M28 22c0-6 6-12 14-12h4c2 8 8 12 12 12s10-4 12-12h4c8 0 14 6 14 12l8 12-10 8-6-4v46c0 4-3 7-7 7H43c-4 0-7-3-7-7V50l-6 4-10-8 8-12z" fill="#7650f5"/><path d="M43 58h30M43 68h22" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>`,
+  '皮肤主题':`<path d="M32 28c0-8 8-14 18-14s18 6 18 14l10 10-8 8-6-4v40c0 4-3 7-7 7H43c-4 0-7-3-7-7V42l-6 4-8-8 10-10z" fill="#7650f5"/><path d="M42 52h16M42 62h16" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".9"/>`,
   '兑换':`<rect x="19" y="39" width="62" height="46" rx="5" fill="#ff5368"/><rect x="14" y="32" width="72" height="14" rx="4" fill="#ff5368"/><rect x="45" y="32" width="10" height="53" fill="#ffd23f"/><path d="M50 32Q20 30 29 15Q40 7 50 27Q61 5 73 15Q81 30 50 32Z" fill="#ffd23f"/>`,
 };
 const GALLERY_VIEWBOX="0 0 100 100";
@@ -1372,8 +1373,8 @@ function svgIcon(name,size,forceColor){
   // 优先使用项目 SVG 图库
   if(typeof FA_TO_GALLERY!=='undefined' && FA_TO_GALLERY.hasOwnProperty(key)){
     const g=FA_TO_GALLERY[key];
-    if(g===null)return '';
-    if(g && GALLERY_ICONS[g])return gallerySvg(g,size);
+    // null = 故意不用图库，走下方原版 FA_SVG 路径（红钻/返回等）
+    if(g!==null && g && typeof GALLERY_ICONS!=='undefined' && GALLERY_ICONS[g])return gallerySvg(g,size);
   }
   // 名称直接命中图库
   if(typeof GALLERY_ICONS!=='undefined' && GALLERY_ICONS[key])return gallerySvg(key,size);
@@ -2215,7 +2216,7 @@ function saveHomeQuickIcons(obj){
 /** 首页四宫格自绘图标（可被控制终端图片覆盖） */
 function homeQuickSvg(key){
   const name=(typeof HOME_QUICK_GALLERY!=='undefined'&&HOME_QUICK_GALLERY[key])||null;
-  if(name&&typeof gallerySvg==='function')return gallerySvg(name,34);
+  if(name&&typeof gallerySvg==='function')return gallerySvg(name,44);
   return '';
 }
 function renderHomeQuickGrid(){
@@ -3450,7 +3451,7 @@ async function viewUserProfile(userId){
       btnHtml+=`<button class="up-btn-msg" onclick="closeUserProfile();openSubPage('account')">编辑资料</button>`;
       actionsEl.innerHTML=btnHtml;
     }else if(currentUser){
-      actionsEl.innerHTML='';
+      actionsEl.innerHTML='<button class="up-btn-msg" onclick="userProfileSendMsg()">私信</button><button class="up-btn-msg" onclick="openGiftModal(\''+userId+'\')" style="background:var(--btn-primary-bg,#0f1419);color:var(--btn-primary-color,#fff);">赠送礼物</button>';
     }
 
     // 展示说说
@@ -3999,40 +4000,27 @@ function iconSvgCheckin(size){size=size||22;return `<svg width="${size}" height=
 
 async function openWalletPanel(){
   if(!currentUser){toast('请先登录','warning');return;}
-  let coin=Number(currentUser.coin)||0;
-  let diamond=Number(currentUser.diamond)||0;
-  let bound=Number(currentUser.bound_diamond)||0;
-  let coupons=[];
-  try{
-    const st=await apiRequest('/checkin');
-    coin=Number(st.coin)||coin;
-    diamond=Number(st.diamond)||diamond;
-    bound=Number(st.bound_diamond)||bound;
-    coupons=st.coupons||[];
-    currentUser.coin=coin;
-    currentUser.diamond=diamond;
-    currentUser.bound_diamond=bound;
-  }catch(e){}
-  const unusedCoupons=coupons.filter(c=>(c.status||'unused')==='unused');
-  const usedCoupons=coupons.filter(c=>c.status==='used');
-  let couponHtml='';
-  if(!coupons.length){
-    couponHtml='<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">暂无优惠券，可通过每日签到获得</div>';
-  }else{
-    couponHtml='<div style="display:flex;flex-direction:column;gap:8px;max-height:180px;overflow-y:auto;">'+
-      coupons.map(c=>{
-        const used=(c.status==='used');
-        return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid ${used?'#eff3f4':'#d8b4fe'};background:${used?'#f7f9f9':'#faf5ff'};opacity:${used?'.7':'1'};">
-          ${iconSvgCoupon(28)}
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;">${String(c.name||'优惠券').replace(/</g,'&lt;')}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${String(c.description||c.source||'').replace(/</g,'&lt;')||'签到获得'}</div>
-          </div>
-          <span style="font-size:11px;font-weight:600;color:${used?'#536471':'#7C4DFF'};">${used?'已使用':'未使用'}</span>
-        </div>`;
-      }).join('')+'</div>';
-  }
-  showCustomModal(`
+  // 先用本地缓存立即弹窗，后台再刷新，避免卡顿
+  const renderWallet=(coin,diamond,bound,coupons)=>{
+    const unusedCoupons=(coupons||[]).filter(c=>(c.status||'unused')==='unused');
+    let couponHtml='';
+    if(!coupons||!coupons.length){
+      couponHtml='<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">暂无优惠券，可通过每日签到获得</div>';
+    }else{
+      couponHtml='<div style="display:flex;flex-direction:column;gap:8px;max-height:180px;overflow-y:auto;">'+
+        coupons.map(c=>{
+          const used=(c.status==='used');
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid ${used?'#eff3f4':'#d8b4fe'};background:${used?'#f7f9f9':'#faf5ff'};opacity:${used?'.7':'1'};">
+            ${iconSvgCoupon(28)}
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;">${String(c.name||'优惠券').replace(/</g,'&lt;')}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${String(c.description||c.source||'').replace(/</g,'&lt;')||'签到获得'}</div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:${used?'#536471':'#7C4DFF'};">${used?'已使用':'未使用'}</span>
+          </div>`;
+        }).join('')+'</div>';
+    }
+    showCustomModal(`
     <h3 style="display:flex;align-items:center;gap:8px;">${iconSvgDiamond(24)} 我的钱包</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">
       <div style="border:1px solid #ffe0e0;background:#fff5f5;border-radius:14px;padding:12px;">
@@ -4059,7 +4047,7 @@ async function openWalletPanel(){
       <div style="border:1px solid #e9d5ff;background:#faf5ff;border-radius:14px;padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#536471;">${iconSvgCoupon(18)} 优惠券</div>
         <div style="font-size:22px;font-weight:800;color:#7C4DFF;margin-top:6px;">${unusedCoupons.length}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">未使用 ${unusedCoupons.length} · 共 ${coupons.length}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">未使用 ${unusedCoupons.length} · 共 ${(coupons||[]).length}</div>
       </div>
     </div>
     <div style="font-size:13px;font-weight:700;margin:4px 0 8px;display:flex;align-items:center;gap:6px;">${iconSvgCoupon(18)} 我的优惠券</div>
@@ -4069,7 +4057,20 @@ async function openWalletPanel(){
       <button class="btn btn-outline" onclick="openCoinExchange()">${iconSvgCoin(16)} 金币兑换</button>
       <button class="btn btn-primary" onclick="closeCustomModal();openCheckinPanel()">${iconSvgCheckin(16)} 去签到</button>
     </div>`);
-  try{document.getElementById('myBalance').textContent=String(diamond);}catch(e){}
+    try{document.getElementById('myBalance').textContent=String(diamond);}catch(e){}
+  };
+  let coin=Number(currentUser.coin)||0;
+  let diamond=Number(currentUser.diamond)||0;
+  let bound=Number(currentUser.bound_diamond)||0;
+  renderWallet(coin,diamond,bound,[]);
+  try{
+    const st=await apiRequest('/checkin');
+    coin=Number(st.coin)||coin;
+    diamond=Number(st.diamond)||diamond;
+    bound=Number(st.bound_diamond)||bound;
+    currentUser.coin=coin;currentUser.diamond=diamond;currentUser.bound_diamond=bound;
+    renderWallet(coin,diamond,bound,st.coupons||[]);
+  }catch(e){}
 }
 
 async function openCoinExchange(){
@@ -8714,6 +8715,7 @@ async function init(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   init();
+  try{refreshAuthPhoneUI();}catch(e){}
   setTimeout(bindBottomNavAutoHide,100);
   startIconObserver();
   setTimeout(function(){hydrateIcons(document);},0);
@@ -8797,6 +8799,11 @@ window.openRecharge=openRecharge;
 window.openWithdraw=openWithdraw;
 window.openWalletPanel=openWalletPanel;
 window.openCoinExchange=openCoinExchange;
+window.renderPayManagePanel=renderPayManagePanel;
+window.addPayChannel=addPayChannel;
+window.removePayChannel=removePayChannel;
+window.savePhoneLoginApi=savePhoneLoginApi;
+window.sendAuthSmsCode=sendAuthSmsCode;
 window.switchHomeMainTab=switchHomeMainTab;
 window.loadHomeAnnounce=loadHomeAnnounce;
 window.showHomeAnnounceDetail=showHomeAnnounceDetail;
@@ -8843,6 +8850,105 @@ function ctIcon(name,size){
   if(name==='skin')return gallerySvg('皮肤主题',size);
   return gallerySvg('控制终端',size)||'';
 }
+
+/* ========== 支付管理 / 手机号登录配置（本地保存，未填 API 则保持原登录） ========== */
+function getPayConfig(){
+  try{return JSON.parse(localStorage.getItem('qw_pay_config')||'{}')||{};}catch(e){return {};}
+}
+function savePayConfig(cfg){
+  try{localStorage.setItem('qw_pay_config',JSON.stringify(cfg||{}));}catch(e){}
+}
+function renderPayManagePanel(body){
+  if(!body)return;
+  const cfg=getPayConfig();
+  const channels=Array.isArray(cfg.channels)?cfg.channels:[];
+  const rows=channels.length?channels.map((c,i)=>`
+    <div style="border:1px solid #eff3f4;border-radius:12px;padding:10px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="font-weight:700;font-size:13px;">${String(c.name||c.type||'通道').replace(/</g,'&lt;')} <span style="font-size:11px;color:#536471;font-weight:500;">${c.type||''}</span></div>
+        <button class="btn btn-outline btn-xs" style="color:#f4212e;border-color:#f4212e;" onclick="removePayChannel(${i})">删除</button>
+      </div>
+      <div style="font-size:11px;color:#8b95a1;margin-top:4px;word-break:break-all;">API：${String(c.api||'(空)').replace(/</g,'&lt;')}</div>
+      <div style="font-size:11px;margin-top:2px;">状态：${c.enabled?'<span style="color:#00ba7c;">已启用</span>':'未启用'}</div>
+    </div>`).join(''):'<div style="font-size:12px;color:#536471;padding:8px 0;">暂无支付通道，可添加支付宝/微信/银行卡等</div>';
+  body.innerHTML=`
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;">支付管理</div>
+    <p style="font-size:12px;color:#536471;margin-bottom:10px;">配置收付 API。填写后前端可按通道调用；未配置时充值/登录逻辑保持原样。</p>
+    <div style="margin-bottom:14px;">${rows}</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;">添加支付通道</div>
+    <div class="admin-form-group"><label>类型</label>
+      <select class="admin-form-control" id="payType">
+        <option value="alipay">支付宝</option>
+        <option value="wechat">微信</option>
+        <option value="bank">银行卡</option>
+        <option value="other">其他</option>
+      </select>
+    </div>
+    <div class="admin-form-group"><label>名称</label><input class="admin-form-control" id="payName" placeholder="例如：支付宝官方" /></div>
+    <div class="admin-form-group"><label>API / 密钥</label><input class="admin-form-control" id="payApi" placeholder="粘贴 API 地址或密钥" /></div>
+    <div class="admin-form-group" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="payEnabled" checked /><label style="margin:0;">启用</label></div>
+    <button class="btn btn-primary btn-sm" onclick="addPayChannel()">添加通道</button>
+    <hr style="border:none;border-top:1px solid #eff3f4;margin:16px 0;" />
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;">手机号登录验证</div>
+    <p style="font-size:12px;color:#536471;margin-bottom:8px;">填写短信/手机验证 API 后，登录页可使用手机号验证码登录；<b>未填写则仍用原用户名/ID+密码</b>。</p>
+    <div class="admin-form-group"><label>手机验证 API</label><input class="admin-form-control" id="phoneLoginApi" value="${String(cfg.phoneLoginApi||'').replace(/"/g,'&quot;')}" placeholder="留空=关闭手机号登录" /></div>
+    <div class="admin-form-group"><label>备注</label><input class="admin-form-control" id="phoneLoginNote" value="${String(cfg.phoneLoginNote||'').replace(/"/g,'&quot;')}" placeholder="可选说明" /></div>
+    <button class="btn btn-primary btn-sm" onclick="savePhoneLoginApi()">保存手机登录配置</button>
+  `;
+}
+function addPayChannel(){
+  const type=(document.getElementById('payType')||{}).value||'other';
+  const name=(document.getElementById('payName')||{}).value||'';
+  const api=(document.getElementById('payApi')||{}).value||'';
+  const enabled=!!(document.getElementById('payEnabled')||{}).checked;
+  if(!api.trim()){toast('请填写 API','warning');return;}
+  const cfg=getPayConfig();
+  cfg.channels=Array.isArray(cfg.channels)?cfg.channels:[];
+  cfg.channels.push({type,name:name||type,api:api.trim(),enabled});
+  savePayConfig(cfg);
+  toast('已添加','success');
+  const body=document.getElementById('ctBody');
+  if(body)renderPayManagePanel(body);
+}
+function removePayChannel(idx){
+  const cfg=getPayConfig();
+  cfg.channels=Array.isArray(cfg.channels)?cfg.channels:[];
+  cfg.channels.splice(idx,1);
+  savePayConfig(cfg);
+  toast('已删除','success');
+  const body=document.getElementById('ctBody');
+  if(body)renderPayManagePanel(body);
+}
+function savePhoneLoginApi(){
+  const cfg=getPayConfig();
+  cfg.phoneLoginApi=String((document.getElementById('phoneLoginApi')||{}).value||'').trim();
+  cfg.phoneLoginNote=String((document.getElementById('phoneLoginNote')||{}).value||'').trim();
+  savePayConfig(cfg);
+  toast(cfg.phoneLoginApi?'已开通手机号登录配置':'已关闭手机号登录（保持原登录）','success');
+  try{refreshAuthPhoneUI();}catch(e){}
+}
+async function sendAuthSmsCode(){
+  if(!isPhoneLoginEnabled()){toast('未配置手机验证 API','warning');return;}
+  const phone=(document.getElementById('authPhone')||{}).value||'';
+  if(!/^1\d{10}$/.test(String(phone).trim())){toast('请输入正确手机号','warning');return;}
+  const api=getPayConfig().phoneLoginApi;
+  toast('验证码请求已发往配置的 API（需服务端对接）','info');
+  try{
+    // 预留：对接管理员填写的短信 API
+    await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:String(phone).trim(),action:'send_code'})});
+  }catch(e){console.warn(e);}
+}
+function isPhoneLoginEnabled(){
+  const api=String((getPayConfig().phoneLoginApi)||'').trim();
+  return !!api;
+}
+function refreshAuthPhoneUI(){
+  const box=document.getElementById('authPhoneBox');
+  if(!box)return;
+  box.style.display=isPhoneLoginEnabled()?'block':'none';
+}
+
+
 function renderControlConsole(){
   const box=document.getElementById('subConsoleContent');
   if(!box)return;
@@ -8851,6 +8957,7 @@ function renderControlConsole(){
   if(_ctTab==='exchange'||_ctTab==='home')_ctTab='manage';
   const tabs=[
     {id:'manage',lab:'管理功能'},
+    {id:'pay',lab:'支付管理'},
     {id:'d1',lab:'D1数据库'},
     {id:'b2',lab:'B2图库'}
   ];
@@ -8863,7 +8970,7 @@ function renderControlConsole(){
 function ctGo(tab){
   if(tab==='home'||tab==='exchange')tab='manage';
   _ctTab=tab;
-  const ids=['manage','d1','b2'];
+  const ids=['manage','pay','d1','b2'];
   document.querySelectorAll('.ct-tabs button').forEach((b,i)=>{
     b.classList.toggle('active',ids[i]===tab);
   });
@@ -8894,6 +9001,8 @@ function ctGo(tab){
     body.innerHTML=`<div style="font-size:14px;font-weight:700;margin-bottom:10px;">管理功能</div>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">点击进入对应管理页；皮肤/签到/兑换使用弹窗或子页。</p>
       <div class="ct-grid">${items.map(it=>`<div class="ct-card" onclick="${it.act}"><div class="ico">${ctIcon(it.icon,32)}</div><div class="lab">${it.lab}</div></div>`).join('')}</div>`;
+  }else if(tab==='pay'){
+    renderPayManagePanel(body);
   }else if(tab==='d1'){
     body.innerHTML='<div class="inline-load"><div class="gl-spinner"></div><div>加载 D1 表...</div></div>';
     ctLoadD1();
