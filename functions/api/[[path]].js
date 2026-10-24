@@ -1163,6 +1163,36 @@ async function handleDeleteShopCategory(env, authHeader, categoryId) {
 // ============================================================
 //  店铺评价
 // ============================================================
+
+async function handleGetProductReviews(env, productId) {
+  try {
+    const result = await queryDB(env, `
+      SELECT r.*, u.username, u.avatar
+      FROM shop_reviews r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN orders o ON r.order_id = o.id
+      WHERE o.product_id = ?
+      ORDER BY r.created_at DESC
+      LIMIT 50
+    `, [productId]);
+    return jsonResponse(result.results || []);
+  } catch (e) {
+    // 降级：按店铺评价里带同一商品订单的
+    try {
+      const result = await queryDB(env, `
+        SELECT r.*, u.username, u.avatar
+        FROM shop_reviews r
+        LEFT JOIN users u ON r.user_id = u.id
+        WHERE r.order_id IN (SELECT id FROM orders WHERE product_id = ?)
+        ORDER BY r.created_at DESC LIMIT 50
+      `, [productId]);
+      return jsonResponse(result.results || []);
+    } catch (e2) {
+      return jsonResponse([]);
+    }
+  }
+}
+
 async function handleGetShopReviews(env, shopId) {
   const result = await queryDB(env,
     `SELECT r.*, u.username, u.avatar FROM shop_reviews r
@@ -4036,6 +4066,10 @@ export async function onRequest(context) {
 
     if (path.startsWith('/api/users/') && method === 'GET') return await handleGetUserPublic(env, path.replace('/api/users/', ''));
     if (path.startsWith('/api/posts/') && method === 'GET') return await handleGetPostDetail(env, path.replace('/api/posts/', ''));
+    if (path.startsWith('/api/products/') && path.endsWith('/reviews') && method === 'GET') {
+      const pid = path.replace('/api/products/', '').replace('/reviews', '');
+      return await handleGetProductReviews(env, pid);
+    }
     if (path.startsWith('/api/shops/') && path.endsWith('/reviews') && method === 'GET') return await handleGetShopReviews(env, path.replace('/api/shops/', '').replace('/reviews', ''));
     if (path.startsWith('/api/shops/') && path.endsWith('/products') && method === 'GET') return await handleGetShopProducts(env, path.replace('/api/shops/', '').replace('/products', ''));
     if (path.startsWith('/api/shops/') && path.endsWith('/categories') && method === 'GET') return await handleGetShopCategories(env, path.replace('/api/shops/', '').replace('/categories', ''));
