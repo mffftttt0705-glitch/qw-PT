@@ -21,7 +21,7 @@
 .svg-ico{display:inline-block;vertical-align:-0.2em;width:1.15em;height:1.15em;flex-shrink:0;}
 .svg-ico.fa-spin{animation:spinLoad 0.8s linear infinite;}
 .bottom-nav .nav-item .svg-ico{width:26px;height:26px;}
-.more-functions .func-item .svg-ico,.more-functions .func-item .icon.svg-ico{width:26px;height:26px;margin-bottom:4px;}
+.more-functions .func-item .svg-ico,.more-functions .func-item .icon.svg-ico{width:32px;height:32px;margin-bottom:4px;}
 .menu-list .menu-item .left .svg-ico{width:20px;height:20px;}
 .product-price .svg-ico{width:1em;height:1em;color:#f4212e;}
 .inline-load{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 16px;gap:10px;color:var(--text-muted);font-size:13px;}
@@ -153,9 +153,9 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
   max-width:calc(100% - 24px);
   margin:0 auto;
   box-sizing:border-box;
-  background:rgba(255,255,255,0.96);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+  background:rgba(255,255,255,0.72);
+  backdrop-filter:blur(22px) saturate(1.2);
+  -webkit-backdrop-filter:blur(22px) saturate(1.2);
   border:1px solid rgba(0,0,0,0.04);
   border-radius:999px;
   box-shadow:0 8px 28px rgba(15,20,25,0.10), 0 2px 8px rgba(15,20,25,0.04);
@@ -180,10 +180,12 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 @keyframes slideIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#8b95a1;font-size:10px;cursor:pointer;padding:4px 6px;border-radius:16px;background:transparent;border:none;font-family:inherit;position:relative;min-width:0;flex:1;max-width:72px;-webkit-tap-highlight-color:transparent;transition:color .15s ease;}
-.nav-item i,.nav-item .svg-ico{font-size:22px;width:24px;height:24px;color:#8b95a1;}
-.nav-item span{line-height:1.1;white-space:nowrap;}
+.nav-item i,.nav-item .svg-ico,.nav-item .gallery-ico{font-size:26px;width:30px;height:30px;color:#9aa3af;}
+.nav-item .svg-ico,.nav-item .gallery-ico{filter:grayscale(1) brightness(0.85);opacity:.9;}
+.nav-item span{line-height:1.1;white-space:nowrap;color:#9aa3af;}
 .nav-item.active{color:#f5a623;}
-.nav-item.active i,.nav-item.active .svg-ico{color:#f5a623;}
+.nav-item.active span{color:#f5a623;font-weight:700;}
+.nav-item.active i,.nav-item.active .svg-ico,.nav-item.active .gallery-ico{color:#f5a623;filter:grayscale(1) sepia(1) saturate(12) hue-rotate(2deg) brightness(1.05);opacity:1;}
 .nav-item .badge{position:absolute;top:0;right:calc(50% - 18px);background:#f4212e;color:#fff;border-radius:50%;font-size:9px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;}
 .banner-carousel{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:12px;background:var(--product-img-bg);aspect-ratio:16 / 6;}
 .banner-carousel .banner-track{display:flex;transition:transform 0.5s ease;height:100%;}
@@ -341,8 +343,8 @@ html,body{width:100%;height:100%;min-height:100vh;min-height:100dvh;overflow:hid
 .status-soldout{background:#f7f9f9;color:#536471;border:1px solid #eff3f4;}
 .status-hidden{background:#f7f9f9;color:#536471;border:1px solid #eff3f4;}
 .empty-state{text-align:center;padding:30px 20px;color:var(--text-muted);}
-.empty-state i{font-size:36px;opacity:0.4;display:block;margin-bottom:10px;}
-.empty-state p{font-size:14px;}
+.empty-state i,.empty-state .svg-ico,.empty-state .gallery-ico,.empty-state img{display:none !important;}
+.empty-state p{font-size:14px;margin:0;}
 .table-wrap{overflow-x:auto;margin-top:6px;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 thead{border-bottom:2px solid var(--border-color);}
@@ -516,7 +518,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .view-container{padding:10px 12px 84px;}
 .app-wrapper .bottom-nav{left:10px;right:10px;bottom:max(8px,env(safe-area-inset-bottom));padding:6px 6px;min-height:54px;max-width:calc(100% - 20px);}
 .nav-item{padding:2px 2px;font-size:9px;max-width:64px;}
-.nav-item i,.nav-item .svg-ico{font-size:20px;width:22px;height:22px;}
+.nav-item i,.nav-item .svg-ico,.nav-item .gallery-ico{font-size:24px;width:28px;height:28px;}
 .product-grid{gap:8px;}
 .shop-entrance .shop-entry{flex:0 0 68px;}
 .shop-entrance .shop-entry .entry-icon{width:48px;height:48px;font-size:20px;}
@@ -565,7 +567,10 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .home-quick-item .hq-label{font-size:12px;color:#1a1a1a;font-weight:500;}
 .ct-card .ico{font-size:28px;margin-bottom:8px;color:#0f1419;display:flex;align-items:center;justify-content:center;min-height:36px;}
 .ct-card .ico svg{width:32px;height:32px;}
-.bottom-nav .nav-item .svg-ico{width:28px;height:28px;}.gallery-ico{overflow:visible;flex-shrink:0;}
+.bottom-nav .nav-item .svg-ico,.bottom-nav .nav-item .gallery-ico{width:30px;height:30px;}.gallery-ico{overflow:visible;flex-shrink:0;}
+.ct-card .ico .gallery-ico{width:36px;height:36px;}
+.home-quick-item .hq-icon .gallery-ico{width:34px;height:34px;}
+.back-btn .svg-ico,.up-back .svg-ico,.sub-header .back-btn .svg-ico{width:24px;height:24px;}
 .home-section-head{display:flex;align-items:center;justify-content:space-between;margin:8px 0 10px;padding:0 2px;}
 .home-section-head .hs-title{font-size:16px;font-weight:800;color:#0f1419;}
 .home-section-head .hs-more{font-size:12px;color:#999;cursor:pointer;}
@@ -772,7 +777,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <div class="admin-card" style="padding:4px 12px;">
 <div class="menu-list">
 <div class="menu-item" onclick="if(!currentUser){toast('请先登录','warning');return;}openChat('cs_bot','AI智能体小Q','contact')">
-<div class="left"><i class="fas fa-robot icon" style="color:var(--accent-color,#0f1419);"></i><span class="text">联系小Q客服</span></div>
+<div class="left"><i class="fas fa-headset icon" style="color:var(--accent-color,#0f1419);"></i><span class="text">联系小Q客服</span></div>
 <div class="right"><i class="fas fa-chevron-right"></i></div>
 </div>
 <div class="menu-item" onclick="showLoginModal()">
@@ -1126,7 +1131,7 @@ const FA_TO_GALLERY={
   'fa-user':'我的',
   'fa-users':'用户',
   'fa-user-plus':'用户',
-  'fa-gem':'充值',
+  'fa-gem':null,  /* 使用原版红色红钻 */
   'fa-coins':'积分兑换',
   'fa-star':'表情包',
   'fa-trophy':'订单',
@@ -1146,7 +1151,7 @@ const FA_TO_GALLERY={
   'fa-download':null,
   'fa-upload':null,
   'fa-sync':null,
-  'fa-cog':'控制终端',
+  'fa-cog':'账号',  /* 账户设置 */
   'fa-magic':'皮肤主题',
   'fa-palette':'皮肤主题',
   'fa-bullhorn':'公告',
@@ -1176,12 +1181,15 @@ const FA_TO_GALLERY={
   'fa-info-circle':'公告',
   'fa-exclamation-circle':'公告',
   'fa-exclamation-triangle':'公告',
-  'fa-arrow-left':null,
+  'fa-arrow-left':null,  /* 使用原版返回箭头 */
   'fa-chevron-right':null,
   'fa-spinner':null,
   'fa-spin':null,
   'fa-ban':null,
   'fa-phone':'人工客服',
+  'fa-headset':'人工客服',
+  'fa-robot':'人工客服',
+  'fa-robot':'人工客服',
   'fa-globe':'广告',
   'fa-sticky-note':'公告',
   'fa-layer-group':'分类',
@@ -1225,7 +1233,7 @@ const CT_TO_GALLERY={
 const HOME_QUICK_GALLERY={cs:'人工客服',checkin:'积分签到',lottery:'积分抽奖',exchange:'积分兑换'};
 
 function gallerySvg(name,size){
-  size=size||28;
+  size=size||32;
   const body=GALLERY_ICONS[name];
   if(!body)return '';
   return `<svg class="svg-ico gallery-ico" width="${size}" height="${size}" viewBox="${GALLERY_VIEWBOX}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">${body}</svg>`;
@@ -1351,7 +1359,7 @@ const ICON_COLOR_MAP={
   'fa-spinner':'#1D9BF0','fa-spin':'#1D9BF0'
 };
 function svgIcon(name,size,forceColor){
-  size=size||24;
+  size=size||28;
   let key=String(name||'').trim();
   if(!key)return '';
   const parts=key.split(/\s+/);
@@ -1666,7 +1674,7 @@ function renderBottomNav(){
   ];
   nav.innerHTML=items.map(item=>`
     <button class="nav-item" data-target="${item.id}" type="button">
-      ${typeof svgIcon==='function'?svgIcon(item.icon,24):`<i class="fas ${item.icon}"></i>`}
+      ${typeof svgIcon==='function'?svgIcon(item.icon,30):`<i class="fas ${item.icon}"></i>`}
       <span>${item.label}</span>
       ${item.badge?`<span class="badge" id="${item.badge}" style="display:none;">0</span>`:''}
     </button>`).join('');
@@ -1951,7 +1959,7 @@ async function loadShopHandlersTab(shopId){
   try{
     const handlers=await apiRequest('/shops/'+shopId+'/handlers')||[];
     if(handlers.length===0){
-      container.innerHTML=tabHtml+'<div class="empty-state"><i class="fas fa-users"></i><p>暂无入驻打手</p></div>';
+      container.innerHTML=tabHtml+'<div class="empty-state"><p>暂无入驻打手</p></div>';
       return;
     }
     let html=tabHtml+'<div style="padding:8px 0;">';
@@ -2207,7 +2215,7 @@ function saveHomeQuickIcons(obj){
 /** 首页四宫格自绘图标（可被控制终端图片覆盖） */
 function homeQuickSvg(key){
   const name=(typeof HOME_QUICK_GALLERY!=='undefined'&&HOME_QUICK_GALLERY[key])||null;
-  if(name&&typeof gallerySvg==='function')return gallerySvg(name,30);
+  if(name&&typeof gallerySvg==='function')return gallerySvg(name,34);
   return '';
 }
 function renderHomeQuickGrid(){
@@ -2346,8 +2354,7 @@ function renderHomeProducts(products){
   const container=document.getElementById('homeProductList');
   if(!container)return;
   if(products.length===0){
-    const emptyIcon = appIcons['empty_default'] ? `<img src="${appIcons['empty_default']}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;" />` : '<i class="fas fa-box-open"></i>';
-    container.innerHTML=`<div class="empty-state">${emptyIcon}<p>暂无商品</p></div>`;
+    container.innerHTML=`<div class="empty-state"><p>暂无商品</p></div>`;
     return;
   }
   let html='<div class="product-grid">';
@@ -2663,7 +2670,7 @@ async function renderCategoryProducts(categoryId){
     products=products.filter(p=>String(p.category_id)===String(categoryId)||childIds.some(id=>String(id)===String(p.category_id)));
   }
   if(products.length===0){
-    container.innerHTML='<div class="empty-state"><i class="fas fa-box-open"></i><p>暂无商品</p></div>';
+    container.innerHTML='<div class="empty-state"><p>暂无商品</p></div>';
     return;
   }
   let html='<div class="product-grid">';
@@ -2701,7 +2708,7 @@ async function handleCatSearch(keyword){
     const products=await apiRequest('/products');
     const filtered=products.filter(p=>(p.title||'').toLowerCase().includes(kw));
     let html=filtered.length===0
-      ?'<div class="empty-state"><i class="fas fa-search"></i><p>未找到相关商品</p></div>'
+      ?'<div class="empty-state"><p>未找到相关商品</p></div>'
       :'<div class="product-grid">'+filtered.map(p=>`<div class="product-card" onclick="openProductDetail('${p.id}')"><div class="product-img">${p.image?`<img src="${p.image}" />`:'<i class="fas fa-tags"></i>'}</div><div class="product-body"><div class="product-title">${p.title}</div><div class="product-bottom"><span class="product-price">${p.price} <i class="fas fa-gem" style="color:#f4212e !important;font-size:0.9em;"></i></span></div></div></div>`).join('')+'</div>';
     productList.innerHTML=html;
   }catch(err){console.error(err);}
@@ -2709,7 +2716,7 @@ async function handleCatSearch(keyword){
     const shops=await apiRequest('/shops');
     const filteredShops=shops.filter(s=>(s.name||'').toLowerCase().includes(kw));
     let html=filteredShops.length===0
-      ?'<div class="empty-state"><i class="fas fa-search"></i><p>未找到相关店铺</p></div>'
+      ?'<div class="empty-state"><p>未找到相关店铺</p></div>'
       :'<div class="category-card-list">'+filteredShops.map(s=>`<div class="category-card" onclick="openShopDetail('${s.id}')"><div class="cat-icon">${s.logo?`<img src="${s.logo}" />`:getAppIconHtml('shop_default','fas fa-store')}</div><div class="cat-name">${s.name}</div></div>`).join('')+'</div>';
     shopList.innerHTML=html;
   }catch(err){console.error(err);}
@@ -2806,7 +2813,7 @@ async function showBuyWithHandler(productId){
     <h3><i class="fas fa-shopping-cart"></i> 选择打手</h3>
     <p style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">仅显示「在线」或「接单中」的打手，也可不指定由打手自行接单</p>
     <div id="buyHandlerList" style="max-height:280px;overflow-y:auto;margin-bottom:12px;">
-      <div class="empty-state" style="padding:16px;"><i class="fas fa-spinner fa-spin"></i><p>加载打手中...</p></div>
+      <div class="empty-state" style="padding:16px;"><p>加载打手中...</p></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeCustomModal()">取消</button>
@@ -2819,7 +2826,7 @@ async function showBuyWithHandler(productId){
     const box=document.getElementById('buyHandlerList');
     if(!box)return;
     if(available.length===0){
-      box.innerHTML='<div class="empty-state" style="padding:12px;"><i class="fas fa-user-slash"></i><p>暂无在线/接单中的打手，可点「不指定打手」</p></div>';
+      box.innerHTML='<div class="empty-state" style="padding:12px;"><p>暂无在线/接单中的打手，可点「不指定打手」</p></div>';
       return;
     }
     box.innerHTML=available.map(h=>{
@@ -2981,7 +2988,7 @@ function searchPosts(keyword) {
     document.getElementById('postCount').textContent = filtered.length + '个';
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>未找到相关帖子</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>未找到相关帖子</p></div>';
         return;
     }
 
@@ -2993,7 +3000,7 @@ function renderPostsHtml(posts) {
     if (!container) return;
 
     if (posts.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-newspaper"></i><p>暂无帖子</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>暂无帖子</p></div>';
         return;
     }
 
@@ -3332,7 +3339,7 @@ function renderMoreFunctions(){
   // 末尾统一加「刷新新版本」，Cloudflare 更新后点此清缓存重载
   items.push({icon:'',label:'刷新版本',action:"forceRefreshApp()"});
   container.innerHTML=items.map(item=>{
-    const ico=typeof svgIcon==='function'?svgIcon(item.icon,26):`<i class="fas ${item.icon} icon"></i>`;
+    const ico=typeof svgIcon==='function'?svgIcon(item.icon,30):`<i class="fas ${item.icon} icon"></i>`;
     return `<div class="func-item" onclick="${item.action}">${ico.replace('class="svg-ico"','class="svg-ico icon"')}<span class="label">${item.label}</span></div>`;
   }).join('');
 }
@@ -3443,7 +3450,7 @@ async function viewUserProfile(userId){
       btnHtml+=`<button class="up-btn-msg" onclick="closeUserProfile();openSubPage('account')">编辑资料</button>`;
       actionsEl.innerHTML=btnHtml;
     }else if(currentUser){
-      actionsEl.innerHTML='<button class="up-btn-msg" onclick="userProfileSendMsg()"><i class="fas fa-comment"></i> 私信</button>';
+      actionsEl.innerHTML='';
     }
 
     // 展示说说
@@ -3474,9 +3481,7 @@ async function viewUserProfile(userId){
     // 他人主页：可送礼物
     if(currentUser && currentUser.id!==userId){
       const act=document.getElementById('upActions');
-      if(act && !act.innerHTML.includes('赠送礼物')){
-        act.innerHTML += `<button class="up-btn-msg" onclick="openGiftModal('${userId}')" style="background:var(--btn-primary-bg,#0f1419);color:var(--btn-primary-color,#fff);"><i class="fas fa-gift"></i> 赠送礼物</button>`;
-      }
+      /* 个人主页已去除私信/赠送礼物入口 */
     }
     // 打手显示评价 Tab
     const reviewTab=document.getElementById('upReviewTab');
@@ -3500,7 +3505,7 @@ async function loadUserPosts(userId){
     const myPosts=(posts||[]).filter(p=>String(p.user_id)===targetId);
     document.getElementById('upPostCount').textContent=myPosts.length;
     if(myPosts.length===0){
-      container.innerHTML='<div class="empty-state"><i class="fas fa-newspaper"></i><p>暂无帖子</p></div>';
+      container.innerHTML='<div class="empty-state"><p>暂无帖子</p></div>';
       return;
     }
     let html='';
@@ -3531,14 +3536,14 @@ async function loadUserShops(userId) {
             const shops = await apiRequest('/shops');
             const ownShops = shops.filter(s => String(s.owner_id) === String(userId));
             container.innerHTML = ownShops.length === 0
-                ? '<div class="empty-state"><i class="fas fa-store"></i><p>暂无店铺</p></div>'
+                ? '<div class="empty-state"><p>暂无店铺</p></div>'
                 : ownShops.map(s => renderShopCard(s)).join('');
             return;
         }
         // 打手：显示入驻的店铺
         const shops = await apiRequest('/handlers/' + userId + '/shops');
         if (shops.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-store"></i><p>暂未入驻任何店铺</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>暂未入驻任何店铺</p></div>';
             return;
         }
         container.innerHTML = '<div style="font-size:13px;color:#536471;margin-bottom:8px;">已入驻的店铺：</div>' + shops.map(s => renderShopCard(s)).join('');
@@ -3601,7 +3606,7 @@ async function loadUserReviews(userId) {
     try {
         const reviews = await apiRequest('/handlers/' + userId + '/reviews');
         if (!reviews || reviews.length === 0) {
-            c.innerHTML = '<div class="empty-state"><i class="fas fa-star"></i><p>暂无评价</p></div>';
+            c.innerHTML = '<div class="empty-state"><p>暂无评价</p></div>';
             return;
         }
         c.innerHTML = reviews.map(r => {
@@ -4325,7 +4330,7 @@ async function renderSubOrders() {
   if (!container) return;
   try {
     const orders = await apiRequest('/orders/my');
-    if (orders.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>暂无订单</p></div>'; return; }
+    if (orders.length === 0) { container.innerHTML = '<div class="empty-state"><p>暂无订单</p></div>'; return; }
 
     const role = currentUserRole || currentUser?.role;
     const isAdmin = role === 'admin';
@@ -7114,7 +7119,7 @@ function filterHallByCategory(catId) {
   const container = document.getElementById('hallList');
   if (!container) return;
   if (list.length === 0) {
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>该分类暂无可接订单</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>该分类暂无可接订单</p></div>';
   } else {
     container.innerHTML = buildHallOrdersHtml(list);
   }
@@ -7125,7 +7130,7 @@ async function renderHallPage() {
   const container = document.getElementById('hallList');
   if (!container) return;
   if (!currentUser) {
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>请先登录后查看接单大厅</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>请先登录后查看接单大厅</p></div>';
     const pubBtn = document.getElementById('hallPublishBtn');
     if (pubBtn) pubBtn.style.display = 'none';
     const tabs = document.getElementById('hallCatTabs');
@@ -7172,7 +7177,7 @@ async function renderHallPage() {
     const orders = await apiRequest('/handler/pending-orders');
     hallOrdersCache = orders || [];
     if (!orders || orders.length === 0) {
-      container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无可接订单</p></div>';
+      container.innerHTML = '<div class="empty-state"><p>暂无可接订单</p></div>';
       return;
     }
     filterHallByCategory(currentHallCategory || 'all');
@@ -7273,7 +7278,7 @@ async function renderSubHall() {
   try {
     const orders = await apiRequest('/handler/pending-orders');
     if (!orders || orders.length === 0) {
-      container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无可接订单</p></div>';
+      container.innerHTML = '<div class="empty-state"><p>暂无可接订单</p></div>';
       return;
     }
     container.innerHTML = buildHallOrdersHtml(orders);
@@ -7436,7 +7441,7 @@ async function loadContacts(){
     const totalUnread=filtered.reduce((sum,c)=>sum+(c.unread_count||0),0);
     const totalEl=document.getElementById('msgUnreadTotal');
     if(totalEl)totalEl.textContent=totalUnread>0?`(${totalUnread}条未读)`:'';
-    if(filtered.length===0){container.innerHTML='<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无联系人</p></div>';return;}
+    if(filtered.length===0){container.innerHTML='<div class="empty-state"><p>暂无联系人</p></div>';return;}
     let html='';
     filtered.forEach(c=>{
       const unreadBadge=c.unread_count>0?`<span style="background:#f4212e;color:#fff;border-radius:50%;font-size:10px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;display:inline-block;margin-left:6px;">${c.unread_count}</span>`:'';
@@ -7565,7 +7570,7 @@ async function loadFullscreenMessages(token) {
     if(myToken!==_chatLoadToken||fullscreenContactId!==reqContactId)return;
     if (!messages || messages.length === 0) {
       body.dataset.hasMsg='';
-      body.innerHTML = '<div class="empty-state"><i class="fas fa-comment-dots"></i><p>暂无消息，打个招呼吧</p></div>';
+      body.innerHTML = '<div class="empty-state"><p>暂无消息，打个招呼吧</p></div>';
       return;
     }
     let html = '';
@@ -7588,7 +7593,7 @@ async function loadFullscreenMessages(token) {
     updateBadges();
   } catch (err) {
     if(myToken!==_chatLoadToken||fullscreenContactId!==reqContactId)return;
-    body.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>加载失败: ${err.message}</p></div>`;
+    body.innerHTML = `<div class="empty-state"><p>加载失败: ${err.message}</p></div>`;
   }
 }
 async function sendFullscreenMessage(){
@@ -8831,7 +8836,7 @@ let _ctTab='manage';
 let _b2Token=null;
 /** 控制终端图标（更大、线条完整、四角齐全） */
 function ctIcon(name,size){
-  size=size||32;
+  size=size||36;
   const g=(typeof CT_TO_GALLERY!=='undefined'&&CT_TO_GALLERY[name])||null;
   if(g&&typeof gallerySvg==='function'&&GALLERY_ICONS[g])return gallerySvg(g,size);
   if(name==='exchange')return gallerySvg('礼物',size);
