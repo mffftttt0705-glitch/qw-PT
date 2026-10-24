@@ -565,7 +565,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 .home-quick-item .hq-label{font-size:12px;color:#1a1a1a;font-weight:500;}
 .ct-card .ico{font-size:28px;margin-bottom:8px;color:#0f1419;display:flex;align-items:center;justify-content:center;min-height:36px;}
 .ct-card .ico svg{width:32px;height:32px;}
-.bottom-nav .nav-item .svg-ico{width:28px;height:28px;}
+.bottom-nav .nav-item .svg-ico{width:28px;height:28px;}.gallery-ico{overflow:visible;flex-shrink:0;}
 .home-section-head{display:flex;align-items:center;justify-content:space-between;margin:8px 0 10px;padding:0 2px;}
 .home-section-head .hs-title{font-size:16px;font-weight:800;color:#0f1419;}
 .home-section-head .hs-more{font-size:12px;color:#999;cursor:pointer;}
@@ -646,9 +646,9 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 </div>
 <div id="homeMainPanelRank" style="display:none;">
 <div style="display:flex;gap:8px;margin-bottom:12px;">
-<button type="button" class="rank-sub-btn active" data-rank="reviews" onclick="switchRankTab('reviews')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #0f1419;background:#0f1419;color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;"><span class="rank-ico" data-ico="thumbs"></span>好评榜</button>
-<button type="button" class="rank-sub-btn" data-rank="orders" onclick="switchRankTab('orders')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;"><span class="rank-ico" data-ico="box"></span>完成榜</button>
-<button type="button" class="rank-sub-btn" data-rank="diamonds" onclick="switchRankTab('diamonds')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;"><span class="rank-ico" data-ico="gem"></span>红钻榜</button>
+<button type="button" class="rank-sub-btn active" data-rank="reviews" onclick="switchRankTab('reviews')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #0f1419;background:#0f1419;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">好评榜</button>
+<button type="button" class="rank-sub-btn" data-rank="orders" onclick="switchRankTab('orders')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;">完成榜</button>
+<button type="button" class="rank-sub-btn" data-rank="diamonds" onclick="switchRankTab('diamonds')" style="flex:1;padding:10px 6px;border-radius:12px;border:1px solid #eff3f4;background:transparent;color:#536471;font-size:13px;font-weight:600;cursor:pointer;">红钻榜</button>
 </div>
 <div id="handlerRankList"></div>
 </div>
@@ -672,7 +672,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 <span style="font-size:18px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="fas fa-bullseye"></i> 接单大厅</span>
 <div style="display:flex;gap:6px;align-items:center;">
 <button class="btn btn-primary btn-sm" id="hallPublishBtn" style="display:none;" onclick="showPublishDemand()"><i class="fas fa-plus"></i> 发布需求</button>
-<button class="btn btn-outline btn-sm" onclick="renderHallPage()"><i class="fas fa-sync"></i> 刷新</button>
+<button class="btn btn-outline btn-sm" onclick="renderHallPage()">刷新</button>
 </div>
 </div>
 <div id="hallCatTabs" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch;"></div>
@@ -694,7 +694,7 @@ td{padding:8px 6px;border-bottom:1px solid var(--border-color);vertical-align:mi
 </div>
 <div class="post-actions-bar">
 <button class="btn btn-primary" onclick="showCreatePost()"><i class="fas fa-plus"></i> 发帖</button>
-<button class="btn btn-outline btn-sm" onclick="refreshPosts()"><i class="fas fa-sync"></i> 刷新</button>
+<button class="btn btn-outline btn-sm" onclick="refreshPosts()">刷新</button>
 </div>
 <div id="postList"></div>
 </div>
@@ -1080,6 +1080,157 @@ let allPostsCache=[];
    工具函数
 ============================================================ */
 /* ========== 内置 SVG 图标（解决 WebToApp/APK 外网 FontAwesome 不显示） ========== */
+const GALLERY_ICONS={
+  '人工客服':`<circle cx="50" cy="35" r="22" fill="#f6c9a9"/><path d="M28 36Q25 8 50 9Q75 9 72 37L64 28Q52 29 43 20Q39 30 28 31Z" fill="#243b70"/><path d="M22 37V31a28 28 0 0 1 56 0v10h-7V31a21 21 0 0 0-42 0v10z" fill="#2585f5"/><rect x="18" y="34" width="11" height="20" rx="5" fill="#2585f5"/><rect x="71" y="34" width="11" height="20" rx="5" fill="#2585f5"/><path d="M35 58l15 9 15-9 13 17-28 10-28-10z" fill="#2585f5"/><path d="M42 60l8 7 8-7-3 14h-10z" fill="#fff"/><path d="M63 46q8 0 8-7" fill="none" stroke="#f6c9a9" stroke-width="4" stroke-linecap="round"/>`,
+  '积分签到':`<rect x="16" y="20" width="68" height="63" rx="10" fill="#2585f5"/><rect x="23" y="28" width="54" height="47" rx="5" fill="#fff"/><path d="M28 14v16M72 14v16" stroke="#2585f5" stroke-width="8" stroke-linecap="round"/><path d="M35 51l10 10 21-22" fill="none" stroke="#2585f5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`,
+  '积分抽奖':`<circle cx="50" cy="44" r="34" fill="#ff5b45"/><circle cx="50" cy="44" r="26" fill="#ffd45a"/><path d="M50 18L58 40 76 44 58 50 50 70 42 50 24 44 42 40Z" fill="#ff9b32"/><path d="M50 18V70M24 44H76M32 26l36 36M68 26L32 62" stroke="#fff2c0" stroke-width="3"/><circle cx="50" cy="44" r="12" fill="#ff5b45"/><path d="M50 35l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#ffe47a"/><rect x="35" y="76" width="30" height="8" rx="3" fill="#ff5b45"/>`,
+  '积分兑换':`<ellipse cx="43" cy="20" rx="24" ry="9" fill="#ffd54a"/><path d="M19 20v38c0 5 11 9 24 9s24-4 24-9V20" fill="#ffb91f"/><ellipse cx="43" cy="20" rx="24" ry="8" fill="#ffcf35"/><path d="M19 31c0 10 48 10 48 0M19 43c0 10 48 10 48 0M19 55c0 10 48 10 48 0" fill="none" stroke="#ffe27b" stroke-width="4"/><circle cx="68" cy="62" r="22" fill="#ffb51e" stroke="#fff" stroke-width="3"/><path d="M68 47l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z" fill="#fff"/>`,
+  '首页':`<path d="M12 43L50 10 88 43 81 51 75 46V82H56V58H44V82H25V46L19 51Z" fill="#2585f5"/>`,
+  '分类':`<rect x="14" y="14" width="29" height="29" rx="8" fill="#2585f5"/><rect x="57" y="14" width="29" height="29" rx="8" fill="#2585f5"/><rect x="14" y="57" width="29" height="29" rx="8" fill="#2585f5"/><rect x="57" y="57" width="29" height="29" rx="8" fill="#2585f5"/>`,
+  '接单大厅':`<rect x="17" y="15" width="57" height="67" rx="8" fill="#3c6df5"/><rect x="34" y="9" width="24" height="12" rx="4" fill="#3c6df5" stroke="#fff" stroke-width="3"/><path d="M28 35h34M28 47h28M28 59h20" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="73" cy="70" r="17" fill="#2585f5" stroke="#fff" stroke-width="3"/><path d="M73 60v11l7 4" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>`,
+  '消息':`<path d="M15 20Q15 11 25 11H75Q86 11 86 22V56Q86 66 75 66H43L25 81V66Q15 63 15 54Z" fill="#2585f5"/><circle cx="34" cy="39" r="5" fill="#fff"/><circle cx="50" cy="39" r="5" fill="#fff"/><circle cx="66" cy="39" r="5" fill="#fff"/>`,
+  '我的':`<circle cx="50" cy="50" r="42" fill="#2585f5"/><circle cx="50" cy="35" r="14" fill="#fff"/><path d="M22 72Q25 54 50 54Q75 54 78 72Q51 91 22 72Z" fill="#fff"/>`,
+  '空心心形':`<path d="M50 78L19 49C-1 27 25 8 42 25L50 33 58 25C75 8 101 27 81 49Z" fill="none" stroke="#ff5368" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>`,
+  '评论':`<path d="M14 17Q14 11 22 11H78Q86 11 86 19V64Q86 72 77 72H42L25 86V72Q14 70 14 61Z" fill="#2585f5"/><path d="M28 31h42M28 43h31M28 55h19" stroke="#fff" stroke-width="5" stroke-linecap="round"/>`,
+  '控制终端':`<rect x="12" y="15" width="76" height="54" rx="7" fill="#6555f5"/><rect x="20" y="23" width="60" height="38" rx="3" fill="#fff"/><path d="M43 70h14v8H43zM32 81h36" stroke="#6555f5" stroke-width="5" stroke-linecap="round"/><path d="M50 30l4 3 5-1 1 5 4 3-3 4 1 5-5 1-3 4-4-3-5 1-1-5-4-3 3-4-1-5 5-1z" fill="#6555f5"/><circle cx="51" cy="42" r="5" fill="#fff"/>`,
+  '每日签到':`<rect x="15" y="20" width="70" height="65" rx="10" fill="#ff7138"/><rect x="23" y="30" width="54" height="45" rx="4" fill="#fff"/><path d="M29 13v16M71 13v16" stroke="#ff7138" stroke-width="8" stroke-linecap="round"/><text x="50" y="63" text-anchor="middle" font-size="27" font-weight="800" fill="#ff7138">31</text>`,
+  '账号':`<circle cx="42" cy="29" r="16" fill="#2585f5"/><path d="M13 76Q16 50 42 50Q62 50 68 69L62 80H18Z" fill="#2585f5"/><circle cx="72" cy="62" r="16" fill="#2585f5"/><circle cx="72" cy="62" r="7" fill="#fff"/>`,
+  'AI智能体':`<path d="M50 13v10" stroke="#2585f5" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="10" r="7" fill="#2585f5"/><rect x="19" y="29" width="62" height="48" rx="17" fill="#2585f5"/><circle cx="17" cy="50" r="8" fill="#2585f5"/><circle cx="83" cy="50" r="8" fill="#2585f5"/><rect x="30" y="40" width="40" height="25" rx="10" fill="#fff"/><circle cx="41" cy="52" r="4" fill="#2585f5"/><circle cx="59" cy="52" r="4" fill="#2585f5"/><path d="M40 61h20" stroke="#2585f5" stroke-width="3" stroke-linecap="round"/>`,
+  '登录':`<path d="M24 18H61Q68 18 68 25V75Q68 82 61 82H24" fill="none" stroke="#2585f5" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 50h47M45 34l17 16-17 16" fill="none" stroke="#2585f5" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`,
+  '订单':`<path d="M22 12H73Q82 12 82 22V68L66 84H22Q13 84 13 75V22Q13 12 22 12Z" fill="#10b981"/><path d="M29 32h38M29 46h31M29 60h23" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M66 84V69H82" fill="#b8f4df"/>`,
+  '商品':`<path d="M22 34H78L84 78Q84 85 76 85H24Q16 85 16 78Z" fill="#ff922e"/><path d="M33 35V26A17 17 0 0 1 67 26V35" fill="none" stroke="#ff922e" stroke-width="8" stroke-linecap="round"/><circle cx="34" cy="38" r="5" fill="#fff"/><circle cx="66" cy="38" r="5" fill="#fff"/>`,
+  '用户':`<circle cx="50" cy="31" r="15" fill="#2585f5"/><circle cx="20" cy="43" r="10" fill="#2585f5"/><circle cx="80" cy="43" r="10" fill="#2585f5"/><path d="M20 76Q22 52 50 52Q78 52 80 76Z" fill="#2585f5"/><path d="M4 71Q5 55 20 55Q29 55 34 64L32 77H7Z" fill="#2585f5"/><path d="M66 64Q71 55 80 55Q95 55 96 71L93 77H68Z" fill="#2585f5"/>`,
+  '充值':`<path d="M36 25Q50 13 64 25L73 39Q88 57 76 75Q67 87 50 87Q33 87 24 75Q12 57 27 39Z" fill="#7650f5"/><path d="M35 22Q50 7 65 22L60 31H40Z" fill="#8d6aff"/><text x="50" y="66" text-anchor="middle" font-size="35" font-weight="800" fill="#fff">¥</text>`,
+  '店铺':`<path d="M19 37L27 17H73L81 37Z" fill="#ff5368"/><path d="M19 37Q27 51 35 37Q43 51 51 37Q59 51 67 37Q75 51 81 37V45H19Z" fill="#ff5368"/><path d="M23 48H77V82H23Z" fill="#ff5368"/><rect x="42" y="59" width="17" height="23" rx="2" fill="#fff"/><rect x="28" y="56" width="10" height="10" rx="2" fill="#fff"/>`,
+  '公告':`<path d="M15 42H31L65 24V76L31 58H15Z" fill="#ff922e"/><path d="M25 59L31 80Q33 85 39 82L43 78 36 61Z" fill="#ff922e"/><path d="M72 35l10-7M75 50h13M72 65l10 7" stroke="#ff922e" stroke-width="6" stroke-linecap="round"/>`,
+  '提现':`<path d="M20 30L68 17Q76 15 78 24L82 35H22Z" fill="#2585f5"/><rect x="13" y="32" width="73" height="52" rx="9" fill="#2585f5"/><path d="M60 47H87V68H60Q51 68 51 58Q51 47 60 47Z" fill="#fff"/><circle cx="65" cy="58" r="3" fill="#2585f5"/>`,
+  '广告':`<rect x="13" y="18" width="74" height="54" rx="8" fill="#ff5368"/><text x="50" y="54" text-anchor="middle" font-size="28" font-weight="900" fill="#fff">AD</text><path d="M35 73v10M65 73v10M28 84h44" stroke="#ff5368" stroke-width="5" stroke-linecap="round"/>`,
+  '图标':`<g fill="#7650f5"><circle cx="25" cy="25" r="9"/><circle cx="50" cy="25" r="9"/><circle cx="75" cy="25" r="9"/><circle cx="25" cy="50" r="9"/><circle cx="50" cy="50" r="9"/><circle cx="75" cy="50" r="9"/><circle cx="25" cy="75" r="9"/><circle cx="50" cy="75" r="9"/><circle cx="75" cy="75" r="9"/></g>`,
+  '礼物':`<rect x="19" y="39" width="62" height="46" rx="5" fill="#ff5368"/><rect x="14" y="32" width="72" height="14" rx="4" fill="#ff5368"/><rect x="45" y="32" width="10" height="53" fill="#ffd23f"/><path d="M50 32Q20 30 29 15Q40 7 50 27Q61 5 73 15Q81 30 50 32Z" fill="#ffd23f"/>`,
+  '表情包':`<circle cx="50" cy="50" r="39" fill="#ffca28"/><path d="M31 39q5-7 10 0M59 39q5-7 10 0" fill="none" stroke="#29334a" stroke-width="5" stroke-linecap="round"/><path d="M29 55Q50 80 71 55" fill="none" stroke="#29334a" stroke-width="5" stroke-linecap="round"/>`,
+  '派单系统':`<rect x="14" y="15" width="62" height="65" rx="8" fill="#2585f5"/><path d="M27 32h35M27 45h27M27 58h19" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M53 63L88 46L78 79L68 68L59 74Z" fill="#1769e8" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M68 68L88 46" stroke="#fff" stroke-width="2"/>`,
+  '皮肤主题':`<path d="M28 22c0-6 6-12 14-12h4c2 8 8 12 12 12s10-4 12-12h4c8 0 14 6 14 12l8 12-10 8-6-4v46c0 4-3 7-7 7H43c-4 0-7-3-7-7V50l-6 4-10-8 8-12z" fill="#7650f5"/><path d="M43 58h30M43 68h22" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>`,
+  '兑换':`<rect x="19" y="39" width="62" height="46" rx="5" fill="#ff5368"/><rect x="14" y="32" width="72" height="14" rx="4" fill="#ff5368"/><rect x="45" y="32" width="10" height="53" fill="#ffd23f"/><path d="M50 32Q20 30 29 15Q40 7 50 27Q61 5 73 15Q81 30 50 32Z" fill="#ffd23f"/>`,
+};
+const GALLERY_VIEWBOX="0 0 100 100";
+const FA_TO_GALLERY={
+  'fa-home':'首页',
+  'fa-store':'店铺',
+  'fa-th-large':'分类',
+  'fa-th':'分类',
+  'fa-crosshairs':'接单大厅',
+  'fa-bullseye':'接单大厅',
+  'fa-bell':'消息',
+  'fa-comment':'评论',
+  'fa-comment-dots':'消息',
+  'fa-user':'我的',
+  'fa-users':'用户',
+  'fa-user-plus':'用户',
+  'fa-gem':'充值',
+  'fa-coins':'积分兑换',
+  'fa-star':'表情包',
+  'fa-trophy':'订单',
+  'fa-thumbs-up':null,
+  'fa-box':'商品',
+  'fa-box-open':'商品',
+  'fa-tags':'商品',
+  'fa-shopping-cart':'商品',
+  'fa-gift':'礼物',
+  'fa-calendar-day':'每日签到',
+  'fa-check-circle':'订单',
+  'fa-clipboard-list':'订单',
+  'fa-clipboard-check':'订单',
+  'fa-receipt':'订单',
+  'fa-credit-card':'提现',
+  'fa-wallet':'充值',
+  'fa-download':null,
+  'fa-upload':null,
+  'fa-sync':null,
+  'fa-cog':'控制终端',
+  'fa-magic':'皮肤主题',
+  'fa-palette':'皮肤主题',
+  'fa-bullhorn':'公告',
+  'fa-folder':'分类',
+  'fa-image':'图标',
+  'fa-camera':'图标',
+  'fa-ad':'广告',
+  'fa-newspaper':'公告',
+  'fa-id-card':'账号',
+  'fa-gamepad':'接单大厅',
+  'fa-paper-plane':'消息',
+  'fa-heart':'空心心形',
+  'fa-fire':'积分抽奖',
+  'fa-crown':'账号',
+  'fa-medal':'订单',
+  'fa-chart-bar':'订单',
+  'fa-tshirt':'皮肤主题',
+  'fa-sign-in-alt':'登录',
+  'fa-sign-out-alt':'登录',
+  'fa-lock':'账号',
+  'fa-edit':'订单',
+  'fa-trash':null,
+  'fa-search':'分类',
+  'fa-plus':null,
+  'fa-plus-circle':null,
+  'fa-times':null,
+  'fa-info-circle':'公告',
+  'fa-exclamation-circle':'公告',
+  'fa-exclamation-triangle':'公告',
+  'fa-arrow-left':null,
+  'fa-chevron-right':null,
+  'fa-spinner':null,
+  'fa-spin':null,
+  'fa-ban':null,
+  'fa-phone':'人工客服',
+  'fa-globe':'广告',
+  'fa-sticky-note':'公告',
+  'fa-layer-group':'分类',
+  'fa-paperclip':'订单',
+  'fa-keyboard':'控制终端',
+  'fa-fill-drip':'皮肤主题',
+  'fa-eraser':'皮肤主题',
+  'fa-icons':'图标',
+  'fa-pen':'订单',
+  'fa-user-edit':'账号',
+  'fa-user-lock':'账号',
+  'fa-user-slash':'用户',
+  'fa-venus-mars':'账号',
+  'fa-hand-paper':'人工客服',
+  'fa-cloud-upload-alt':'广告',
+  'fa-toggle-on':'控制终端',
+};
+const CT_TO_GALLERY={
+  'manage':'控制终端',
+  'home':'首页',
+  'd1':'控制终端',
+  'b2':'图标',
+  'exchange':'礼物',
+  'checkin':'每日签到',
+  'skin':'皮肤主题',
+  'orders':'订单',
+  'product':'商品',
+  'user':'用户',
+  'shop':'店铺',
+  'announce':'公告',
+  'withdraw':'提现',
+  'category':'分类',
+  'ad':'广告',
+  'icon':'图标',
+  'gift':'礼物',
+  'ai':'AI智能体',
+  'smile':'表情包',
+  'dispatch':'派单系统',
+  'recharge':'充值',
+};
+const HOME_QUICK_GALLERY={cs:'人工客服',checkin:'积分签到',lottery:'积分抽奖',exchange:'积分兑换'};
+
+function gallerySvg(name,size){
+  size=size||28;
+  const body=GALLERY_ICONS[name];
+  if(!body)return '';
+  return `<svg class="svg-ico gallery-ico" width="${size}" height="${size}" viewBox="${GALLERY_VIEWBOX}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">${body}</svg>`;
+}
+
 const FA_SVG_PATHS={
   'fa-arrow-left':'<path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
   'fa-chevron-right':'<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -1200,15 +1351,28 @@ const ICON_COLOR_MAP={
   'fa-spinner':'#1D9BF0','fa-spin':'#1D9BF0'
 };
 function svgIcon(name,size,forceColor){
-  size=size||22;
+  size=size||24;
   let key=String(name||'').trim();
+  if(!key)return '';
   const parts=key.split(/\s+/);
   key=parts.find(p=>p.indexOf('fa-')===0&&p!=='fa-spin'&&p!=='fa-solid'&&p!=='fa-regular')||parts[parts.length-1]||'fa-store';
   if(key.indexOf('fa-')!==0)key='fa-'+key;
+  // 禁用刷新类图标
+  if(key==='fa-sync'||key==='fa-spinner'||key==='fa-spin'||key==='fa-redo'||key==='fa-refresh'){
+    return '';
+  }
+  // 优先使用项目 SVG 图库
+  if(typeof FA_TO_GALLERY!=='undefined' && FA_TO_GALLERY.hasOwnProperty(key)){
+    const g=FA_TO_GALLERY[key];
+    if(g===null)return '';
+    if(g && GALLERY_ICONS[g])return gallerySvg(g,size);
+  }
+  // 名称直接命中图库
+  if(typeof GALLERY_ICONS!=='undefined' && GALLERY_ICONS[key])return gallerySvg(key,size);
   const path=FA_SVG_PATHS[key]||FA_SVG_PATHS['fa-star'];
-  const spin=parts.indexOf('fa-spin')>=0||key==='fa-spinner'||key==='fa-spin';
-  const color=forceColor||ICON_COLOR_MAP[key]||'#0f1419';
-  return `<svg class="svg-ico${spin?' fa-spin':''}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="color:${color}">${path}</svg>`;
+  const spin=false;
+  const color=forceColor||(typeof ICON_COLOR_MAP!=='undefined'&&ICON_COLOR_MAP[key])||'#0f1419';
+  return `<svg class="svg-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="color:${color}">${path}</svg>`;
 }
 function hydrateIcons(root){
   try{
@@ -1999,14 +2163,7 @@ async function renderHomePage(){
 }
 
 
-function paintRankIcons(){
-  document.querySelectorAll('.rank-ico').forEach(el=>{
-    const k=el.getAttribute('data-ico');
-    if(k==='thumbs')el.innerHTML=svgIcon('fa-thumbs-up',16);
-    else if(k==='box')el.innerHTML=svgIcon('fa-box',16);
-    else if(k==='gem')el.innerHTML=svgIcon('fa-gem',16,'#f4212e');
-  });
-}
+function paintRankIcons(){ /* 排行榜图标已去除 */ }
 
 function switchHomeMainTab(tab){
   const isHome=tab!=='rank';
@@ -2049,14 +2206,9 @@ function saveHomeQuickIcons(obj){
 }
 /** 首页四宫格自绘图标（可被控制终端图片覆盖） */
 function homeQuickSvg(key){
-  const s='width="30" height="30" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"';
-  const map={
-    cs:`<svg ${s} stroke="#1d9bf0" stroke-width="1.8"><path d="M5 7h14a2 2 0 012 2v6a2 2 0 01-2 2H10l-4 3v-3H5a2 2 0 01-2-2V9a2 2 0 012-2z"/><circle cx="9" cy="12" r="1" fill="#1d9bf0" stroke="none"/><circle cx="12" cy="12" r="1" fill="#1d9bf0" stroke="none"/><circle cx="15" cy="12" r="1" fill="#1d9bf0" stroke="none"/></svg>`,
-    checkin:`<svg ${s} stroke="#00ba7c" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/><path d="M9 15.5l2 2 4-4.5" stroke-width="2"/></svg>`,
-    lottery:`<svg ${s} stroke="#f5a623" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M12 10v10M4 14h16"/><path d="M8.2 10c0-2.2 1.4-3.8 3-3.8.9 0 1.4.9 1.6 2.2.2-1.3.8-2.2 1.7-2.2 1.5 0 2.8 1.6 2.8 3.8"/><circle cx="12" cy="6" r="1.2" fill="#f5a623" stroke="none"/></svg>`,
-    exchange:`<svg ${s} stroke="#7c4dff" stroke-width="1.8"><path d="M7 8h11l-2.2-2.2M17 16H6l2.2 2.2"/><rect x="8" y="10" width="8" height="4" rx="1"/><path d="M10 12h4"/></svg>`
-  };
-  return map[key]||map.cs;
+  const name=(typeof HOME_QUICK_GALLERY!=='undefined'&&HOME_QUICK_GALLERY[key])||null;
+  if(name&&typeof gallerySvg==='function')return gallerySvg(name,30);
+  return '';
 }
 function renderHomeQuickGrid(){
   const grid=document.getElementById('homeQuickGrid');
@@ -2449,7 +2601,7 @@ async function renderHandlerRank(by){
     const data=await apiRequest('/handlers/rank?by='+encodeURIComponent(by||'orders'));
     const list=(data&&data.list)||(Array.isArray(data)?data:[]);
     if(!list.length){
-      container.innerHTML='<div class="empty-state"><i class="fas fa-trophy"></i><p>暂无排行数据</p></div>';
+      container.innerHTML='<div class="empty-state"><p>暂无排行数据</p></div>';
       return;
     }
     const metricLabel=by==='reviews'?'好评':(by==='diamonds'?'红钻':'完成单');
@@ -3178,7 +3330,7 @@ function renderMoreFunctions(){
     ];
   }
   // 末尾统一加「刷新新版本」，Cloudflare 更新后点此清缓存重载
-  items.push({icon:'fa-sync',label:'刷新版本',action:"forceRefreshApp()"});
+  items.push({icon:'',label:'刷新版本',action:"forceRefreshApp()"});
   container.innerHTML=items.map(item=>{
     const ico=typeof svgIcon==='function'?svgIcon(item.icon,26):`<i class="fas ${item.icon} icon"></i>`;
     return `<div class="func-item" onclick="${item.action}">${ico.replace('class="svg-ico"','class="svg-ico icon"')}<span class="label">${item.label}</span></div>`;
@@ -5687,7 +5839,7 @@ async function renderSubStickers(){
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
         <button class="btn btn-primary btn-sm" onclick="adminUploadSticker('image')"><i class="fas fa-image"></i> 上传图片表情</button>
         <button class="btn btn-outline btn-sm" onclick="adminUploadSticker('video')"><i class="fas fa-video"></i> 上传视频表情</button>
-        <button class="btn btn-outline btn-sm" onclick="renderSubStickers()"><i class="fas fa-sync"></i> 刷新</button>
+        <button class="btn btn-outline btn-sm" onclick="renderSubStickers()">刷新</button>
       </div>
       <div id="adminStickerList"><div class="loading-box"><div class="loading-spinner"></div></div></div>
     </div>`;
@@ -5804,7 +5956,7 @@ async function renderSubAi(){
     </div>
     <div class="admin-card">
       <div class="admin-card-title"><i class="fas fa-exclamation-triangle"></i> 违禁词警告记录</div>
-      <button class="btn btn-outline btn-sm" onclick="loadBannedWarnings()" style="margin-bottom:8px;"><i class="fas fa-sync"></i> 刷新</button>
+      <button class="btn btn-outline btn-sm" onclick="loadBannedWarnings()" style="margin-bottom:8px;">刷新</button>
       <div id="bannedWarningList"></div>
     </div>`;
   await loadAiSettingsPanel();
@@ -8680,38 +8832,11 @@ let _b2Token=null;
 /** 控制终端图标（更大、线条完整、四角齐全） */
 function ctIcon(name,size){
   size=size||32;
-  const c={
-    manage:'#5B8DEF',home:'#F5A623',d1:'#7C4DFF',b2:'#1D9BF0',exchange:'#7C4DFF',
-    checkin:'#00BA7C',skin:'#E91E63',orders:'#5B8DEF',product:'#FF6B6B',user:'#7C4DFF',
-    shop:'#F5A623',announce:'#FF9800',withdraw:'#00BA7C',category:'#5B8DEF',ad:'#E91E63',
-    icon:'#1D9BF0',gift:'#E91E63',ai:'#7C4DFF',smile:'#F5A623',dispatch:'#FF6B6B',recharge:'#F4212E'
-  };
-  const col=c[name]||'#0f1419';
-  const s=`width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"`;
-  const map={
-    manage:`<svg ${s}><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".12"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".12"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".12"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".12"/></svg>`,
-    home:`<svg ${s}><path d="M4 11L12 4l8 7v8a1 1 0 01-1 1h-5v-5H10v5H5a1 1 0 01-1-1v-8z" fill="${col}" fill-opacity=".15"/></svg>`,
-    d1:`<svg ${s}><ellipse cx="12" cy="6" rx="7" ry="3" fill="${col}" fill-opacity=".15"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>`,
-    b2:`<svg ${s}><rect x="3" y="5" width="18" height="14" rx="2.2" fill="${col}" fill-opacity=".12"/><circle cx="9" cy="11" r="1.8" fill="${col}" stroke="none"/><path d="M3.5 16.5l5-4 3.5 2.8 3-2.2 6 4"/></svg>`,
-    exchange:`<svg ${s}><path d="M7 8h11l-2.5-2.5M17 16H6l2.5 2.5"/><rect x="8" y="10" width="8" height="4" rx="1" fill="${col}" fill-opacity=".2"/></svg>`,
-    checkin:`<svg ${s}><rect x="4" y="5" width="16" height="15" rx="2.2" fill="${col}" fill-opacity=".12"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/><path d="M9 15.5l2 2 4-4.5"/></svg>`,
-    skin:`<svg ${s}><path d="M12 3l2.2 4.5L19 8.5l-3.5 3.4.8 4.8L12 14.6 7.7 16.7l.8-4.8L5 8.5l4.8-1z" fill="${col}" fill-opacity=".2"/></svg>`,
-    orders:`<svg ${s}><path d="M8 4h8v2H8z"/><rect x="7" y="6" width="10" height="14" rx="1.5" fill="${col}" fill-opacity=".12"/><path d="M10 11h4M10 15h4"/></svg>`,
-    product:`<svg ${s}><path d="M6 9h12l-1 11H7L6 9z" fill="${col}" fill-opacity=".15"/><path d="M9 9V7.5a3 3 0 016 0V9"/></svg>`,
-    user:`<svg ${s}><circle cx="12" cy="8" r="3.4" fill="${col}" fill-opacity=".2"/><path d="M5 19.5c1.2-3.3 3.6-5 7-5s5.8 1.7 7 5"/></svg>`,
-    shop:`<svg ${s}><path d="M4 10h16v10H4z" fill="${col}" fill-opacity=".12"/><path d="M4 10l1.6-5h12.8L20 10M9 20v-5h6v5"/></svg>`,
-    announce:`<svg ${s}><path d="M4 10v4h3l8 3.5V6.5L7 10H4z" fill="${col}" fill-opacity=".15"/><path d="M18 9.2a2.6 2.6 0 010 5.6"/></svg>`,
-    withdraw:`<svg ${s}><rect x="3" y="7" width="13" height="10" rx="1.8" fill="${col}" fill-opacity=".12"/><path d="M17 10.2l4 1.8-4 1.8v-3.6z" fill="${col}" fill-opacity=".25"/></svg>`,
-    category:`<svg ${s}><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".15"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".15"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".15"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6" fill="${col}" fill-opacity=".15"/></svg>`,
-    ad:`<svg ${s}><rect x="3" y="6" width="18" height="12" rx="2.2" fill="${col}" fill-opacity=".12"/><path d="M8 15V9l5 6V9"/></svg>`,
-    icon:`<svg ${s}><rect x="3" y="5" width="18" height="14" rx="2.2" fill="${col}" fill-opacity=".12"/><circle cx="9" cy="11" r="1.6" fill="${col}" stroke="none"/><path d="M3.5 16.5l5-4 3 2.5 3-2 7 4"/></svg>`,
-    gift:`<svg ${s}><rect x="4" y="10" width="16" height="10" rx="1.5" fill="${col}" fill-opacity=".15"/><path d="M12 10v10M4 14h16"/><path d="M8.2 10c0-2.2 1.4-3.8 3-3.8.9 0 1.4.9 1.6 2.2.2-1.3.8-2.2 1.7-2.2 1.5 0 2.8 1.6 2.8 3.8"/></svg>`,
-    ai:`<svg ${s}><circle cx="12" cy="12" r="8" fill="${col}" fill-opacity=".12"/><path d="M9 14.2c.9 1.3 2 1.9 3 1.9s2.1-.6 3-1.9"/><circle cx="9.5" cy="10.2" r="1.1" fill="${col}" stroke="none"/><circle cx="14.5" cy="10.2" r="1.1" fill="${col}" stroke="none"/></svg>`,
-    smile:`<svg ${s}><circle cx="12" cy="12" r="8" fill="${col}" fill-opacity=".15"/><circle cx="9.2" cy="10.2" r="1.1" fill="${col}" stroke="none"/><circle cx="14.8" cy="10.2" r="1.1" fill="${col}" stroke="none"/><path d="M9 14.2c1 1.4 2.2 2.1 3 2.1s2-.7 3-2.1"/></svg>`,
-    dispatch:`<svg ${s}><path d="M4 12l16-7-6.2 16-2.1-7.2L4 12z" fill="${col}" fill-opacity=".2"/></svg>`,
-    recharge:`<svg ${s}><circle cx="12" cy="12" r="8" fill="${col}" fill-opacity=".12"/><path d="M12 8v8M9 11.5h6"/></svg>`
-  };
-  return map[name]||map.manage;
+  const g=(typeof CT_TO_GALLERY!=='undefined'&&CT_TO_GALLERY[name])||null;
+  if(g&&typeof gallerySvg==='function'&&GALLERY_ICONS[g])return gallerySvg(g,size);
+  if(name==='exchange')return gallerySvg('礼物',size);
+  if(name==='skin')return gallerySvg('皮肤主题',size);
+  return gallerySvg('控制终端',size)||'';
 }
 function renderControlConsole(){
   const box=document.getElementById('subConsoleContent');
